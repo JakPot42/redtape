@@ -1,0 +1,16 @@
+# Private seed lives here. Never commit. (SPEC.md 5, CLAUDE.md)
+.env
+
+# Held-out split is regenerated from the private seed, never committed.
+data/heldout/
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+
+# Evaluation outputs are committed deliberately, not incidentally.
+results/*.tmp.json
