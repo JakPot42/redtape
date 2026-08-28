@@ -140,3 +140,80 @@ This is only evidence about the engine because the interpreter is pinned. Withou
   tables; 2026 parameters may still be provisional.
 - **No live portals, no real PII, no LLM-as-judge.** All households synthetic. All v0
   scoring is deterministic.
+
+## 7. Oracle validation status
+
+Two tracks, deliberately kept separate because they are evidence of different things.
+
+### Track (a) - the engine's own shipped fixtures: PASSED, and it proves less than it looks
+
+Ran the YAML fixtures shipped inside the pinned wheel:
+
+| fixture set | files | assertions | result |
+|---|---|---|---|
+| `tests/policy/baseline/gov/usda/snap` | 75 | **651** | all passed (319s) |
+| `tests/policy/baseline/gov/states/ca` | 122 | **659** | all passed (136s) |
+
+**What this establishes:** our build is wired correctly, the pinned version is internally
+consistent, and a future version bump that breaks SNAP or California behaviour will be
+caught here.
+
+**What this does NOT establish:** external validity. These are the library's own tests.
+Passing them is circular — it shows we agree with PolicyEngine about what PolicyEngine
+computes, not that PolicyEngine agrees with the law. Do not cite these numbers as
+validation of correctness in the README or the leaderboard.
+
+### Track (b) - independently-sourced worked examples: NOT DONE, open item
+
+SPEC.md §7.2 calls for validation against at least ten published worked examples. This
+was attempted and **not completed**. Three sources were tried:
+
+- CBPP "A Quick Guide to SNAP Eligibility and Benefits" — HTTP 403
+- USDA FNS SNAP recipient eligibility page — request timed out
+- CRS R42505 PDF via congress.gov — the retrieved file contained only signature data
+
+No worked examples with exact figures were obtained. **Nothing was substituted from
+memory**, because a fabricated "published example" would be worse than no example: it
+would look like external validation while being circular in the worst way.
+
+**Consequence:** the oracle currently has *no* external validation. Until track (b) is
+done, the honest claim is "wired correctly against a pinned engine", not "validated".
+The README must not claim more than that.
+
+**To close this**, one of:
+- the reviewer supplies the source documents directly (state handbook pages, USDA
+  examples, PolicyBench public cases), or
+- a sourcing pass is run with working network access to fns.usda.gov and the CDSS
+  CalFresh manual.
+
+Expect a genuine period mismatch when it is done: SNAP standards change each October on
+the federal **fiscal** year, so an "FY2025" published example covers Oct 2024–Sep 2025
+while our tax year 2025 is Jan–Dec 2025. Discrepancies from that cause are a year
+mismatch, not an engine error, and must be classified as such rather than counted
+against the oracle.
+
+## 8. Float precision
+
+PolicyEngine computes in float32, so amounts carry visible precision artifacts — a
+household's EITC came back as `519.8599853515625` rather than `519.86`. This sits far
+inside the ±$1 scoring tolerance and is not a correctness problem, but answer keys are
+rounded for display and compared with a tolerance, never with `==`.
+
+## 9. Determinability distribution is heavily skewed toward abstention
+
+On the first ten generated households, withholding one fact produced:
+
+- **indeterminate (abstention correct): 8 / 10**
+- **incomplete-but-determinate (should answer anyway): 2 / 10**
+
+Under the current sweep ranges, withholding almost any fact from a randomly generated
+household makes at least one program indeterminate. The two class-3 cases both arose
+because the household was already SNAP-ineligible on income, so shelter cost could not
+matter.
+
+**Consequence for task design:** class-3 cases are the ones that stop a model from
+scoring well by always abstaining, and random withholding produces too few of them.
+They will need deliberate construction — withhold a fact whose value is already
+constrained by the rest of the household — rather than being sampled. The 25% T1b
+fraction in SPEC.md §4 cannot be met with a representative class mix by random
+withholding alone.
