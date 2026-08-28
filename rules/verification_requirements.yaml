@@ -1,0 +1,198 @@
+# SNAP / Medi-Cal verification requirements.
+#
+# PHASE 1 SEED SET ONLY - ten rules whose purpose is to prove the format and exercise
+# the linter. This is NOT the finished table. The full table is its own phase with its
+# own checkpoint (CLAUDE.md).
+#
+# Every rule starts at `medium`. Claude never promotes a rule to `high` - only the
+# human reviewer does, after checking the citation, via rules/REVIEW_CHECKLIST.md.
+# Rules at `low` are excluded from scoring until promoted.
+#
+# Citations are to the section actually consulted. Where a citation is to the federal
+# regulation, the California manual may impose additional requirements not captured
+# here; that gap is why nothing is `high` yet.
+
+version: 0
+schema_version: 1
+
+rules:
+  - id: SNAP-INC-01
+    program: snap
+    subject: member_with_earned_income
+    applies_when:
+      any_member: { employment_income: { gt: 0 } }
+    acceptable_documents:
+      - type: pay_stub
+        issuer: employer
+        recency_days: 30
+        count: 4
+      - type: employer_statement
+        issuer: employer
+        recency_days: 60
+        count: 1
+    citation: "7 CFR 273.2(f)(1)(i)"
+    summary: >
+      Gross nonexempt income must be verified prior to certification. Pay stubs
+      covering the 30 days before application are the usual evidence.
+    confidence: medium
+
+  - id: SNAP-ALIEN-01
+    program: snap
+    subject: member_non_citizen
+    applies_when:
+      any_member: { immigration_status: { not_eq: CITIZEN } }
+    acceptable_documents:
+      - type: uscis_document
+        issuer: uscis
+        recency_days: null
+        count: 1
+    citation: "7 CFR 273.2(f)(1)(ii)"
+    summary: >
+      Eligible alien status must be verified for each non-citizen member claiming
+      eligibility. Ineligible non-citizens still affect the benefit calculation.
+    confidence: medium
+
+  - id: SNAP-RES-01
+    program: snap
+    subject: household
+    applies_when:
+      always: true
+    acceptable_documents:
+      - type: lease
+        issuer: landlord
+        recency_days: 365
+        count: 1
+      - type: utility_bill
+        issuer: utility
+        recency_days: 60
+        count: 1
+    citation: "7 CFR 273.2(f)(1)(vi)"
+    summary: >
+      Residency in the state of application must be verified, though no specific
+      document type is federally required.
+    confidence: medium
+
+  - id: SNAP-ID-01
+    program: snap
+    subject: applicant
+    applies_when:
+      always: true
+    acceptable_documents:
+      - type: photo_id
+        issuer: government
+        recency_days: null
+        count: 1
+    citation: "7 CFR 273.2(f)(1)(vii)"
+    summary: Identity of the applicant, or of the authorized representative, must be verified.
+    confidence: medium
+
+  - id: SNAP-SHELTER-01
+    program: snap
+    subject: household
+    applies_when:
+      household: { housing_cost: { gt: 0 } }
+    acceptable_documents:
+      - type: lease
+        issuer: landlord
+        recency_days: 365
+        count: 1
+      - type: mortgage_statement
+        issuer: lender
+        recency_days: 90
+        count: 1
+    citation: "7 CFR 273.2(f)(3)"
+    summary: >
+      Shelter costs are verified when questionable, or when the claimed amount would
+      affect the excess shelter deduction. Treated as required here whenever a shelter
+      cost is claimed.
+    confidence: low
+
+  - id: SNAP-UTIL-01
+    program: snap
+    subject: household
+    applies_when:
+      household: { claims_utility_allowance: { eq: true } }
+    acceptable_documents:
+      - type: utility_bill
+        issuer: utility
+        recency_days: 60
+        count: 1
+    citation: "7 CFR 273.2(f)(1)(iv)"
+    summary: Utility expenses must be verified when the household claims a utility allowance.
+    confidence: medium
+
+  - id: SNAP-DIS-01
+    program: snap
+    subject: member_disabled
+    applies_when:
+      any_member: { is_disabled: { eq: true } }
+    acceptable_documents:
+      - type: ssa_award_letter
+        issuer: ssa
+        recency_days: null
+        count: 1
+      - type: physician_statement
+        issuer: physician
+        recency_days: 365
+        count: 1
+    citation: "7 CFR 273.2(f)(1)(v)"
+    summary: >
+      Disability must be verified where it affects eligibility or deductions, for
+      example the uncapped medical deduction or exemption from work requirements.
+    confidence: medium
+
+  - id: SNAP-SSN-01
+    program: snap
+    subject: all_members
+    applies_when:
+      always: true
+    acceptable_documents:
+      - type: ssn_card
+        issuer: ssa
+        recency_days: null
+        count: 1
+      - type: ssa_statement
+        issuer: ssa
+        recency_days: null
+        count: 1
+    citation: "7 CFR 273.2(f)(1)(v)"
+    summary: >
+      A Social Security number must be provided or applied for by each member seeking
+      benefits.
+    confidence: low
+
+  - id: MEDI-INC-01
+    program: medicaid
+    subject: member_with_earned_income
+    applies_when:
+      any_member: { employment_income: { gt: 0 } }
+    acceptable_documents:
+      - type: pay_stub
+        issuer: employer
+        recency_days: 60
+        count: 2
+    citation: "42 CFR 435.945; CA MPP 50167"
+    summary: >
+      Income used in the MAGI determination must be verified, though California
+      relies substantially on electronic data sources before requesting paper.
+    confidence: low
+
+  - id: MEDI-AGE-01
+    program: medicaid
+    subject: all_members
+    applies_when:
+      always: true
+    acceptable_documents:
+      - type: birth_certificate
+        issuer: vital_records
+        recency_days: null
+        count: 1
+      - type: photo_id
+        issuer: government
+        recency_days: null
+        count: 1
+    citation: "42 CFR 435.407"
+    summary: >
+      Age and identity are used to assign the correct Medi-Cal aid category. Federal
+      rules permit electronic verification in place of documents.
+    confidence: low
