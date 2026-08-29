@@ -117,7 +117,7 @@ rules:
         issuer: utility
         recency_days: 60
         count: 1
-    citation: "7 CFR 273.2(f)(1)(iv)"
+    citation: "7 CFR 273.2(f)(1)(iii)"
     summary: Utility expenses must be verified when the household claims a utility allowance.
     confidence: medium
 
@@ -135,7 +135,7 @@ rules:
         issuer: physician
         recency_days: 365
         count: 1
-    citation: "7 CFR 273.2(f)(1)(v)"
+    citation: "7 CFR 273.2(f)(1)(viii)"
     summary: >
       Disability must be verified where it affects eligibility or deductions, for
       example the uncapped medical deduction or exemption from work requirements.
@@ -155,7 +155,7 @@ rules:
         issuer: ssa
         recency_days: null
         count: 1
-    citation: "7 CFR 273.2(f)(1)(v)"
+    citation: "7 CFR 273.6"
     summary: >
       A Social Security number must be provided or applied for by each member seeking
       benefits.

@@ -38,7 +38,8 @@ uv pip install --python .venv/bin/python -e ".[dev]"
 
 ./.venv/bin/python scripts/smoke.py         # one household, with provenance
 ./.venv/bin/python scripts/checkpoint1.py   # ten households + determinability table
-./.venv/bin/python -m pytest tests/ -q      # 27 tests
+./.venv/bin/python -m pytest tests/ -q      # 43 tests
+./.venv/bin/python scripts/external_validation.py   # 10 published-table comparisons
 ./.venv/bin/python -m redtape.scoring.rules_lint rules/verification_requirements.yaml
 ```
 
@@ -55,13 +56,18 @@ uv pip install --python .venv/bin/python -e ".[dev]"
    indistinguishable to the engine. This is why abstention labels come from the
    perturbation prober rather than from the oracle.
 
-3. **The oracle has no external validation yet.** The engine's own 1,310 shipped
-   fixture assertions pass, but that is circular evidence. Independently-sourced worked
-   examples are an open item — see `docs/LIMITS.md` §7.
+3. **The oracle is externally validated for SNAP amounts in California only —
+   nothing else.** Ten comparisons against published CalFresh tables match exactly
+   (10/10, zero discrepancies). That covers SNAP benefit amounts for FFY2025 sizes 1–2
+   and FFY2026 max allotments for sizes 1–6. **Medicaid, EITC, and CTC have had no
+   external comparison of any kind**, and neither have any of the eligibility booleans.
+   Those remain wired, not validated. See `docs/LIMITS.md` §7 for the exact cells.
 
 ## Rules table confidence
 
 10 rules · high **0** · medium **6** · low **4** · scored (excludes `low`) **6**
+
+Three citations were found to be wrong while checking them against the regulation text and have been corrected (`docs/LIMITS.md` §10). No confidence level was changed.
 
 No rule is at `high`. Claude drafts rules and never promotes their confidence; only the
 human reviewer does, via `rules/REVIEW_CHECKLIST.md`.
