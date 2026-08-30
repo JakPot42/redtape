@@ -53,6 +53,10 @@ SWEEPS: dict[str, tuple[Any, ...]] = {
     "dependent_care_cost": (0.0, 600.0, 2_400.0, 6_000.0, 12_000.0),
     "age": (2, 10, 17, 19, 35, 59, 66, 75),
     "is_disabled": (False, True),
+    # Student status is the one fact found that flips SNAP ELIGIBILITY rather than
+    # only the amount (7 CFR 273.5). Eligibility-flipping facts are the scarcest and
+    # most valuable T1b class - see docs/LIMITS.md 17.
+    "is_higher_ed_student": (False, True),
 }
 
 

@@ -575,3 +575,107 @@ belongs. Three independent sources (the reviewer's manual read of the COLA memo,
 Clara County chart, and the engine's own parameters) agreed against it, so it was
 discarded.
 
+## 20. Medicaid is computed but NOT SCORED in v0
+
+**Decision, not a defect.** `is_medicaid_eligible` remains in the T1 answer object with
+full provenance, and `MedicaidAnswer.scored` is `False`. `SCORED_PROGRAMS` is
+`("snap", "eitc", "ctc")`.
+
+**Why.** SNAP is externally validated across two fiscal years and household sizes 1-6;
+EITC and CTC are now validated against published IRS figures (§21). Medicaid MAGI
+eligibility has **no external validation at all** - we found no reachable published
+source giving MAGI eligibility outcomes for concrete households, and unlike the other
+three the parameters are not published as a simple table that can be checked cell by
+cell. Shipping a scored benchmark cell backed only by the engine agreeing with itself
+would be exactly the circularity this project exists to avoid.
+
+**What this costs.** T1 loses its only per-person eligibility output, which was the one
+place the answer schema exercised person-level rather than unit-level reasoning. That is
+a real reduction in what v0 measures and is stated as such in the README.
+
+**To lift it:** a source giving MAGI eligibility determinations for specified households -
+a state handbook worked example, or published MAGI conversion tables with enough detail
+to reconstruct a determination.
+
+## 21. EITC and CTC are externally validated
+
+Sources, both retrieved 2026-08-30 and agreeing on every figure used:
+**[H]** IRS.gov "Earned income and Earned Income Tax Credit (EITC) tables";
+**[I]** Tax Foundation "2025 Tax Brackets and Federal Income Tax Rates"; each consistent
+with Rev. Proc. 2024-40 as they summarise it. **[J]** PL 119-21 CTC provisions per IRS
+Schedule 8812 guidance and Tax Foundation.
+
+**EITC, TY2025** - 34 checks in `tests/test_eitc_ctc.py` spanning all three regions:
+
+| children | published max | engine at plateau | published phaseout end | engine above it |
+|---|---|---|---|---|
+| 0 | $649 | $649 | $19,104 | $0 |
+| 1 | $4,328 | $4,328 | $50,434 | $0 |
+| 2 | $7,152 | $7,152 | $57,310 | $0 |
+| 3+ | $8,046 | $8,046 | $61,555 | $0 |
+
+Phase-in is monotonic increasing and never exceeds the maximum; phase-out is monotonic
+decreasing between plateau and end. Zero earned income gives zero credit for every child
+count.
+
+**CTC, TY2025** - $2,200 per qualifying child (PL 119-21), phasing out above $200,000
+single at $50 per $1,000. Engine matches exactly: $200,000 → $2,200; $210,000 → $1,700;
+$230,000 → $700; $244,000 → $0. A child aged 16 qualifies, 18 does not, and 17 yields the
+$500 other-dependent credit rather than the CTC.
+
+### A semantic correction: `ctc` is not what the household receives
+
+`ctc` is the **gross** credit before limitation. `ctc_value` is the amount actually
+received once tax liability and the $1,700-per-child refundable cap are applied. For a
+zero-income family with two children:
+
+| variable | value |
+|---|---|
+| `ctc` | 4,400.00 |
+| `non_refundable_ctc` | 4,400.00 |
+| `refundable_ctc` | 0.00 |
+| **`ctc_value`** | **0.00** |
+
+The T1 answer previously reported `ctc` and so credited that family with $4,400 it does
+not receive. **The scored answer now uses `ctc_value`**, with the gross entitlement kept
+alongside it in `AnnualAmount.gross_entitlement`. This is the same class of error as
+reporting `medicaid` (a dollar value) where `is_medicaid_eligible` (a boolean) was meant.
+
+## 22. Eligibility-flipping T1b cases: student status works, ABAWD does not
+
+Three routes to an `is_snap_eligible` flip were probed. Flips are the scarcest and most
+valuable T1b class because they cannot be reached by adjusting an amount.
+
+**Student status — WORKS.** 7 CFR 273.5: enrolment more than half-time in higher
+education makes a person ineligible absent an exemption. Measured
+(`scripts/probe_abawd_student.py`), single adult, CA, 2025-11:
+
+| `is_snap_higher_ed_student` | `is_snap_ineligible_student` | `is_snap_eligible` | SNAP |
+|---|---|---|---|
+| False | False | **True** | 298.00 |
+| True | True | **False** | 0.00 |
+
+A clean binary flip that survives broad-based categorical eligibility, because student
+ineligibility is a composition rule rather than an income test. `is_higher_ed_student` is
+now a generated fact and is in the prober's fact space.
+
+**ABAWD — does not flip, and the engine is right about that.** `is_snap_abawd_exempt` is
+`True` and `is_subject_to_snap_abawd` is `False` for every age 25-64 in every month
+tested. Two independent, *correctly modelled* reasons:
+
+1. California is an ABAWD-waived area (`gov.usda.snap.work_requirements.abawd.waived_states`).
+2. California delayed HR 1 ABAWD adoption. `is_snap_abawd_hr1_in_effect` reads
+   `gov.states.ca.cdss.snap.work_requirements.abawd.hr1_in_effect`, and the variable
+   **cites CDSS ACL 25-93** for it.
+
+The engine also already implements HR 1's exemption changes — its source distinguishes
+`pre_hr1_exempt` (including homeless, veteran and former foster youth) from
+`post_hr1_exempt` (which drops them and adds the American Indian / Alaska Native
+exemption), gated on `hr1_in_effect`. **So the removals the reviewer asked about are
+implemented; they are simply not yet switched on for California.** This is not a
+divergence, and it is worth recording as a case where the engine was better informed
+than our assumption — which is also why the SUA and immigrant-eligibility gaps stand out
+as specific omissions rather than general neglect.
+
+**Gross income test — does not flip.** See §17.
+

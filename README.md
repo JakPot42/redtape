@@ -39,7 +39,7 @@ uv pip install --python .venv/bin/python -e ".[dev]"
 
 ./.venv/bin/python scripts/smoke.py         # one household, with provenance
 ./.venv/bin/python scripts/checkpoint1.py   # ten households + determinability table
-./.venv/bin/python -m pytest tests/ -q      # 102 tests
+./.venv/bin/python -m pytest tests/ -q      # 136 tests
 ./.venv/bin/python scripts/external_validation.py   # 10 published-table comparisons
 ./.venv/bin/python -m redtape.scoring.rules_lint rules/verification_requirements.yaml
 ```
@@ -57,14 +57,26 @@ uv pip install --python .venv/bin/python -e ".[dev]"
    indistinguishable to the engine. This is why abstention labels come from the
    perturbation prober rather than from the oracle.
 
-3. **The oracle is externally validated for SNAP amounts in California only, and
-   narrowly.** 22 comparisons against published CalFresh tables match exactly — but only
+3. **Only externally validated programs are scored.** `SCORED_PROGRAMS` is
+   `("snap", "eitc", "ctc")`. **Medicaid is computed and recorded but NOT scored** — it
+   has no external validation and none was obtainable, and scoring a cell backed only by
+   the engine agreeing with itself is the circularity this project exists to avoid. That
+   costs T1 its only per-person eligibility output; stated plainly rather than papered
+   over. `docs/LIMITS.md` §20.
+
+   EITC and CTC are now validated against published IRS figures across phase-in, plateau
+   and phase-out for 0/1/2/3+ children. One correction fell out of it: `ctc` is the
+   **gross** credit, not what the household receives — a zero-income family with two
+   children has `ctc = 4,400` and `ctc_value = 0`. The scored answer uses `ctc_value`.
+   `docs/LIMITS.md` §21.
+
+4. **SNAP validation is narrower than the headline count suggests.** 22 comparisons against published CalFresh tables match exactly — but only
    9 of those exercise calculation logic (sizes 1–6, FFY2025, months before 2025-07-04);
    8 test parameter loading and 5 are direct parameter reads. **Medicaid, EITC, CTC and
    every eligibility boolean have had no external comparison of any kind.** See
    `docs/LIMITS.md` §7 for the exact cells.
 
-4. **Imputed programme take-up is suppressed; declared receipt is permitted.** PolicyEngine models a household as
+5. **Imputed programme take-up is suppressed; declared receipt is permitted.** PolicyEngine models a household as
    receiving the benefits it qualifies for — CalWORKs at $930/mo for a parent with a
    child, SSI at $967/mo for a senior — and those count as SNAP unearned income. The
    narrative states neither, so the answer key would depend on an assumption the agent
@@ -72,14 +84,14 @@ uv pip install --python .venv/bin/python -e ".[dev]"
    that is passed through. v0 answers "what would this household receive given only the
    stated facts". `docs/LIMITS.md` §12.
 
-5. **HR 1's 2025 immigrant eligibility restrictions are not modelled**, and this one
+6. **HR 1's 2025 immigrant eligibility restrictions are not modelled**, and this one
    affects eligibility rather than amounts. Refugees, asylees, people with deportation
    withheld, conditional entrants and one-year parolees are still treated as fully
    eligible. The corpus is **restricted** to statuses where the engine and published rules
    agree; refugee and asylee households were previously generated and have been removed.
    `docs/LIMITS.md` §16.
 
-6. **HR 1's 2025 SUA changes are not modelled by the engine.** California's
+7. **HR 1's 2025 SUA changes are not modelled by the engine.** California's
    `always_standard` utility-allowance flag is unchanged across both the 2025-07-04 and
    2025-10-31 effective dates. Disclosed as a scope limitation with the affected months
    named, not scored against the oracle. `docs/LIMITS.md` §11.

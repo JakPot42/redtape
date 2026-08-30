@@ -166,6 +166,29 @@ provisions appear to have been implemented for ABAWD work requirements
 (`is_snap_abawd_hr1_in_effect`) but not for the SUA or immigrant-eligibility changes. If
 the maintainers would prefer these as separate reports we are happy to split them.
 
+## Two structural gaps, distinct from the parameter divergences above
+
+These are **modelling gaps rather than wrong values**, so they need a different fix and
+probably a different judgement about priority.
+
+**1. COFA status is not representable.** The `immigration_status` enum has eleven values
+and none expresses residence under a Compact of Free Association. COFA residents are one
+of the four categories that *remain* eligible under HR 1, so even a correct implementation
+of the restriction could not express an eligible COFA household. This needs a new enum
+value before the immigrant-eligibility rule can be implemented completely.
+
+**2. The LPR five-year bar is unmodelled.** HR 1 preserves eligibility for lawful
+permanent residents "after a five-year waiting period where applicable", but the model has
+no date-of-entry or date-of-status input, so `LEGAL_PERMANENT_RESIDENT` is treated as
+eligible unconditionally. That is correct for long-resident LPRs and wrong for recent
+ones, with no way to distinguish them. Fixing it requires a new input, not a parameter
+change.
+
+We raise both because they bound what a fix to the immigrant-eligibility rule can
+achieve: the first category cannot be expressed at all, and the second cannot be
+conditioned correctly, so an implementation would be partial by construction until the
+inputs exist.
+
 ## What we are not claiming
 
 - We have not audited any state other than California.

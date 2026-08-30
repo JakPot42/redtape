@@ -141,7 +141,15 @@ CARE_CASES = [
     #
     # CBPP states shelter of $1,198 as the TOTAL including utilities. California grants
     # the $663 SUA unconditionally, so housing_cost is set to 1198 - 663 = 535 to make
-    # the shelter total match. That substitution is why this case is comparable at all.
+    # the shelter total match.
+    #
+    # WHAT THIS CASE DOES AND DOES NOT VALIDATE. The substitution makes the comparison
+    # like-for-like, and it is not circular - both sides are externally sourced. But it
+    # BYPASSES the SUA logic entirely: the utility allowance is fed in as a fixed
+    # quantity rather than derived. This case validates the deduction-and-benefit
+    # formula, including the dependent care channel. It is NOT evidence that the
+    # utility path is correct, and must never be counted as such - see
+    # docs/HR1_SUA_DIVERGENCE.md for why the utility path is in fact known-divergent.
     ("CBPP FY2026 published example", 3, 1672, 535, 56, "2025-11", 661.0),
 ]
 ALLOTMENT_CASES = [(s, "2025-11", FFY2026["max_allotment"][s]) for s in range(1, 9)]

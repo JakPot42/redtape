@@ -67,6 +67,7 @@ def build_situation(hh: Household) -> dict:
             "employment_income": {year: p.employment_income},
             "immigration_status": {year: p.immigration_status.value},
             "is_disabled": {year: p.is_disabled},
+            "is_snap_higher_ed_student": {year: p.is_higher_ed_student},
         }
 
     # One marital unit per adult, matching PolicyEngine's expectations for
@@ -102,7 +103,8 @@ _QUERIES = (
     ("snap.benefit", "snap", "month"),
     ("medicaid.person_eligible", "is_medicaid_eligible", "year"),
     ("eitc.amount", "eitc", "year"),
-    ("ctc.amount", "ctc", "year"),
+    ("ctc.amount", "ctc_value", "year"),
+    ("ctc.gross_entitlement", "ctc", "year"),
 )
 
 
@@ -133,7 +135,12 @@ def compute(hh: Household) -> OracleResult:
     benefit = float(sim.calculate("snap", month)[0])
     medicaid = sim.calculate("is_medicaid_eligible", year)
     eitc = float(sim.calculate("eitc", year)[0])
-    ctc = float(sim.calculate("ctc", year)[0])
+    # `ctc` is the GROSS credit before limitation; `ctc_value` is what the household
+    # actually receives once tax liability and the refundable cap are applied. A
+    # zero-income family with two children has ctc=4,400 and ctc_value=0. The scored
+    # answer is what is received.
+    ctc_gross = float(sim.calculate("ctc", year)[0])
+    ctc = float(sim.calculate("ctc_value", year)[0])
 
     answer = T1Answer(
         snap=SnapAnswer(period_label=month, eligible=eligible, benefit=benefit),
@@ -142,7 +149,7 @@ def compute(hh: Household) -> OracleResult:
             person_eligible={p.person_id: bool(v) for p, v in zip(hh.people, medicaid)},
         ),
         eitc=AnnualAmount(period_label=str(year), amount=eitc),
-        ctc=AnnualAmount(period_label=str(year), amount=ctc),
+        ctc=AnnualAmount(period_label=str(year), amount=ctc, gross_entitlement=ctc_gross),
     )
 
     prov = tuple(

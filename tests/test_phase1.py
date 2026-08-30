@@ -114,6 +114,9 @@ def test_oracle_attaches_provenance_to_every_value():
         "medicaid.person_eligible",
         "eitc.amount",
         "ctc.amount",
+        # The gross entitlement is recorded alongside the received amount, because
+        # ctc and ctc_value differ and both are worth keeping. See LIMITS 21.
+        "ctc.gross_entitlement",
     }
     for p in r.provenance:
         assert p.variable and p.entity and p.period_queried

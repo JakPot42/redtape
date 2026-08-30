@@ -310,6 +310,27 @@ evidence base.
 
 ---
 
+## Only externally validated cells are scored **[decided]**
+
+`SCORED_PROGRAMS = ("snap", "eitc", "ctc")`. **Medicaid is computed, recorded with
+provenance, and NOT scored** — it has no external validation and none was obtainable.
+Scoring a cell backed only by the engine agreeing with itself is the circularity this
+project exists to avoid, and the thesis is deterministic ground truth, so an unvalidated
+scored cell would undercut the whole claim.
+
+The rule generalises: **a program enters the scored answer only once an external source
+confirms it.** Adding one is a deliberate step with its own validation, never a
+side-effect of the engine happening to produce a number.
+
+**Report what is received, not what is owed.** `ctc` is the gross credit before
+limitation; `ctc_value` is what the household actually gets. A zero-income family with
+two children has `ctc = 4,400` and `ctc_value = 0`. The scored answer uses `ctc_value`,
+with the gross kept alongside in `gross_entitlement`. This is the same trap as `medicaid`
+(a dollar amount) versus `is_medicaid_eligible` (a boolean): the plausible-looking
+variable is not the one that answers the question.
+
+---
+
 ## Deferred design decisions
 
 **T1b abstention scoring.** T1b abstention scoring is currently specified heuristically (omit a required fact, reward "cannot determine"). The intended Phase 2 upgrade is SMT-based determinability: encode the program's eligibility rules as constraints, treat missing facts as free variables, and check whether the known facts are satisfiable with BOTH eligible and ineligible outcomes. If both are satisfiable, abstention is the provably correct answer and the model difference names the deciding fact. Do not implement yet; revisit before Phase 2.

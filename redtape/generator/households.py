@@ -90,6 +90,8 @@ def generate(seed: int, index: int) -> Household:
                 employment_income=float(rng.randint(lo, hi)) if hi else 0.0,
                 immigration_status=_weighted(rng, _STATUS_WEIGHTS),
                 is_disabled=rng.random() < 0.12,
+                # Higher-education enrolment flips SNAP eligibility outright.
+                is_higher_ed_student=rng.random() < 0.10,
             )
         )
     for i in range(n_children):
@@ -100,6 +102,7 @@ def generate(seed: int, index: int) -> Household:
                 employment_income=0.0,
                 immigration_status=_weighted(rng, _STATUS_WEIGHTS),
                 is_disabled=rng.random() < 0.05,
+                is_higher_ed_student=False,
             )
         )
 

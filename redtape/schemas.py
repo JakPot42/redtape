@@ -22,6 +22,7 @@ WITHHOLDABLE_FACTS = (
     "employment_income",
     "declared_benefits",
     "dependent_care_cost",
+    "is_higher_ed_student",
     "immigration_status",
     "housing_cost",
     "age",
@@ -104,6 +105,11 @@ class Person(Strict):
     employment_income: float | None = Field(description="US dollars per YEAR; None means withheld")
     immigration_status: ImmigrationStatus | None = None
     is_disabled: bool | None = None
+    is_higher_ed_student: bool | None = Field(
+        default=False,
+        description="enrolled more than half-time in higher education (7 CFR 273.5). "
+        "Produces an ELIGIBILITY flip for SNAP, unlike most facts. None means withheld.",
+    )
     declared_benefits: tuple[DeclaredBenefit, ...] = Field(
         default=(),
         description="benefits the narrative states this person receives; empty means none stated",
@@ -122,8 +128,12 @@ class Person(Strict):
         return {b.program: b.annual_amount for b in self.declared_benefits}
 
     def withheld(self) -> list[str]:
-        return [f for f in ("age", "employment_income", "immigration_status", "is_disabled")
-                if getattr(self, f) is None]
+        return [
+            f
+            for f in ("age", "employment_income", "immigration_status", "is_disabled",
+                      "is_higher_ed_student")
+            if getattr(self, f) is None
+        ]
 
 
 class Household(Strict):
@@ -170,15 +180,38 @@ class SnapAnswer(Strict):
 
 
 class MedicaidAnswer(Strict):
+    """UNSCORED in v0.
+
+    Medicaid MAGI eligibility has NO external validation - we found no reachable
+    published source against which to check it, and unlike SNAP/EITC/CTC the
+    parameters are not published as a simple table. Rather than ship a scored
+    benchmark cell backed only by the engine agreeing with itself, v0 computes and
+    records Medicaid with full provenance but excludes it from scoring.
+
+    This is a scope limit, not a defect. See docs/LIMITS.md 20.
+    """
+
     period: Literal["year"] = "year"
     period_label: str
     person_eligible: dict[str, bool]
+    scored: Literal[False] = Field(
+        default=False,
+        description="v0 does not score Medicaid; no external validation exists",
+    )
 
 
 class AnnualAmount(Strict):
     period: Literal["year"] = "year"
     period_label: str
-    amount: float
+    amount: float = Field(
+        description="the amount the household RECEIVES, not a gross entitlement"
+    )
+    gross_entitlement: float | None = Field(
+        default=None,
+        description="pre-limitation credit where it differs from the amount received; "
+        "CTC is $2,200/child gross but is limited by tax liability and the $1,700 "
+        "refundable cap, so a zero-income family is entitled to $4,400 and receives $0",
+    )
 
 
 class Determinability(str, Enum):
@@ -192,6 +225,10 @@ class Determinability(str, Enum):
 class CannotDetermine(Strict):
     program: Literal["snap", "medicaid", "eitc", "ctc"]
     missing_fact: str = Field(description='e.g. "p1.employment_income"')
+
+
+# Programs whose values are SCORED in v0. Medicaid is deliberately absent.
+SCORED_PROGRAMS = ("snap", "eitc", "ctc")
 
 
 class T1Answer(Strict):
