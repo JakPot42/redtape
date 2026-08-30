@@ -38,7 +38,7 @@ uv pip install --python .venv/bin/python -e ".[dev]"
 
 ./.venv/bin/python scripts/smoke.py         # one household, with provenance
 ./.venv/bin/python scripts/checkpoint1.py   # ten households + determinability table
-./.venv/bin/python -m pytest tests/ -q      # 43 tests
+./.venv/bin/python -m pytest tests/ -q      # 76 tests
 ./.venv/bin/python scripts/external_validation.py   # 10 published-table comparisons
 ./.venv/bin/python -m redtape.scoring.rules_lint rules/verification_requirements.yaml
 ```
@@ -56,12 +56,24 @@ uv pip install --python .venv/bin/python -e ".[dev]"
    indistinguishable to the engine. This is why abstention labels come from the
    perturbation prober rather than from the oracle.
 
-3. **The oracle is externally validated for SNAP amounts in California only —
-   nothing else.** Ten comparisons against published CalFresh tables match exactly
-   (10/10, zero discrepancies). That covers SNAP benefit amounts for FFY2025 sizes 1–2
-   and FFY2026 max allotments for sizes 1–6. **Medicaid, EITC, and CTC have had no
-   external comparison of any kind**, and neither have any of the eligibility booleans.
-   Those remain wired, not validated. See `docs/LIMITS.md` §7 for the exact cells.
+3. **The oracle is externally validated for SNAP amounts in California only, and
+   narrowly.** 22 comparisons against published CalFresh tables match exactly — but only
+   9 of those exercise calculation logic (sizes 1–6, FFY2025, months before 2025-07-04);
+   8 test parameter loading and 5 are direct parameter reads. **Medicaid, EITC, CTC and
+   every eligibility boolean have had no external comparison of any kind.** See
+   `docs/LIMITS.md` §7 for the exact cells.
+
+4. **Modelled programme take-up is suppressed.** PolicyEngine models a household as
+   receiving the benefits it qualifies for — CalWORKs at $930/mo for a parent with a
+   child, SSI at $967/mo for a senior — and those count as SNAP unearned income. The
+   narrative states neither, so the answer key would depend on an assumption the agent
+   cannot see. v0 answers "what would this household receive given only the stated
+   facts", not "what does it actually receive". `docs/LIMITS.md` §12.
+
+5. **HR 1's 2025 SUA changes are not modelled by the engine.** California's
+   `always_standard` utility-allowance flag is unchanged across both the 2025-07-04 and
+   2025-10-31 effective dates. Disclosed as a scope limitation with the affected months
+   named, not scored against the oracle. `docs/LIMITS.md` §11.
 
 ## Rules table confidence
 

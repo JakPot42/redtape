@@ -1,23 +1,22 @@
 """External validation of the oracle against PUBLISHED CalFresh tables.
 
-Every published constant below is quoted from an external source with its retrieval date.
-Nothing here comes from memory, and nothing comes from PolicyEngine.
+Every published constant is quoted from an external source with its retrieval date.
+Nothing comes from memory, and nothing comes from PolicyEngine.
 
-Two comparison types:
+Comparison kinds:
 
-  FORMULA - full hand calculation from published tables and the published formula:
-      net    = gross - standard deduction - 20% of EARNED income - excess shelter
-      excess = min(cap, max(0, shelter + SUA - 0.5 * income_after_other_deductions))
-      benefit= max allotment - ceil(0.30 * net)
-
+  FORMULA   - full hand calculation from published tables and the published formula.
+              This exercises calculation logic.
   ALLOTMENT - a zero-income household has zero net income, so its benefit must equal the
-      published maximum allotment for its size. This checks one published cell directly
-      and needs no deduction constants.
+              published maximum allotment. This tests parameter loading, NOT calculation.
+  PARAMETER - an engine parameter value read directly and compared to the published one.
 
-CalWORKs/TANF is explicitly suppressed. PolicyEngine models a zero-earnings California
-household as receiving cash aid, which counts as unearned income for SNAP; a published
-SNAP example takes gross income as given. Not suppressing it produces a spurious
-discrepancy whose cause is "modelling scope", not an engine error.
+The three are reported separately because they are not equally strong evidence.
+
+FORMULA cases are restricted to months BEFORE 2025-07-04. From that date the published
+HR 1 rules change SUA entitlement in ways the engine does not model (docs/LIMITS.md 11),
+so a later-month formula case would be comparing against rules the engine never
+implemented.
 
 Run: ./.venv/bin/python scripts/external_validation.py
 """
@@ -26,45 +25,48 @@ from __future__ import annotations
 
 import math
 
-from policyengine_us import Simulation
+from policyengine_us import CountryTaxBenefitSystem, Simulation
+
+from redtape.oracle.takeup import apply_suppression
 
 # ----------------------------------------------------------------------------------
 # PUBLISHED CONSTANTS
 # ----------------------------------------------------------------------------------
 # [A] LSNC Guide to CalFresh Benefits, "Maximum CalFresh deductions",
-#     https://calfresh.guide/maximum-calfresh-deductions/  retrieved 2026-08-29.
-#     Effective 10/01/2024-09/30/2025 (FFY2025).
-# [B] Santa Clara County DEBS, "CalFresh Program Monthly Allotment and Income
-#     Eligibility Standards Charts", retrieved 2026-08-29.
-#     Effective 10/01/2025-09/30/2026 (FFY2026).
-# [C] Santa Clara County DEBS Update 24-07, "CalFresh COLA for FFY 2025",
-#     retrieved 2026-08-29. Effective 10/01/2024-09/30/2025.
+#     calfresh.guide, retrieved 2026-08-29. FFY2025, eff. 10/01/2024-09/30/2025.
+# [B] Santa Clara County DEBS allotment/income chart, retrieved 2026-08-29.
+#     FFY2026, eff. 10/01/2025-09/30/2026.
+# [C] SCC DEBS Update 24-07, CalFresh COLA FFY2025, retrieved 2026-08-29.
+# [D] LSNC Guide to CalFresh Benefits, maximum allotments as of 10/01/2024,
+#     retrieved 2026-08-29. FFY2025 full table.
+# [E] CDSS ACIN I-46-25, FFY2026 COLA, supplied by the reviewer 2026-08-29.
 
 FFY2025 = {
-    "std_deduction": {1: 204, 2: 204, 3: 204, 4: 217, 5: 254, 6: 291},  # [A]
-    "earned_rate": 0.20,                                                # [A]
-    "sua": 645,                                                          # [A][C]
-    "max_excess_shelter": 712,                                           # [A][C]
-    "max_allotment": {2: 536},                                           # [C]
-    "cite": "[A] LSNC calfresh.guide; [C] SCC Update 24-07",
+    "max_allotment": {1: 292, 2: 536, 3: 768, 4: 975, 5: 1158, 6: 1390, 7: 1536, 8: 1756},  # [D]
+    "std_deduction": {1: 204, 2: 204, 3: 204, 4: 217, 5: 254, 6: 291},                       # [A]
+    "earned_rate": 0.20,                                                                     # [A]
+    "sua": 645, "lua": 166,                                                                  # [A][C]
+    "max_excess_shelter": 712,                                                               # [A][C]
 }
 FFY2026 = {
-    "max_allotment": {1: 298, 2: 546, 3: 785, 4: 994, 5: 1183, 6: 1421, 7: 1571, 8: 1789},  # [B]
-    "gross_limit": {1: 1696, 2: 2292, 3: 2888, 4: 3483},                 # [B]
-    "net_limit": {1: 1305, 2: 1763, 3: 2221, 4: 2680},                   # [B]
-    "cite": "[B] SCC DEBS allotment/income chart",
+    "max_allotment": {1: 298, 2: 546, 3: 785, 4: 994, 5: 1183, 6: 1421, 7: 1571, 8: 1789},  # [B][E]
+    "sua": 663, "lua": 170,                                                                  # [E]
+    # std_deduction and max_excess_shelter NOT yet sourced externally - see LIMITS 7.
 }
 
-MONTHS_2025 = [f"2025-{i:02d}" for i in range(1, 13)]
+MONTHS = [f"2025-{i:02d}" for i in range(1, 13)]
 
 
-def oracle(size: int, earned_annual: float, shelter_annual: float, month: str):
+def snap(size, earned_m, shelter_m, month, ages=None, disabled=None):
+    ages = ages or ([30] + [8] * (size - 1))
+    disabled = disabled or [False] * size
     ids = [f"p{i+1}" for i in range(size)]
     people = {
         i: {
-            "age": {"2025": 30 if k == 0 else 8},
-            "employment_income": {"2025": earned_annual if k == 0 else 0},
+            "age": {"2025": ages[k]},
+            "employment_income": {"2025": earned_m * 12 if k == 0 else 0},
             "immigration_status": {"2025": "CITIZEN"},
+            "is_disabled": {"2025": disabled[k]},
         }
         for k, i in enumerate(ids)
     }
@@ -72,73 +74,97 @@ def oracle(size: int, earned_annual: float, shelter_annual: float, month: str):
         "people": people,
         "tax_units": {"tu": {"members": ids}},
         "families": {"f": {"members": ids}},
-        "spm_units": {
-            "s": {
-                "members": ids,
-                "housing_cost": {"2025": shelter_annual},
-                "tanf": {"2025": 0},
-                "ca_tanf": {"2025": 0},
-            }
-        },
+        "spm_units": {"s": {"members": ids, "housing_cost": {"2025": shelter_m * 12},
+                            "has_heating_cooling_expense": {"2025": True}}},
         "households": {"h": {"members": ids, "state_name": {"2025": "CA"}}},
         "marital_units": {"m": {"members": [ids[0]]}},
     }
-    sim = Simulation(situation=sit)
-    return float(sim.calculate("snap", month)[0])
+    return float(Simulation(situation=apply_suppression(sit, 2025)).calculate("snap", month)[0])
 
 
-def formula_ffy2025(size: int, earned_m: float, shelter_m: float) -> float:
+def formula_ffy2025(size, earned_m, shelter_m):
     p = FFY2025
     std = p["std_deduction"][min(size, 6)]
     after = max(0.0, earned_m - std - p["earned_rate"] * earned_m)
     excess = min(p["max_excess_shelter"], max(0.0, shelter_m + p["sua"] - 0.5 * after))
-    net = max(0.0, after - excess)
-    return max(0.0, p["max_allotment"][size] - math.ceil(0.30 * net))
+    return max(0.0, p["max_allotment"][size] - math.ceil(0.30 * max(0.0, after - excess)))
 
 
-CASES = [
-    # kind, label, size, earned/mo, shelter/mo, month, published value, source
-    ("FORMULA", "2p, $1,200 earned, $900 rent", 2, 1200, 900, "2025-04"),
-    ("FORMULA", "2p, $0 earned, $900 rent", 2, 0, 900, "2025-04"),
-    ("FORMULA", "2p, $2,000 earned, $1,200 rent", 2, 2000, 1200, "2025-04"),
-    ("FORMULA", "2p, $800 earned, $0 rent", 2, 800, 0, "2025-04"),
-    ("ALLOTMENT", "1p, zero income", 1, 0, 0, "2025-11"),
-    ("ALLOTMENT", "2p, zero income", 2, 0, 0, "2025-11"),
-    ("ALLOTMENT", "3p, zero income", 3, 0, 0, "2025-11"),
-    ("ALLOTMENT", "4p, zero income", 4, 0, 0, "2025-11"),
-    ("ALLOTMENT", "5p, zero income", 5, 0, 0, "2025-11"),
-    ("ALLOTMENT", "6p, zero income", 6, 0, 0, "2025-11"),
+FORMULA_CASES = [
+    (1, 900, 700, "2025-04"), (2, 1200, 900, "2025-04"), (3, 1500, 1100, "2025-04"),
+    (4, 2000, 1400, "2025-04"), (5, 2400, 1600, "2025-04"), (6, 2800, 1800, "2025-04"),
+    (2, 0, 900, "2025-04"), (2, 2000, 1200, "2025-04"), (3, 800, 0, "2025-06"),
 ]
+ALLOTMENT_CASES = [(s, "2025-11", FFY2026["max_allotment"][s]) for s in range(1, 9)]
 
 
-def main() -> None:
-    print("=" * 112)
-    print("TEN EXTERNAL WORKED EXAMPLES - published CalFresh tables vs redtape oracle")
-    print("=" * 112)
-    print(f"{'#':>2} {'kind':<10} {'case':<31} {'month':<8} {'FFY':<8} "
-          f"{'published':>10} {'oracle':>9} {'delta':>8} verdict")
-    print("-" * 112)
-
+def main():
     rows = []
-    for i, (kind, label, size, earned, shelter, month) in enumerate(CASES, 1):
-        ffy = "FFY2026" if month >= "2025-10" else "FFY2025"
-        if kind == "FORMULA":
-            pub = formula_ffy2025(size, earned, shelter)
-        else:
-            pub = float(FFY2026["max_allotment"][size])
-        got = oracle(size, earned * 12, shelter * 12, month)
-        delta = got - pub
-        verdict = "MATCH" if abs(delta) < 1.0 else "DISCREPANCY"
-        rows.append((i, kind, label, month, ffy, pub, got, delta, verdict))
-        print(f"{i:>2} {kind:<10} {label:<31} {month:<8} {ffy:<8} "
-              f"{pub:>10,.2f} {got:>9,.2f} {delta:>8,.2f} {verdict}")
+    print("=" * 104)
+    print("A. FORMULA - hand calculation from published FFY2025 tables (exercises calculation logic)")
+    print("=" * 104)
+    print(f"{'#':>2} {'size':>4} {'earned/mo':>10} {'rent/mo':>8} {'month':<9} "
+          f"{'published':>10} {'oracle':>9} {'delta':>8} verdict")
+    print("-" * 104)
+    for i, (size, e, sh, m) in enumerate(FORMULA_CASES, 1):
+        pub, got = formula_ffy2025(size, e, sh), snap(size, e, sh, m)
+        d = got - pub
+        v = "MATCH" if abs(d) < 1.0 else "DISCREPANCY"
+        rows.append(("FORMULA", v))
+        print(f"{i:>2} {size:>4} {e:>10,} {sh:>8,} {m:<9} {pub:>10,.2f} {got:>9,.2f} {d:>8,.2f} {v}")
 
-    print("-" * 112)
-    ok = sum(1 for r in rows if r[8] == "MATCH")
-    print(f"matched within the $1 tolerance: {ok}/{len(rows)}")
     print()
-    print("sources: " + FFY2025["cite"] + "; " + FFY2026["cite"])
-    print("all constants retrieved 2026-08-29; engine policyengine-us==1.821.4")
+    print("=" * 104)
+    print("B. ALLOTMENT - zero-income households vs published FFY2026 table (tests parameter loading only)")
+    print("=" * 104)
+    print(f"{'#':>2} {'size':>4} {'month':<9} {'published':>10} {'oracle':>9} {'delta':>8} verdict")
+    print("-" * 104)
+    for i, (size, m, pub) in enumerate(ALLOTMENT_CASES, 1):
+        got = snap(size, 0, 0, m)
+        d = got - pub
+        v = "MATCH" if abs(d) < 1.0 else "DISCREPANCY"
+        rows.append(("ALLOTMENT", v))
+        print(f"{i:>2} {size:>4} {m:<9} {pub:>10,.2f} {got:>9,.2f} {d:>8,.2f} {v}")
+
+    print()
+    print("=" * 104)
+    print("C. PARAMETER - engine parameter values vs published figures")
+    print("=" * 104)
+    P = CountryTaxBenefitSystem().parameters
+    sim = Simulation(situation=apply_suppression({
+        "people": {"p1": {"age": {"2025": 30}}},
+        "tax_units": {"tu": {"members": ["p1"]}}, "families": {"f": {"members": ["p1"]}},
+        "spm_units": {"s": {"members": ["p1"], "has_heating_cooling_expense": {"2025": True}}},
+        "households": {"h": {"members": ["p1"], "state_name": {"2025": "CA"}}},
+        "marital_units": {"m": {"members": ["p1"]}},
+    }, 2025))
+    checks = [
+        ("SUA FFY2025", 645, float(sim.calculate("snap_standard_utility_allowance", "2025-04")[0])),
+        ("SUA FFY2026", 663, float(sim.calculate("snap_standard_utility_allowance", "2025-11")[0])),
+        ("earned income deduction", 0.20,
+         float(P.gov.usda.snap.income.deductions.earned_income("2025-04-01"))),
+        ("gross income limit (xFPL)", 1.3, float(P.gov.usda.snap.income.limit.gross("2025-04-01"))),
+        ("net income limit (xFPL)", 1.0, float(P.gov.usda.snap.income.limit.net("2025-04-01"))),
+    ]
+    print(f"{'parameter':<28} {'published':>10} {'engine':>10} verdict")
+    print("-" * 104)
+    for label, pub, got in checks:
+        v = "MATCH" if abs(got - pub) < 0.01 else "DISCREPANCY"
+        rows.append(("PARAMETER", v))
+        print(f"{label:<28} {pub:>10,.2f} {got:>10,.2f} {v}")
+
+    print()
+    print("=" * 104)
+    for kind in ("FORMULA", "ALLOTMENT", "PARAMETER"):
+        sub = [r for r in rows if r[0] == kind]
+        ok = sum(1 for r in sub if r[1] == "MATCH")
+        print(f"  {kind:<10} {ok}/{len(sub)} match")
+    ok = sum(1 for r in rows if r[1] == "MATCH")
+    print(f"  {'TOTAL':<10} {ok}/{len(rows)} match")
+    print()
+    print("  FORMULA cases exercise calculation logic. ALLOTMENT cases test parameter")
+    print("  loading only - do not read the combined figure as broad validation.")
+    print("  Medicaid, EITC, CTC and all eligibility booleans remain unvalidated.")
 
 
 if __name__ == "__main__":

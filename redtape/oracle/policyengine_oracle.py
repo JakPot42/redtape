@@ -11,6 +11,8 @@ Design constraints, all from CLAUDE.md:
 * Attach the source variable, entity, and queried period to every value produced.
 * Import cost is ~30s cold, so this is imported once at generation time and never
   from inside a rollout.
+* Suppress modelled programme take-up, and assert afterwards that the engine gave
+  the household no income the narrative did not state. See redtape/oracle/takeup.py.
 """
 
 from __future__ import annotations
@@ -19,6 +21,7 @@ import platform
 from functools import lru_cache
 from importlib.metadata import version
 
+from redtape.oracle.takeup import apply_suppression, assert_no_unstated_income
 from redtape.schemas import (
     AnnualAmount,
     Household,
@@ -72,7 +75,7 @@ def build_situation(hh: Household) -> dict:
         f"mu_{p.person_id}": {"members": [p.person_id]} for p in hh.people if p.age >= 18
     }
 
-    return {
+    situation = {
         "people": people,
         "tax_units": {"tu": {"members": members}},
         "families": {"fam": {"members": members}},
@@ -80,6 +83,9 @@ def build_situation(hh: Household) -> dict:
         "households": {"hh": {"members": members, "state_name": {year: hh.state}}},
         "marital_units": marital_units,
     }
+    # The narrative states earnings and shelter only. Anything else the engine would
+    # pay this household is an unstated take-up assumption; zero it.
+    return apply_suppression(situation, hh.tax_year)
 
 
 # (answer field, variable, period accessor). SNAP is monthly; the rest are annual.
@@ -109,6 +115,10 @@ def compute(hh: Household) -> OracleResult:
 
     sim = Simulation(situation=build_situation(hh))
     year, month = hh.tax_year, hh.month
+
+    # Fails loudly if a modelled programme we did not suppress leaked income in.
+    stated_monthly_earned = sum(p.employment_income for p in hh.people) / 12
+    assert_no_unstated_income(sim, month, stated_monthly_earned)
 
     eligible = bool(sim.calculate("is_snap_eligible", month)[0])
     benefit = float(sim.calculate("snap", month)[0])

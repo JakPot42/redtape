@@ -150,6 +150,85 @@ The 25% T1b fraction in SPEC.md §4 is **provisional** and must not be fixed unt
 
 ---
 
+---
+
+## Modelled programme take-up: suppressed globally **[decided]**
+
+**The problem.** PolicyEngine models a household as *receiving* the programmes it would
+be eligible for, and those receipts count as unearned income for SNAP. A zero-earnings
+California household with a child is modelled as receiving CalWORKs at **$930/month**; a
+zero-earnings 67-year-old is modelled as receiving SSI at **$967/month**. The narrative
+states neither. Without intervention the answer key for every generated household
+silently depends on a take-up assumption the agent cannot see — an undeclared
+determinability problem underneath the entire benchmark. When suppression was first
+applied, **4 of the 10 checkpoint households changed answer key**, which measures how
+much of the benchmark was resting on it.
+
+**Decision: suppress modelled take-up globally** (`redtape/oracle/takeup.py`), and state
+the scope limit in the README. PolicyBench avoided this by excluding take-up entirely;
+we follow that precedent.
+
+**Why not the alternative** (state actual receipt of each cash-aid programme in every
+narrative): it fails *open*. You would have to state receipt for CalWORKs, SSI, the CA
+state supplement, Social Security, unemployment, and every other modelled programme —
+and any one you forget silently reintroduces the hidden assumption for exactly the
+household shapes that trigger it. Suppression fails *closed*: the invariant catches a
+programme nobody thought of. The leak is shape-dependent — CalWORKs appears only with a
+child present, SSI only once someone is old enough — so "we listed them all" is not a
+claim anyone can verify by inspection.
+
+**Not permanent.** Stating take-up as an explicit fact is a good v1 feature: it becomes a
+new determinability axis rather than a hidden assumption. It is the wrong thing to do
+half-way in v0.
+
+**A declared list is necessary but not sufficient.** `SUPPRESSED_PROGRAMS` can only
+suppress programmes we thought of. The real guard is `assert_no_unstated_income`, which
+asserts the engine gave the household no income the narrative did not state, and runs on
+every `compute()`. `test_invariant_has_teeth` removes the suppression and asserts the
+invariant *fails* — without it, the take-up tests could pass because the invariant is
+vacuous rather than because the leak is closed.
+
+**The invariant is one-sided, deliberately.** SNAP legitimately *excludes* some stated
+earnings — notably a student child's earned income (7 CFR 273.9(c)(7)). Engine earned
+income *below* the stated figure is correct behaviour. Only invented income is a leak. A
+two-sided version produced a false positive the moment a determinability sweep aged an
+earner into childhood.
+
+**Known cost of this decision.** SNAP's definition of a "disabled member" requires
+receipt of a disability benefit, not a self-reported flag. Because SSI take-up is
+suppressed, `is_disabled=True` no longer makes a household "elderly or disabled" for
+SNAP, so **disability is not a decisive fact for SNAP in v0** — measured, not assumed
+(`scripts/probe_decisive.py`). Age 60 *is* decisive, via the excess-shelter-cap
+exemption. Do not build a T1b case around disability for SNAP without re-checking this.
+
+---
+
+## Rules table: every citation is read before it is written **[decided]**
+
+**Why this changed.** Three of the ten seed citations were wrong — a **30% error rate** —
+and only one had been flagged as doubtful. The other two were believed correct and were
+not; reading the actual section text found them (`docs/LIMITS.md` §10). Drafting from
+memory of a regulation's structure and spot-checking a sample does not work at an
+acceptable error rate.
+
+Consequently:
+
+- **The full rules table cannot be drafted and spot-checked.** Every rule requires its
+  primary source opened and read before the rule is written. No exceptions for rules that
+  look obvious — two of the three errors were in rules that looked obvious.
+- **`medium` is no longer an acceptable default for an unread citation.** `medium` now
+  means "the cited section has been read and the rule matches it, but the interaction
+  with California's manual is unverified". A rule whose citation has not been read is
+  `low`, and `low` is excluded from scoring.
+- **The rules phase gets a longer budget than SPEC.md §7 assumes**, and it is its own
+  phase with its own checkpoint. Recorded here so the timeline is not quietly compressed
+  later. If the schedule is under pressure, cut the number of rules, never the reading.
+- **Prefer LSNC (`calfresh.guide`) as the primary California source.** It was reachable,
+  is well-cited to the MPP and the CFR, and is maintained. eCFR, USDA FNS, and CBPP all
+  blocked or timed out; Cornell LII works for federal regulation text.
+
+---
+
 ## Deferred design decisions
 
 **T1b abstention scoring.** T1b abstention scoring is currently specified heuristically (omit a required fact, reward "cannot determine"). The intended Phase 2 upgrade is SMT-based determinability: encode the program's eligibility rules as constraints, treat missing facts as free variables, and check whether the known facts are satisfiable with BOTH eligible and ineligible outcomes. If both are satisfiable, abstention is the provably correct answer and the model difference names the deciding fact. Do not implement yet; revisit before Phase 2.

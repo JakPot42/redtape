@@ -158,68 +158,66 @@ Establishes wiring correctness and drift detection. Does **not** establish exter
 validity: these are the library's own tests, so passing them shows we agree with
 PolicyEngine about what PolicyEngine computes. Not citable as validation of correctness.
 
-### Track (b) - published CalFresh tables: 10 / 10 exact matches
+### Track (b) - published CalFresh tables: 22 / 22 exact matches
 
-Ten comparisons against externally published figures. **Zero discrepancies**, so there
-is nothing to classify by cause — stated plainly rather than padded.
+Reported by kind, because the three are not equally strong evidence.
 
-| # | kind | case | month | FFY | published | oracle | delta |
-|---|---|---|---|---|---|---|---|
-| 1 | formula | 2p, $1,200 earned, $900 rent | 2025-04 | FFY2025 | 522.00 | 522.00 | 0.00 |
-| 2 | formula | 2p, $0 earned, $900 rent | 2025-04 | FFY2025 | 536.00 | 536.00 | 0.00 |
-| 3 | formula | 2p, $2,000 earned, $1,200 rent | 2025-04 | FFY2025 | 330.00 | 330.00 | 0.00 |
-| 4 | formula | 2p, $800 earned, $0 rent | 2025-04 | FFY2025 | 533.00 | 533.00 | 0.00 |
-| 5 | allotment | 1p, zero income | 2025-11 | FFY2026 | 298.00 | 298.00 | 0.00 |
-| 6 | allotment | 2p, zero income | 2025-11 | FFY2026 | 546.00 | 546.00 | 0.00 |
-| 7 | allotment | 3p, zero income | 2025-11 | FFY2026 | 785.00 | 785.00 | 0.00 |
-| 8 | allotment | 4p, zero income | 2025-11 | FFY2026 | 994.00 | 994.00 | 0.00 |
-| 9 | allotment | 5p, zero income | 2025-11 | FFY2026 | 1,183.00 | 1,183.00 | 0.00 |
-| 10 | allotment | 6p, zero income | 2025-11 | FFY2026 | 1,421.00 | 1,421.00 | 0.00 |
+| kind | n | result | what it actually tests |
+|---|---|---|---|
+| **FORMULA** | 9 | 9/9 match | calculation logic - full hand calculation from published tables and the published formula, household sizes 1-6 |
+| **ALLOTMENT** | 8 | 8/8 match | parameter loading only - a zero-income household must receive the published max allotment, sizes 1-8 |
+| **PARAMETER** | 5 | 5/5 match | engine parameter values read directly vs published figures |
 
-**`formula`** cases are a full hand calculation from published constants and the
-published CalFresh formula: net = gross − standard deduction − 20% of earned income −
-excess shelter; benefit = max allotment − ⌈0.30 × net⌉.
-**`allotment`** cases exploit the fact that a zero-income household has zero net income,
-so its benefit must equal the published maximum allotment for its size — checking one
-published cell directly without needing deduction constants.
+**Do not read "22/22" as broad validation.** Only the 9 FORMULA cases exercise
+calculation logic. The 8 ALLOTMENT cases confirm the engine loaded the right table and
+would pass even if the deduction logic were wrong.
 
-`test_hand_calculation_is_reproducible_from_published_constants` re-derives the four
-formula expectations from the published constants, so they cannot silently drift into
-being copied from the engine.
+FORMULA cases (published vs oracle, all deltas 0.00): size 1 $900/$700 -> 292; size 2
+$1,200/$900 -> 522; size 3 $1,500/$1,100 -> 682; size 4 $2,000/$1,400 -> 773; size 5
+$2,400/$1,600 -> 871; size 6 $2,800/$1,800 -> 1,018; size 2 $0/$900 -> 536; size 2
+$2,000/$1,200 -> 330; size 3 $800/$0 -> 765.
 
-**Sources**, all retrieved 2026-08-29:
+PARAMETER cases: SUA FFY2025 $645, **SUA FFY2026 $663**, earned income deduction 20%,
+gross limit 1.3x FPL, net limit 1.0x FPL - all matching published figures.
+
+**FORMULA cases are restricted to months before 2025-07-04.** From that date the
+published HR 1 rules change SUA entitlement in ways the engine does not model (SS11), so
+a later-month formula case would compare the engine against rules it never implemented.
+
+**Sources**, all retrieved 2026-08-29 unless noted:
 
 - **[A]** LSNC *Guide to CalFresh Benefits*, "Maximum CalFresh deductions",
-  https://calfresh.guide/maximum-calfresh-deductions/ — FFY2025, effective
-  10/01/2024–09/30/2025. Standard deduction 1–3 $204 / 4 $217 / 5 $254 / 6+ $291;
-  earned income deduction 20%; SUA $645; LUA $166; telephone $19; max excess shelter $712.
-- **[B]** Santa Clara County DEBS, "CalFresh Program Monthly Allotment and Income
-  Eligibility Standards Charts" — FFY2026, effective 10/01/2025–09/30/2026.
-  Max allotment 1–8: 298 / 546 / 785 / 994 / 1,183 / 1,421 / 1,571 / 1,789.
-  Gross limit (130% FPL) 1–4: 1,696 / 2,292 / 2,888 / 3,483.
-  Net limit (100% FPL) 1–4: 1,305 / 1,763 / 2,221 / 2,680.
-- **[C]** Santa Clara County DEBS Update 24-07, "CalFresh COLA for FFY 2025" — confirms
-  the FFY2025 shelter cap $712, SUA $645, LUA $166, and the 2-person max allotment $536.
+  https://calfresh.guide/maximum-calfresh-deductions/ - FFY2025, eff. 10/01/2024-09/30/2025.
+  Standard deduction 1-3 $204 / 4 $217 / 5 $254 / 6+ $291; earned income deduction 20%;
+  SUA $645; LUA $166; telephone $19; max excess shelter $712; homeless shelter $190.30.
+- **[D]** LSNC, maximum allotments as of 10/01/2024 - FFY2025 full table:
+  292 / 536 / 768 / 975 / 1,158 / 1,390 / 1,536 / 1,756, +$220 per additional member.
+- **[B]** Santa Clara County DEBS allotment/income chart - FFY2026, eff.
+  10/01/2025-09/30/2026. Max allotment 298 / 546 / 785 / 994 / 1,183 / 1,421 / 1,571 /
+  1,789. Gross limit (130% FPL) 1-4: 1,696 / 2,292 / 2,888 / 3,483. Net limit (100% FPL)
+  1-4: 1,305 / 1,763 / 2,221 / 2,680.
+- **[C]** SCC DEBS Update 24-07, CalFresh COLA FFY2025.
+- **[E]** CDSS ACIN I-46-25, FFY2026 COLA, supplied by the reviewer 2026-08-29:
+  SUA $663, LUA $170, resource limits $3,000 / $4,500, overall COLA 2.1%.
 
-Parameter cells additionally confirmed against the engine's own parameter tree:
-FFY2026 max allotment (all 8 sizes), FFY2025 standard deduction (all 6 brackets),
-earned income deduction 20%, gross limit 1.3 × FPL, net limit 1.0 × FPL.
+**LSNC (calfresh.guide) is the primary California source going forward.** It was
+reachable and is well-cited; eCFR, USDA FNS and CBPP all blocked or timed out. Cornell LII
+works for federal regulation text.
 
-**Two effects that would have produced spurious discrepancies, both controlled for:**
+**Two effects controlled for**, either of which would have produced spurious discrepancies:
 
 1. **The federal fiscal year boundary falls inside our tax year.** FFY2025 runs
-   2024-10-01 to 2025-09-30; FFY2026 begins 2025-10-01. A tax-year-2025 household in
-   July is on FFY2025 standards, one in November on FFY2026. The engine switches
-   correctly at October — a 1-person zero-income household is paid $292 in September and
-   $298 in October, matching the two published tables. `test_fiscal_year_boundary_falls_at_october`
-   locks this. Comparing a November household against an "FY2025" published example
-   would be a **tax-year mismatch**, not an engine error.
-2. **Modelling scope.** PolicyEngine models a zero-earnings California household as
-   receiving CalWORKs cash aid, which counts as unearned income for SNAP and reduces the
-   allotment. A published SNAP worked example takes gross income as given. The
-   comparison suppresses `tanf`/`ca_tanf` so the two are like-for-like. Not doing so
-   produces a discrepancy whose cause is **modelling scope**, not an engine error — the
-   engine is arguably more correct about the household's real circumstances.
+   2024-10-01 to 2025-09-30; FFY2026 begins 2025-10-01. The engine switches correctly at
+   October - a 1-person zero-income household is paid $292 in September and $298 in
+   October. Comparing a November household against an FY2025 example is a **tax-year
+   mismatch**, not an engine error.
+2. **Modelled take-up.** See SS12 and CLAUDE.md. Not suppressing it produces a
+   discrepancy whose cause is **modelling scope**, not an engine error.
+
+**Still needed to extend FORMULA cases into FFY2026:** the FFY2026 **standard deduction
+by household size** and **maximum excess shelter deduction**. LSNC still published only
+FFY2025 figures when checked on 2026-08-29. Without them, FFY2026 coverage is limited to
+allotment and SUA cells.
 
 ### Track (c) - Atlanta Fed Policy Rules Database: NOT an independent check
 
@@ -245,22 +243,23 @@ HTTP 403.
 
 **Validated, for these program-and-year cells only:**
 
-- SNAP benefit amount, California, **FFY2025** (2024-10-01 – 2025-09-30), household
-  sizes 1–2, against published deduction tables and the published formula.
-- SNAP maximum allotment, California, **FFY2026** (2025-10-01 – 2025-09-30), household
-  sizes **1–6**, against the published allotment table.
-- SNAP structural parameters: standard deduction (FFY2025), earned income deduction
-  rate, gross/net income limit multipliers.
+- SNAP benefit amount, California, **FFY2025** (2024-10-01 - 2025-09-30), household sizes
+  **1-6**, months **before 2025-07-04**, against published deduction and allotment tables
+  and the published formula. This is the only claim backed by calculation-logic testing.
+- SNAP maximum allotment, California, **FFY2026**, household sizes **1-8** - parameter
+  loading only.
+- SNAP structural parameters: standard deduction (FFY2025), SUA (FFY2025 and FFY2026),
+  earned income deduction rate, gross/net income limit multipliers.
 
-**Wired but NOT externally validated — everything else**, specifically:
+**Wired but NOT externally validated - everything else**, specifically:
 
-- **Medicaid** — no external comparison of any kind was performed. Treat every Medicaid
-  output as unvalidated.
-- **EITC and CTC** — no external comparison performed.
-- SNAP for household sizes 7+, for FFY2025 sizes 3+, and any month outside the two
-  sampled.
-- All eligibility *booleans* (`is_snap_eligible`, `is_medicaid_eligible`) — only benefit
+- **Medicaid** - no external comparison of any kind. Every Medicaid output is unvalidated.
+- **EITC and CTC** - no external comparison performed.
+- All eligibility **booleans** (`is_snap_eligible`, `is_medicaid_eligible`) - only benefit
   *amounts* were checked.
+- SNAP benefit *amounts* for **FFY2026** - blocked on the two missing published constants.
+- SNAP for any household containing a member who is elderly or disabled in
+  **2025-07 through 2025-12**, where the engine diverges from published HR 1 rules (SS11).
 
 ### Sources that could not be retrieved
 
@@ -344,3 +343,96 @@ never accepting a citation that has not been read.
 promotions — the table remains high 0 / medium 6 / low 4. SNAP-SSN-01's rule text now
 matches the language of its cited section and is a promotion candidate for the reviewer,
 but only the reviewer promotes it.
+
+## 11. HR 1 SUA changes are NOT modelled — named scope limitation
+
+**Status: divergence confirmed and classified as "state rule change since publication",
+not an engine bug.** Probe: `scripts/probe_hr1.py`.
+
+Published rules (CDSS ACIN I-46-25 and HR 1, supplied by the reviewer):
+
+1. **Effective 2025-07-04** — California's Heat and Eat option ends, **except** for
+   households containing an elderly (60+) or disabled member.
+2. **Effective 2025-10-31** — the SUAS nominal payment ($20.01), the mechanism that
+   qualifies many California households for the Standard Utility Allowance, is limited to
+   households that are *not* otherwise SUA-eligible, are *not* already receiving the
+   maximum allotment for their size, and *do* contain a member aged 60+ or disabled.
+   Applied at initial certification for new applicants, at recertification for ongoing
+   households.
+
+**What the engine does.** The California parameter
+`gov.usda.snap.income.deductions.utility.always_standard` is **`True` at every instant
+tested** — 2025-05-01, 2025-07-05, 2025-10-01, 2025-11-01. The engine grants every
+California household the full SUA unconditionally: regardless of whether it has a
+separately-billed heating or cooling expense, regardless of age or disability, and
+identically on both sides of the two effective dates.
+
+Measured `snap_utility_allowance` for a household with **no** heating/cooling expense:
+
+| month | non-elderly, non-disabled | elderly 67 | disabled 45 |
+|---|---|---|---|
+| 2025-05 … 2025-09 | 645.00 | 645.00 | 645.00 |
+| 2025-10 … 2025-12 | 663.00 | 663.00 | 663.00 |
+
+The only movement is the FFY2025→FFY2026 COLA. Neither HR 1 boundary produces any change,
+and `snap_utility_allowance_type` reports `SUA` in every month for a household that
+should not qualify for one.
+
+Supporting evidence that the mechanism is simply absent:
+
+- **no variable matching `suas`** exists anywhere in the engine;
+- **no California LIHEAP/Heat-and-Eat variable** exists (only `ca_riv_liheap_*`, a
+  Riverside County programme, plus IL and DC LIHEAP);
+- the only HR 1-aware variable in the whole model is `is_snap_abawd_hr1_in_effect`, which
+  concerns ABAWD work requirements — a different provision. So the engine models *some*
+  of HR 1 but not this part.
+
+**Affected population and months.** Non-elderly, non-disabled California households that
+qualify for the SUA only via the Heat-and-Eat / SUAS nominal payment rather than an actual
+utility expense, in **2025-07 (from the 4th) through 2025-12**. For those households the
+engine grants a $645/$663 utility allowance the published rules would withdraw, inflating
+the excess shelter deduction and therefore the SNAP benefit.
+
+**Consequences adopted:**
+
+- FORMULA validation cases are restricted to months **before 2025-07-04**, where engine
+  and published rules agree. A later-month formula case would be measuring the engine
+  against rules it never implemented.
+- This is a **scope limitation of v0**, disclosed here and in the README. It is not
+  scored against the oracle and must not be described as an engine defect: PolicyEngine
+  has not yet implemented a rule change that post-dates its California SUA modelling.
+- **Do not generate T1b cases that turn on SUA entitlement in 2025-07 through 2025-12.**
+  The answer key would encode pre-HR 1 policy.
+
+## 12. Take-up suppression and its side effects
+
+See CLAUDE.md for the decision and reasoning. Two consequences worth recording as limits:
+
+**Scope limit.** v0 answers the question "what would this household receive, given only
+the facts stated" — *not* "what does this household actually receive, given the other
+benefits it is enrolled in". A real caseworker must account for actual cash-aid receipt;
+v0 deliberately does not. Suppressed: `tanf`, `ca_tanf`, `ssi`, `ca_state_supplement`,
+`social_security`, `unemployment_compensation`.
+
+**Disability stops being decisive for SNAP.** SNAP's definition of a "disabled member"
+requires receipt of a disability benefit, not a self-reported flag. With SSI take-up
+suppressed, `is_disabled=True` no longer makes a household "elderly or disabled", so the
+excess-shelter-cap exemption does not apply to it. Measured with
+`scripts/probe_decisive.py`, 2-person household, $1,500/mo earned, $2,500/mo rent, 2025-04:
+
+| p1 age | is_disabled | SNAP $/mo |
+|---|---|---|
+| 35 | False | 450.00 |
+| 59 | False | 450.00 |
+| **60** | False | **536.00** |
+| 66 | False | 536.00 |
+| 35 | **True** | 450.00 *(unchanged)* |
+
+So **age 60 is a decisive fact for SNAP; `is_disabled` is not.** The prober agrees:
+`p1.age` is labelled `indeterminate` with SNAP deciding (2 distinct outcomes at high
+shelter, 3 at low shelter), `p1.is_disabled` is labelled `incomplete_determinate` with a
+single outcome. The prober is not missing determinability here — the determinability
+genuinely is not there, as a direct consequence of the take-up decision.
+
+Do not build a T1b case around disability for SNAP in v0 without re-checking this.
+

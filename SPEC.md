@@ -30,7 +30,7 @@ Not in scope for v0: live government portals, real PII, LLM-as-judge scoring, a 
 ## 2. Ground truth sources
 
 - **Amounts and eligibility:** `policyengine-us` (open source, OpenFisca-based). It validates against NBER TAXSIM and, under a 2025 MOU, the Atlanta Fed Policy Rules Database. Treat it as the oracle for SNAP, Medicaid eligibility, EITC, and CTC. Pin the exact package version in the repo and record it in every result file.
-- **Cross-check (optional, Phase 3):** the Atlanta Fed Policy Rules Database, for SNAP and Medicaid sanity checks on a sample of households. Disagreements between the two engines get logged, not silently resolved.
+- **Cross-check (optional, Phase 3): ~~the Atlanta Fed Policy Rules Database~~ — DROPPED 2026-08-29.** The PRD is not an independent second opinion. PolicyEngine validates its own results against the PRD under a 2025 memorandum of understanding and the two parties collaborate on resolving discrepancies (policyengine.org/us/research/policyengine-atlanta-fed-mou-prd), so agreement has been actively engineered and would overstate independence. It is a reconciled model, not a second opinion. Published-table validation (docs/LIMITS.md §7) replaces it. The PRD dataset was in any case unreachable: atlantafed.org returned HTTP 403.
 - **Documentation requirements:** a hand-built, cited rules table (`rules/verification_requirements.yaml`). Sources: 7 CFR 273.2(f) (federal SNAP verification requirements) and the chosen state's SNAP and Medicaid policy manuals. Every rule carries a citation, a plain-English summary, and a `confidence` field (`high` / `medium` / `low`). This table is the most fragile artifact in the project; see Section 6.
 
 ## 3. Repository layout
