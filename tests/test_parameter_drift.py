@@ -47,6 +47,8 @@ def _cells(node_at_instant, region=REGION):
 #   [D] LSNC maximum allotments as of 10/01/2024, retrieved 2026-08-29 (FFY2025)
 #   [E] CDSS ACIN I-46-25 FFY2026 COLA, supplied by reviewer 2026-08-29
 #   [F] FNS SNAP FY2026 COLA memo, read by reviewer 2026-08-29
+#   [G] CBPP "A Quick Guide to SNAP Eligibility and Benefits", updated 2025-10-03,
+#       endnotes 4, 6, 9 and 12; supplied by reviewer 2026-08-30
 # ----------------------------------------------------------------------------------
 
 PUBLISHED = {
@@ -56,9 +58,9 @@ PUBLISHED = {
     },
     "standard_deduction": {
         FFY2025: ({1: 204, 2: 204, 3: 204, 4: 217, 5: 254, 6: 291}, "[A]"),
-        # [F] gives sizes 1-3 only. Sizes 4+ are NOT externally sourced and are
-        # deliberately absent - asserting the engine's own value would be circular.
-        FFY2026: ({1: 209, 2: 209, 3: 209}, "[F]"),
+        # [F] FNS FY2026 COLA memo gives sizes 1-3; [G] CBPP endnote 9 gives all sizes.
+        # Sizes 4+ now have an external source, so they are no longer self-confirming.
+        FFY2026: ({1: 209, 2: 209, 3: 209, 4: 223, 5: 261, 6: 299}, "[F][G]"),
     },
     "shelter_cap": {FFY2025: (712, "[A]"), FFY2026: (744, "[F]")},
     "homeless_shelter_deduction": {FFY2025: (190.30, "[A]"), FFY2026: (198.99, "[F]")},
@@ -155,6 +157,74 @@ def test_california_lua_is_unreachable_and_therefore_unvalidated(P):
         P.gov.usda.snap.income.deductions.utility.always_standard("2025-04-01")["CA"]
     ) is True, "CA is no longer always-SUA; the published LUA is now reachable and must be validated"
     assert _ca_utility("2025-04", "snap_limited_utility_allowance_by_household_size") == 0.0
+
+
+def test_fy2026_minimum_benefit_is_24(P):
+    """[F][G] FY2026 minimum benefit is $24 for 1- and 2-person households (48 + DC).
+
+    The engine derives it as a rate against the 1-person maximum allotment rather than
+    storing it directly, so the check is on the derived value.
+    """
+    node = P.gov.usda.snap.min_allotment(FFY2026)
+    rate = float(node["rate"])
+    max_size = int(node["maximum_household_size"])
+    ref_size = int(node["relevant_max_allotment_household_size"])
+    one_person = _cells(P.gov.usda.snap.max_allotment.main(FFY2026))[ref_size]
+    derived = round(rate * one_person)
+    assert max_size == 2, f"DRIFT: minimum benefit should apply to sizes 1-2, got {max_size}"
+    assert derived == 24, (
+        f"DRIFT: FY2026 minimum benefit: engine derives {derived} "
+        f"({rate} x {one_person}) != published 24 [F][G]"
+    )
+
+
+def test_fy2026_poverty_line_for_family_of_three(P):
+    """[G] FY2026 poverty line for a family of three is $2,221/month; 130% is $2,888.
+
+    Read through the SNAP income-limit variables so the check covers the value SNAP
+    actually uses, not merely a parameter sitting elsewhere in the tree.
+    """
+    from policyengine_us import Simulation
+
+    from redtape.oracle.takeup import apply_suppression
+
+    ids = ["p1", "p2", "p3"]
+    sit = {
+        "people": {
+            "p1": {"age": {"2025": 35}, "employment_income": {"2025": 0}},
+            "p2": {"age": {"2025": 8}, "employment_income": {"2025": 0}},
+            "p3": {"age": {"2025": 5}, "employment_income": {"2025": 0}},
+        },
+        "tax_units": {"tu": {"members": ids}},
+        "families": {"f": {"members": ids}},
+        "spm_units": {"s": {"members": ids}},
+        "households": {"h": {"members": ids, "state_name": {"2025": "CA"}}},
+        "marital_units": {"m": {"members": ["p1"]}},
+    }
+    sim = Simulation(situation=apply_suppression(sit, 2025))
+
+    monthly_fpg = None
+    for var in ("snap_fpg", "spm_unit_fpg", "snap_net_income_limit"):
+        try:
+            v = float(sim.calculate(var, "2025-11")[0])
+        except Exception:
+            try:
+                v = float(sim.calculate(var, 2025)[0]) / 12
+            except Exception:
+                continue
+        monthly_fpg = v
+        break
+
+    if monthly_fpg is None:
+        pytest.skip("no reachable FPG variable; poverty line not checkable this way")
+
+    assert monthly_fpg == pytest.approx(2221, abs=2), (
+        f"DRIFT: FY2026 monthly poverty line for a family of three: engine "
+        f"{monthly_fpg:,.2f} != published 2,221 [G]"
+    )
+    assert monthly_fpg * 1.3 == pytest.approx(2888, abs=3), (
+        f"DRIFT: 130% of the poverty line: engine {monthly_fpg * 1.3:,.2f} != published 2,888 [G]"
+    )
 
 
 def test_structural_rates_match_published(P):

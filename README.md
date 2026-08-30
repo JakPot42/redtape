@@ -39,7 +39,7 @@ uv pip install --python .venv/bin/python -e ".[dev]"
 
 ./.venv/bin/python scripts/smoke.py         # one household, with provenance
 ./.venv/bin/python scripts/checkpoint1.py   # ten households + determinability table
-./.venv/bin/python -m pytest tests/ -q      # 90 tests
+./.venv/bin/python -m pytest tests/ -q      # 102 tests
 ./.venv/bin/python scripts/external_validation.py   # 10 published-table comparisons
 ./.venv/bin/python -m redtape.scoring.rules_lint rules/verification_requirements.yaml
 ```
@@ -72,7 +72,14 @@ uv pip install --python .venv/bin/python -e ".[dev]"
    that is passed through. v0 answers "what would this household receive given only the
    stated facts". `docs/LIMITS.md` §12.
 
-5. **HR 1's 2025 SUA changes are not modelled by the engine.** California's
+5. **HR 1's 2025 immigrant eligibility restrictions are not modelled**, and this one
+   affects eligibility rather than amounts. Refugees, asylees, people with deportation
+   withheld, conditional entrants and one-year parolees are still treated as fully
+   eligible. The corpus is **restricted** to statuses where the engine and published rules
+   agree; refugee and asylee households were previously generated and have been removed.
+   `docs/LIMITS.md` §16.
+
+6. **HR 1's 2025 SUA changes are not modelled by the engine.** California's
    `always_standard` utility-allowance flag is unchanged across both the 2025-07-04 and
    2025-10-31 effective dates. Disclosed as a scope limitation with the affected months
    named, not scored against the oracle. `docs/LIMITS.md` §11.

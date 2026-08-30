@@ -44,8 +44,21 @@ entitlement without a separately billed utility cost, is limited to households t
 Applied at initial certification for new applicants and at recertification for ongoing
 households.
 
+CBPP states the federal rule more cleanly than the state guidance does (endnote 12 of
+"A Quick Guide to SNAP Eligibility and Benefits", updated 2025-10-03):
+
+> Under prior law, households receiving more than **$20** in annual LIHEAP-type benefits
+> automatically qualified for the heating and cooling Standard Utility Allowance. Under
+> HR 1 they qualify automatically **only if they have an elderly or disabled member**;
+> other households must document actual heating and cooling costs.
+
+This confirms the federal threshold is **$20**. California's $20.01 SUAS payment and
+Illinois's $21 LIHEAP requirement are each that state's own implementation of the same
+federal hook, which is why a fix must be parameterised per state rather than hardcoded.
+
 **Governing sources:** Public Law 119-21 (HR 1); CDSS ACIN I-46-25 (FFY2026 COLA);
-CDSS ACL 25-68.
+CDSS ACL 25-68; CBPP "A Quick Guide to SNAP Eligibility and Benefits", updated
+2025-10-03, endnote 12.
 
 ## What the engine does
 
@@ -137,6 +150,21 @@ States are implementing HR 1 differently, so a California-only fix will not gene
 For example, **Illinois** requires that a qualifying member receive **$21 or more** in
 LIHEAP to establish the heating standard. Any fix should be parameterised per state rather
 than hardcoded to the California rule.
+
+## A second, related divergence
+
+While probing this we found that the **HR 1 immigrant eligibility restrictions** also
+appear unimplemented. PL 119-21 restricted SNAP to citizens, LPRs, Cuban/Haitian entrants
+and COFA residents, but `policyengine-us==1.821.4` continues to model refugees, asylees,
+people with deportation withheld, conditional entrants and one-year parolees as fully
+eligible in every month of 2025 — identical to citizens, with no change at the 2025-07-04
+boundary. The enum also has no COFA value, so one of the categories that remains eligible
+cannot be expressed.
+
+We mention it here because it suggests the two are part of the same gap: HR 1's SNAP
+provisions appear to have been implemented for ABAWD work requirements
+(`is_snap_abawd_hr1_in_effect`) but not for the SUA or immigrant-eligibility changes. If
+the maintainers would prefer these as separate reports we are happy to split them.
 
 ## What we are not claiming
 

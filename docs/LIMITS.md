@@ -475,3 +475,103 @@ sizes **1-3 only** (FNS FY2026 COLA memo). The engine holds 223 / 261 / 299 for 
 4 / 5 / 6+, and those are **not** asserted, because asserting the engine's own value
 against itself proves nothing. FFY2026 FORMULA validation is limited to sizes 1-3 for the
 same reason.
+
+## 16. HR 1 immigrant eligibility restrictions are NOT modelled — corpus restricted
+
+**Status: divergence confirmed. Affects ELIGIBILITY, not just amounts, and touched answer
+keys already generated.** Probe: `scripts/probe_immigration.py`.
+
+**Published rule** (CBPP, "A Quick Guide to SNAP Eligibility and Benefits", updated
+2025-10-03, endnote 6, citing PL 119-21, enacted 2025-07-04): SNAP eligibility is
+restricted to U.S. citizens; lawful permanent residents (after a five-year wait where
+applicable); people granted Cuban or Haitian entrant status; and people living in the U.S.
+under a Compact of Free Association.
+
+**What the engine does.** Nothing changes at the 2025-07-04 boundary. SNAP benefit for a
+2-person California household, $1,200/mo earned, by status and month:
+
+| status | Jan | May | Jun | **Jul** | Aug | Oct | Dec |
+|---|---|---|---|---|---|---|---|
+| CITIZEN | 522 | 522 | 522 | 522 | 522 | 543 | 543 |
+| LEGAL_PERMANENT_RESIDENT | 522 | 522 | 522 | 522 | 522 | 543 | 543 |
+| **REFUGEE** | 522 | 522 | 522 | **522** | 522 | 543 | 543 |
+| **ASYLEE** | 522 | 522 | 522 | **522** | 522 | 543 | 543 |
+| **DEPORTATION_WITHHELD** | 522 | 522 | 522 | **522** | 522 | 543 | 543 |
+| **CONDITIONAL_ENTRANT** | 522 | 522 | 522 | **522** | 522 | 543 | 543 |
+| **PAROLED_ONE_YEAR** | 522 | 522 | 522 | **522** | 522 | 543 | 543 |
+| CUBAN_HAITIAN_ENTRANT | 522 | 522 | 522 | 522 | 522 | 543 | 543 |
+| UNDOCUMENTED / DACA / TPS | 292 | 292 | 292 | 292 | 292 | 298 | 298 |
+
+The only movement anywhere is the FFY2026 COLA in October. Five statuses that HR 1 made
+ineligible are still modelled as fully eligible, identical to a citizen.
+`ca_snap_immigration_status_eligible` also reports `True` for all of them, so this is not
+a CFAP substitution — it is federal SNAP eligibility.
+
+**COFA is not representable at all.** The engine's `immigration_status` enum has 11 values
+and none of them is a Compact of Free Association status, so one of the four categories
+that *remain* eligible cannot be expressed.
+
+**Action taken — the corpus is restricted, not merely annotated.**
+`SAFE_IMMIGRATION_STATUSES` (in `redtape/schemas.py`) now limits generation and the
+determinability sweep to statuses where the engine and the published rules agree:
+
+- eligible under both: `CITIZEN`, `LEGAL_PERMANENT_RESIDENT`, `CUBAN_HAITIAN_ENTRANT`
+- ineligible under both: `UNDOCUMENTED`, `DACA`, `TPS`
+
+`REFUGEE` and `ASYLEE` were previously generated (3% and 2% of adults) and have been
+**removed**. `tests/test_immigration_scope.py` fails if any generated household or sweep
+value falls outside the safe set, and separately asserts the current known-wrong engine
+behaviour so that an upstream fix notifies us to re-widen.
+
+**Caveat within the safe set.** The five-year bar for LPRs is not modelled — the engine
+has no date-of-entry input — so `LEGAL_PERMANENT_RESIDENT` is only correct for the
+long-resident case. Narratives must not imply recent arrival.
+
+## 17. The gross-income-test exemption produces no eligibility flips in California
+
+**Status: modelled, but inert for outcomes here.** Probe: `scripts/probe_flip.py`.
+
+CBPP endnote 4: households with a member aged 60+ or with a disability are not subject to
+the gross income test. The engine **does** implement this —
+`meets_snap_gross_income_test` flips `False` → `True` when SSDI or veteran status is
+declared, or at age 60.
+
+But it never changes `is_snap_eligible`. Sweeping a 3-person California household's
+earnings, 2025-11:
+
+| earned/mo | no declaration: eligible / gross test | SSDI declared: eligible / gross test |
+|---|---|---|
+| 3,200 | True / **False** | True / True |
+| 3,500 | True / **False** | True / True |
+| 4,000 | **False** / False | **False** / True |
+| 5,000+ | False / False | False / True |
+
+The exemption is squeezed out from both sides. Below the net-income threshold, California's
+broad-based categorical eligibility (`meets_snap_categorical_eligibility`) already makes
+the household eligible regardless of the gross test. Above it, the household fails the
+**net** income test, from which elderly/disabled status grants no exemption.
+
+**Consequence:** this route does not unlock eligibility-flipping T1b cases in California.
+The scarcest and most valuable T1b class remains unavailable through it. A state without
+broad-based categorical eligibility would behave differently — another reason the
+single-state scope is load-bearing (§14).
+
+## 18. Dependent care is now an exercised deduction channel
+
+Previously untested. The generator now emits a dependent care cost for households with
+children, `childcare_expenses` is wired through the oracle, `dependent_care_cost` is a
+withholdable T1b fact with a declared sweep, and four validation cases exercise it —
+including CBPP's published FY2026 worked example, reproduced end to end.
+
+## 19. No automated PDF table extraction without a second source
+
+See CLAUDE.md for the rule. Recorded here because it produced a near-miss: an automated
+extraction of the FNS FY2026 allotments PDF returned a $688 shelter cap, a $193 standard
+deduction and allotments 291/535/768/**1,023**/1,219/… — none of which match any other
+source. The likely cause is that the document carries separate tables for the 48 states +
+DC, Alaska, Hawaii, Guam and the USVI, and an extraction that does not respect column
+boundaries splices values across jurisdictions, which is why $1,023 appeared where $994
+belongs. Three independent sources (the reviewer's manual read of the COLA memo, the Santa
+Clara County chart, and the engine's own parameters) agreed against it, so it was
+discarded.
+

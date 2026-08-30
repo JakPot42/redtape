@@ -290,6 +290,26 @@ Two rules for that file:
 
 ---
 
+## No automated PDF table extraction without a second source **[decided]**
+
+An automated extraction of the FNS FY2026 allotments PDF returned a $688 shelter cap, a
+$193 standard deduction, and allotments 291/535/768/**1,023**/1,219/… — matching no other
+source. Government benefit PDFs routinely carry separate tables for the 48 states + DC,
+Alaska, Hawaii, Guam and the USVI; an extraction that does not respect column boundaries
+splices values across jurisdictions, which is exactly how $1,023 appeared where $994
+belongs.
+
+**Rule: no figure obtained by automated PDF table extraction enters the validation corpus
+without a second independent source confirming it.** A human reading the PDF counts as
+that source; a second automated extraction of the same document does not.
+
+This is the same failure mode as a silent default standing in for a real value, one layer
+up: a plausible number appears where a real one belongs, and nothing errors. The whole
+project exists to catch that class of mistake, so we do not get to make it in our own
+evidence base.
+
+---
+
 ## Deferred design decisions
 
 **T1b abstention scoring.** T1b abstention scoring is currently specified heuristically (omit a required fact, reward "cannot determine"). The intended Phase 2 upgrade is SMT-based determinability: encode the program's eligibility rules as constraints, treat missing facts as free variables, and check whether the known facts are satisfiable with BOTH eligible and ineligible outcomes. If both are satisfiable, abstention is the provably correct answer and the model difference names the deciding fact. Do not implement yet; revisit before Phase 2.

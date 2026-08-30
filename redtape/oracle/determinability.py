@@ -18,7 +18,13 @@ from typing import Any
 from pydantic import BaseModel, ConfigDict
 
 from redtape.oracle.policyengine_oracle import compute
-from redtape.schemas import Determinability, Household, ImmigrationStatus, T1Answer
+from redtape.schemas import (
+    SAFE_IMMIGRATION_STATUSES,
+    Determinability,
+    Household,
+    ImmigrationStatus,
+    T1Answer,
+)
 
 PROGRAMS = ("snap", "medicaid", "eitc", "ctc")
 
@@ -38,7 +44,13 @@ DEFAULT_TOLERANCE = 1.0
 SWEEPS: dict[str, tuple[Any, ...]] = {
     "employment_income": (0.0, 5_000.0, 12_000.0, 20_000.0, 30_000.0, 45_000.0, 80_000.0),
     "housing_cost": (0.0, 3_600.0, 9_000.0, 18_000.0, 30_000.0, 48_000.0),
-    "immigration_status": tuple(ImmigrationStatus),
+    # Restricted to SAFE_IMMIGRATION_STATUSES. Sweeping REFUGEE/ASYLEE and the other
+    # excluded statuses would probe determinability against a known-wrong answer key
+    # (docs/LIMITS.md 16).
+    "immigration_status": tuple(
+        s for s in ImmigrationStatus if s.value in SAFE_IMMIGRATION_STATUSES
+    ),
+    "dependent_care_cost": (0.0, 600.0, 2_400.0, 6_000.0, 12_000.0),
     "age": (2, 10, 17, 19, 35, 59, 66, 75),
     "is_disabled": (False, True),
 }
@@ -65,8 +77,8 @@ class DeterminabilityLabel(BaseModel):
 
 def _restore(hh: Household, fact: str, value: Any) -> Household:
     """Put `value` back into the withheld slot."""
-    if fact == "housing_cost":
-        return hh.model_copy(update={"housing_cost": float(value)})
+    if fact in ("housing_cost", "dependent_care_cost"):
+        return hh.model_copy(update={fact: float(value)})
 
     pid, _, field = fact.partition(".")
     people = [

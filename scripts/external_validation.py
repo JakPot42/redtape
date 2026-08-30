@@ -51,11 +51,11 @@ FFY2025 = {
 FFY2026 = {
     "max_allotment": {1: 298, 2: 546, 3: 785, 4: 994, 5: 1183, 6: 1421, 7: 1571, 8: 1789},  # [B][E]
     "sua": 663, "lua": 170,                                                                  # [E]
-    # [F] FNS SNAP FY2026 COLA memo, read by the reviewer 2026-08-29.
-    # The memo gives the standard deduction for sizes 1-3 ONLY. Sizes 4+ are deliberately
-    # absent: the engine holds 223/261/299, but asserting those against themselves would
-    # be circular, so FFY2026 FORMULA cases are limited to sizes 1-3.
-    "std_deduction": {1: 209, 2: 209, 3: 209},
+    # [F] FNS SNAP FY2026 COLA memo (sizes 1-3) and [G] CBPP endnote 9 (all sizes),
+    # both read by the reviewer 2026-08-29. Sizes 4+ now have an external source, so the
+    # engine's 223/261/299 is no longer self-confirming and FFY2026 FORMULA cases extend
+    # to size 6.
+    "std_deduction": {1: 209, 2: 209, 3: 209, 4: 223, 5: 261, 6: 299},
     "max_excess_shelter": 744,
     "earned_rate": 0.20,
     "homeless_shelter": 198.99,
@@ -65,7 +65,7 @@ FFY2026 = {
 MONTHS = [f"2025-{i:02d}" for i in range(1, 13)]
 
 
-def snap(size, earned_m, shelter_m, month, ages=None, disabled=None):
+def snap(size, earned_m, shelter_m, month, ages=None, disabled=None, care_m=0):
     ages = ages or ([30] + [8] * (size - 1))
     disabled = disabled or [False] * size
     ids = [f"p{i+1}" for i in range(size)]
@@ -83,6 +83,7 @@ def snap(size, earned_m, shelter_m, month, ages=None, disabled=None):
         "tax_units": {"tu": {"members": ids}},
         "families": {"f": {"members": ids}},
         "spm_units": {"s": {"members": ids, "housing_cost": {"2025": shelter_m * 12},
+                            "childcare_expenses": {"2025": care_m * 12},
                             "has_heating_cooling_expense": {"2025": True}}},
         "households": {"h": {"members": ids, "state_name": {"2025": "CA"}}},
         "marital_units": {"m": {"members": [ids[0]]}},
@@ -90,11 +91,15 @@ def snap(size, earned_m, shelter_m, month, ages=None, disabled=None):
     return float(Simulation(situation=apply_suppression(sit, 2025)).calculate("snap", month)[0])
 
 
-def formula(size, earned_m, shelter_m, ffy):
-    """Published CalFresh formula applied to published constants for the given FFY."""
+def formula(size, earned_m, shelter_m, ffy, care_m=0.0):
+    """Published SNAP formula applied to published constants for the given FFY.
+
+    Dependent care is deducted alongside the standard and earned-income deductions,
+    before the shelter test - this is the channel the CBPP worked example exercises.
+    """
     p = FFY2025 if ffy == "FFY2025" else FFY2026
     std = p["std_deduction"][min(size, 6)]
-    after = max(0.0, earned_m - std - p["earned_rate"] * earned_m)
+    after = max(0.0, earned_m - std - p["earned_rate"] * earned_m - care_m)
     excess = min(p["max_excess_shelter"], max(0.0, shelter_m + p["sua"] - 0.5 * after))
     return max(0.0, p["max_allotment"][size] - math.ceil(0.30 * max(0.0, after - excess)))
 
@@ -118,6 +123,26 @@ FORMULA_CASES = [
     # (pre-HR 1) SUA treatment, not against post-HR 1 entitlement.
     (1, 900, 700, "2025-11"), (2, 1200, 900, "2025-11"), (3, 1500, 1100, "2025-11"),
     (3, 0, 1000, "2025-12"),
+    # FFY2026 sizes 4-6, now that the standard deduction is externally sourced for them.
+    (4, 2000, 1400, "2025-11"), (5, 2400, 1600, "2025-11"), (6, 2800, 1800, "2025-11"),
+]
+
+# Cases exercising the DEPENDENT CARE deduction, an otherwise untested channel.
+# The last is CBPP's published FY2026 worked example, reproduced end to end.
+#   (label, size, earned/mo, shelter/mo, care/mo, month, published_or_None)
+CARE_CASES = [
+    ("dependent care $200/mo", 3, 1500, 1100, 200, "2025-11", None),
+    ("dependent care $600/mo", 3, 1500, 1100, 600, "2025-11", None),
+    ("dependent care $56/mo", 3, 1672, 535, 56, "2025-11", None),
+    # CBPP "A Quick Guide to SNAP Eligibility and Benefits", FY2026 worked example:
+    # family of three, one full-time worker, two children; earnings $1,672/mo; child care
+    # $56/mo; shelter $1,198/mo; countable income A $1,073; shelter deduction $661; net
+    # $412; expected contribution ~$124; max allotment $785; benefit $661/mo.
+    #
+    # CBPP states shelter of $1,198 as the TOTAL including utilities. California grants
+    # the $663 SUA unconditionally, so housing_cost is set to 1198 - 663 = 535 to make
+    # the shelter total match. That substitution is why this case is comparable at all.
+    ("CBPP FY2026 published example", 3, 1672, 535, 56, "2025-11", 661.0),
 ]
 ALLOTMENT_CASES = [(s, "2025-11", FFY2026["max_allotment"][s]) for s in range(1, 9)]
 
@@ -132,12 +157,30 @@ def main():
     print("-" * 104)
     for i, (size, e, sh, m) in enumerate(FORMULA_CASES, 1):
         ffy = "FFY2026" if m >= "2025-10" else "FFY2025"
-        pub, got = formula(size, e, sh, ffy), snap(size, e, sh, m)
+        pub, got = formula(size, e, sh, ffy), snap(size, e, sh, m)  # no dependent care
         d = got - pub
         v = "MATCH" if abs(d) < 1.0 else "DISCREPANCY"
         rows.append(("FORMULA", v))
         print(f"{i:>2} {size:>4} {e:>10,} {sh:>8,} {m:<9} {ffy:<8} {pub:>10,.2f} "
               f"{got:>9,.2f} {d:>8,.2f} {v}")
+
+    print()
+    print("=" * 104)
+    print("A2. DEPENDENT CARE - an otherwise untested deduction channel")
+    print("=" * 104)
+    print(f"{'#':>2} {'case':<34} {'size':>4} {'care/mo':>8} {'month':<9} "
+          f"{'published':>10} {'oracle':>9} {'delta':>8} verdict")
+    print("-" * 104)
+    for i, (label, size, e, sh, care, m, pub_override) in enumerate(CARE_CASES, 1):
+        ffy = "FFY2026" if m >= "2025-10" else "FFY2025"
+        pub = pub_override if pub_override is not None else formula(size, e, sh, ffy, care)
+        got = snap(size, e, sh, m, care_m=care)
+        d = got - pub
+        v = "MATCH" if abs(d) < 1.0 else "DISCREPANCY"
+        rows.append(("FORMULA", v))
+        src = " (CBPP)" if pub_override is not None else ""
+        print(f"{i:>2} {label:<34} {size:>4} {care:>8,} {m:<9} {pub:>10,.2f} "
+              f"{got:>9,.2f} {d:>8,.2f} {v}{src}")
 
     print()
     print("=" * 104)

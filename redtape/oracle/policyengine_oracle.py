@@ -79,7 +79,14 @@ def build_situation(hh: Household) -> dict:
         "people": people,
         "tax_units": {"tu": {"members": members}},
         "families": {"fam": {"members": members}},
-        "spm_units": {"spm": {"members": members, "housing_cost": {year: hh.housing_cost}}},
+        "spm_units": {
+            "spm": {
+                "members": members,
+                "housing_cost": {year: hh.housing_cost},
+                "childcare_expenses": {year: hh.dependent_care_cost},
+                "has_heating_cooling_expense": {year: True},
+            }
+        },
         "households": {"hh": {"members": members, "state_name": {year: hh.state}}},
         "marital_units": marital_units,
     }

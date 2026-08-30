@@ -34,12 +34,25 @@ _HOUSING_BUCKETS = (
     ((18_000, 36_000), 0.35),
     ((36_000, 60_000), 0.10),
 )
+# Restricted to SAFE_IMMIGRATION_STATUSES. REFUGEE and ASYLEE were previously generated
+# and have been REMOVED: the engine still models them as SNAP-eligible after HR 1 removed
+# that eligibility, so any household carrying them has a known-wrong answer key
+# (docs/LIMITS.md 16). Weights are renormalised over the remaining statuses.
 _STATUS_WEIGHTS = (
     (ImmigrationStatus.CITIZEN, 0.80),
-    (ImmigrationStatus.LEGAL_PERMANENT_RESIDENT, 0.10),
-    (ImmigrationStatus.REFUGEE, 0.03),
-    (ImmigrationStatus.ASYLEE, 0.02),
-    (ImmigrationStatus.UNDOCUMENTED, 0.05),
+    (ImmigrationStatus.LEGAL_PERMANENT_RESIDENT, 0.12),
+    (ImmigrationStatus.CUBAN_HAITIAN_ENTRANT, 0.02),
+    (ImmigrationStatus.UNDOCUMENTED, 0.06),
+)
+
+# Dependent care costs, annual. Zero for most households; a real cost where a working
+# adult has a child. Exercises the SNAP dependent care deduction, which is otherwise
+# an untested channel.
+_CARE_BUCKETS = (
+    ((0, 0), 0.60),
+    ((240, 1_200), 0.20),
+    ((1_200, 4_800), 0.15),
+    ((4_800, 12_000), 0.05),
 )
 
 TAX_YEAR = 2025
@@ -93,6 +106,9 @@ def generate(seed: int, index: int) -> Household:
     lo, hi = _weighted(rng, _HOUSING_BUCKETS)
     housing = float(rng.randint(lo, hi)) if hi else 0.0
 
+    lo, hi = _weighted(rng, _CARE_BUCKETS)
+    care = float(rng.randint(lo, hi)) if (hi and n_children) else 0.0
+
     return Household(
         household_id=f"hh-{seed}-{index:05d}",
         seed=seed,
@@ -100,6 +116,7 @@ def generate(seed: int, index: int) -> Household:
         month=f"{TAX_YEAR}-{rng.randint(1, 12):02d}",
         people=tuple(people),
         housing_cost=housing,
+        dependent_care_cost=care,
     )
 
 
@@ -109,8 +126,8 @@ def withhold(hh: Household, fact: str) -> Household:
     `fact` is either "housing_cost" or "<person_id>.<field>". Withheld means None,
     which the oracle refuses to answer on - it never becomes a silent default.
     """
-    if fact == "housing_cost":
-        return hh.model_copy(update={"housing_cost": None})
+    if fact in ("housing_cost", "dependent_care_cost"):
+        return hh.model_copy(update={fact: None})
 
     pid, _, field = fact.partition(".")
     if not field:

@@ -21,6 +21,7 @@ from pydantic import BaseModel, ConfigDict, Field
 WITHHOLDABLE_FACTS = (
     "employment_income",
     "declared_benefits",
+    "dependent_care_cost",
     "immigration_status",
     "housing_cost",
     "age",
@@ -28,12 +29,51 @@ WITHHOLDABLE_FACTS = (
 )
 
 
+# Statuses where the engine and the published post-HR 1 rules AGREE.
+#
+# PL 119-21 (enacted 2025-07-04) restricted SNAP to citizens, LPRs (after a five-year
+# wait where applicable), Cuban/Haitian entrants, and COFA residents. The engine does not
+# implement this: REFUGEE, ASYLEE, DEPORTATION_WITHHELD, CONDITIONAL_ENTRANT and
+# PAROLED_ONE_YEAR are still modelled as fully eligible in every month of 2025
+# (docs/LIMITS.md 16). Generating households with those statuses would bake a known-wrong
+# answer key into the corpus, so they are excluded until upstream implements the rule.
+#
+# COFA cannot be represented at all - the engine's enum has no such value - so that
+# eligible category is simply unavailable.
+SAFE_IMMIGRATION_STATUSES = (
+    "CITIZEN",                    # eligible under both
+    "LEGAL_PERMANENT_RESIDENT",   # eligible under both (5-year bar NOT modelled; see LIMITS 16)
+    "CUBAN_HAITIAN_ENTRANT",      # eligible under both
+    "UNDOCUMENTED",               # ineligible under both
+    "DACA",                       # ineligible under both
+    "TPS",                        # ineligible under both
+)
+
+# Excluded, with the reason, so the exclusion is auditable rather than implicit.
+UNSAFE_IMMIGRATION_STATUSES = {
+    "REFUGEE": "HR 1 removed eligibility; engine still grants it",
+    "ASYLEE": "HR 1 removed eligibility; engine still grants it",
+    "DEPORTATION_WITHHELD": "HR 1 removed eligibility; engine still grants it",
+    "CONDITIONAL_ENTRANT": "HR 1 removed eligibility; engine still grants it",
+    "PAROLED_ONE_YEAR": "HR 1 removed eligibility; engine still grants it",
+}
+
+
 class ImmigrationStatus(str, Enum):
+    """Mirrors the engine enum. Only SAFE_IMMIGRATION_STATUSES may be generated."""
+
     CITIZEN = "CITIZEN"
     LEGAL_PERMANENT_RESIDENT = "LEGAL_PERMANENT_RESIDENT"
+    CUBAN_HAITIAN_ENTRANT = "CUBAN_HAITIAN_ENTRANT"
+    UNDOCUMENTED = "UNDOCUMENTED"
+    DACA = "DACA"
+    TPS = "TPS"
+    # Present so they can be named and excluded; never generated.
     REFUGEE = "REFUGEE"
     ASYLEE = "ASYLEE"
-    UNDOCUMENTED = "UNDOCUMENTED"
+    DEPORTATION_WITHHELD = "DEPORTATION_WITHHELD"
+    CONDITIONAL_ENTRANT = "CONDITIONAL_ENTRANT"
+    PAROLED_ONE_YEAR = "PAROLED_ONE_YEAR"
 
 
 class Strict(BaseModel):
@@ -97,10 +137,17 @@ class Household(Strict):
 
     people: tuple[Person, ...]
     housing_cost: float | None = Field(description="US dollars per YEAR, spm_unit; None means withheld")
+    dependent_care_cost: float | None = Field(
+        default=0.0,
+        description="US dollars per YEAR, spm_unit; the SNAP dependent care deduction. "
+        "None means withheld.",
+    )
 
     def withheld(self) -> list[str]:
         """Fact names withheld anywhere in this household, person-qualified."""
         out = ["housing_cost"] if self.housing_cost is None else []
+        if self.dependent_care_cost is None:
+            out.append("dependent_care_cost")
         for p in self.people:
             out.extend(f"{p.person_id}.{f}" for f in p.withheld())
         return out
