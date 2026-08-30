@@ -331,6 +331,75 @@ variable is not the one that answers the question.
 
 ---
 
+## v0 ships T1 and T1b only **[decided]**
+
+**T2 (documentation completeness) is deferred to v1. T3 (intake) is the candidate second
+family if T1b lands early.**
+
+**Why.** The novelty is determinability, not documentation. T2 depends entirely on the
+rules table, which today is ten seed entries, none at `high` confidence, with a measured
+**30% citation error rate** and a review process we have already agreed is slower than
+SPEC.md §7 assumed. A shallow T1b is worse than no T1b: a benchmark that scores abstention
+badly is one someone will publicly take apart, and the abstention claim is the entire
+reason this project is interesting. Shipping without T2 costs scope and nothing else.
+
+**T3 before T2 if there is room.** T3 (intake) is conceptually closer to T1b than T2 is —
+both are about knowing what you don't know, where T2 is about matching documents to a
+rules corpus. If T1b lands early, T3 is the better second family.
+
+The rules table stays alive as a **slow parallel track** — a few rules a week, every
+citation read before the rule is written. It is the natural v1 and a compounding asset;
+it is simply not on the v0 critical path.
+
+---
+
+## Sweep every scored variable to BOTH extremes before trusting it **[decided]**
+
+Two bugs of the same shape have been found in this schema, and both survived review:
+
+- `ctc` reports $4,400 for a zero-income family with two children who receive $0.
+- `medicaid` is a dollar amount where `is_medicaid_eligible` (a boolean) was meant.
+
+Both were invisible mid-range and separated only at an extreme. Both had a plausible
+variable name, which is exactly why reading the code did not catch them. **Zero income and
+very high income are where refundability, phase-outs and caps split gross entitlement from
+received value.**
+
+`tests/test_extreme_sweep.py` makes this mechanical: it sweeps every input dimension to
+both ends, compares each oracle variable against same-type siblings the engine defines,
+and **fails on any divergence not in its `EXPLAINED` registry**. A new scored field with no
+extreme coverage also fails. Adding to `EXPLAINED` requires writing down the reason — the
+point is that a human decides, not that the test goes quiet.
+
+Its limits, stated so nobody over-trusts it: it can only compare variables it can *name*
+as siblings, and it compares like types only, so a gross/received pair under an unrelated
+name would still slip through. It narrows the class; it does not close it.
+
+---
+
+## Finding eligibility flips: look for composition rules, not income tests **[decided]**
+
+Eligibility-flipping facts are the scarcest and most valuable T1b class, because they
+cannot be reached by adjusting an amount. Three routes were probed and the pattern that
+emerged generalises:
+
+| route | flips eligibility? | why |
+|---|---|---|
+| gross income test exemption (elderly/disabled) | **no** | broad-based categorical eligibility already waives the gross test below the net threshold, and the exemption does not reach the *net* test above it |
+| ABAWD time limits | **no** | California is a waived area and delayed HR 1 adoption |
+| **student status** (7 CFR 273.5) | **yes** | it is a *composition* rule, not an income test |
+
+**The heuristic: income-based routes get absorbed by categorical eligibility; composition
+rules survive it.** BBCE and similar waivers operate on income tests, so anything
+expressed as an income threshold tends to be neutralised. Rules about *who counts as a
+household member* — student status, immigration status, institutional residence — are
+applied before and independently of income, so they still bite.
+
+Apply this when looking for flips in another state or program: ask whether the rule
+removes a person from the unit, or merely changes a number.
+
+---
+
 ## Deferred design decisions
 
 **T1b abstention scoring.** T1b abstention scoring is currently specified heuristically (omit a required fact, reward "cannot determine"). The intended Phase 2 upgrade is SMT-based determinability: encode the program's eligibility rules as constraints, treat missing facts as free variables, and check whether the known facts are satisfiable with BOTH eligible and ineligible outcomes. If both are satisfiable, abstention is the provably correct answer and the model difference names the deciding fact. Do not implement yet; revisit before Phase 2.

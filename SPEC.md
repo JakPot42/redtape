@@ -77,6 +77,30 @@ redtape/
     LIMITS.md                # what is deterministic, what is not, what we don't claim
 ```
 
+## 3a. Scope decision for v0 (added 2026-08-30, supersedes §4 where they conflict)
+
+**v0 ships T1 and T1b, done deeply. T2 is deferred to v1. T3 is the candidate second
+family if T1b lands early.**
+
+The novelty of this project is **determinability**, not documentation. T2 depends entirely
+on `rules/verification_requirements.yaml`, which currently has ten seed entries, none at
+`high` confidence, a measured 30% citation error rate, and a review process now agreed to
+be slower than §7 assumed. A shallow T1b would be worse than no T1b — a benchmark that
+scores abstention badly is one someone will publicly take apart, and abstention is the
+whole reason this is interesting. Shipping without T2 costs scope and nothing else.
+
+**If there is room for a second family, it should be T3, not T2.** T3 (intake) is
+conceptually closer to T1b: both are about knowing what you don't know. T2 is a different
+problem — matching submitted documents against a rules corpus — and it is gated on that
+corpus being trustworthy.
+
+The rules table continues as a slow parallel track, a few rules a week with every citation
+read before the rule is written. It is the natural v1 and a compounding asset; it is not on
+the v0 critical path.
+
+README line when we get there: *"v0 scores what can be proven. Documentation completeness
+requires a rules corpus we are building carefully rather than quickly, and it is v1."*
+
 ## 4. Task families
 
 All tasks are generated from a seeded household record. The narrative (what the agent sees) is rendered from the record with randomized phrasing, field order, units, and distractor details, so the answer cannot be inferred from formatting.

@@ -679,3 +679,23 @@ as specific omissions rather than general neglect.
 
 **Gross income test — does not flip.** See §17.
 
+## 23. Extreme-sweep audit: no third instance found
+
+`tests/test_extreme_sweep.py` was applied retroactively to every variable the oracle
+reads, across both ends of five input dimensions (employment income, housing cost,
+dependent care cost, age, number of children).
+
+**It found no new bug.** The only same-type divergences it surfaced were the three already
+known and explained — `ctc_value` against `ctc`, `non_refundable_ctc` and `refundable_ctc`
+— which are now registered in its `EXPLAINED` table with reasons. Every other flagged pair
+was a boolean compared against a dollar amount (`is_snap_eligible` vs `snap`,
+`is_medicaid_eligible` vs `medicaid`), which is a naming hazard rather than a value
+disagreement and is asserted separately.
+
+Reported as a negative result rather than quietly dropped: the rule is now mechanical and
+will catch the next instance, but applying it retroactively did not reveal a third one.
+
+**Its limits.** It compares only variables it can *name* as siblings, and only across
+matching value types. A gross-versus-received pair under an unrelated name would still
+pass. It narrows the class; it does not close it.
+

@@ -39,7 +39,7 @@ uv pip install --python .venv/bin/python -e ".[dev]"
 
 ./.venv/bin/python scripts/smoke.py         # one household, with provenance
 ./.venv/bin/python scripts/checkpoint1.py   # ten households + determinability table
-./.venv/bin/python -m pytest tests/ -q      # 136 tests
+./.venv/bin/python -m pytest tests/ -q      # 151 tests
 ./.venv/bin/python scripts/external_validation.py   # 10 published-table comparisons
 ./.venv/bin/python -m redtape.scoring.rules_lint rules/verification_requirements.yaml
 ```
