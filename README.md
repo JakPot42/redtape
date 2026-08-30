@@ -24,6 +24,7 @@ and the machinery that makes the abstention task labelable.
 | `redtape/oracle/policyengine_oracle.py` | The only code that touches PolicyEngine. Refuses to answer a household with a withheld fact rather than let the engine substitute a default. Attaches provenance to every value. |
 | `redtape/oracle/determinability.py` | Perturbation prober. Sweeps a withheld fact across a declared range and labels the case determinate / indeterminate / incomplete-but-determinate. |
 | `redtape/generator/households.py` | Seeded generator. Reproducible from `(seed, index)` alone. |
+| `redtape/oracle/takeup.py` | Suppresses imputed programme take-up while passing declared receipt through. The invariant, not the declared list, is the guard. |
 | `redtape/scoring/rules_lint.py` | Rules-table linter. Fails the build if a rule reaches `high` confidence without reviewer sign-off. |
 | `rules/verification_requirements.yaml` | **Ten-rule seed set only**, to prove the format. Not the finished table. |
 
@@ -38,7 +39,7 @@ uv pip install --python .venv/bin/python -e ".[dev]"
 
 ./.venv/bin/python scripts/smoke.py         # one household, with provenance
 ./.venv/bin/python scripts/checkpoint1.py   # ten households + determinability table
-./.venv/bin/python -m pytest tests/ -q      # 76 tests
+./.venv/bin/python -m pytest tests/ -q      # 93 tests
 ./.venv/bin/python scripts/external_validation.py   # 10 published-table comparisons
 ./.venv/bin/python -m redtape.scoring.rules_lint rules/verification_requirements.yaml
 ```
@@ -63,12 +64,13 @@ uv pip install --python .venv/bin/python -e ".[dev]"
    every eligibility boolean have had no external comparison of any kind.** See
    `docs/LIMITS.md` §7 for the exact cells.
 
-4. **Modelled programme take-up is suppressed.** PolicyEngine models a household as
+4. **Imputed programme take-up is suppressed; declared receipt is permitted.** PolicyEngine models a household as
    receiving the benefits it qualifies for — CalWORKs at $930/mo for a parent with a
    child, SSI at $967/mo for a senior — and those count as SNAP unearned income. The
    narrative states neither, so the answer key would depend on an assumption the agent
-   cannot see. v0 answers "what would this household receive given only the stated
-   facts", not "what does it actually receive". `docs/LIMITS.md` §12.
+   cannot see. A narrative *may* state benefit receipt, exactly as it states earnings, and
+   that is passed through. v0 answers "what would this household receive given only the
+   stated facts". `docs/LIMITS.md` §12.
 
 5. **HR 1's 2025 SUA changes are not modelled by the engine.** California's
    `always_standard` utility-allowance flag is unchanged across both the 2025-07-04 and
@@ -83,6 +85,15 @@ Three citations were found to be wrong while checking them against the regulatio
 
 No rule is at `high`. Claude drafts rules and never promotes their confidence; only the
 human reviewer does, via `rules/REVIEW_CHECKLIST.md`.
+
+## Known upstream divergence
+
+`docs/HR1_SUA_DIVERGENCE.md` is a draft report for the PolicyEngine maintainers: HR 1's
+2025 SUA changes are not implemented for California, with evidence, affected month ranges,
+and a proposed fix. Not yet filed.
+
+`tests/test_parameter_drift.py` asserts engine parameters against published figures and
+fails the build on divergence, so staleness surfaces continuously rather than case by case.
 
 ## License
 

@@ -414,25 +414,64 @@ benefits it is enrolled in". A real caseworker must account for actual cash-aid 
 v0 deliberately does not. Suppressed: `tanf`, `ca_tanf`, `ssi`, `ca_state_supplement`,
 `social_security`, `unemployment_compensation`.
 
-**Disability stops being decisive for SNAP.** SNAP's definition of a "disabled member"
-requires receipt of a disability benefit, not a self-reported flag. With SSI take-up
-suppressed, `is_disabled=True` no longer makes a household "elderly or disabled", so the
-excess-shelter-cap exemption does not apply to it. Measured with
-`scripts/probe_decisive.py`, 2-person household, $1,500/mo earned, $2,500/mo rent, 2025-04:
+**Disability is decisive for SNAP — but only if the narrative declares the right thing.**
 
-| p1 age | is_disabled | SNAP $/mo |
-|---|---|---|
-| 35 | False | 450.00 |
-| 59 | False | 450.00 |
-| **60** | False | **536.00** |
-| 66 | False | 536.00 |
-| 35 | **True** | 450.00 *(unchanged)* |
+An earlier version of this section said the take-up decision had cost the disability axis.
+That was wrong: the suppression was over-broad by one step, zeroing declared benefits as
+well as imputed ones. It now suppresses imputation and permits declaration, and the axis
+is back. Measured with `scripts/probe_decisive.py` — 2-person household, $1,500/mo earned,
+$2,500/mo rent, CA, 2025-04 (FFY2025 shelter cap $712):
 
-So **age 60 is a decisive fact for SNAP; `is_disabled` is not.** The prober agrees:
-`p1.age` is labelled `indeterminate` with SNAP deciding (2 distinct outcomes at high
-shelter, 3 at low shelter), `p1.is_disabled` is labelled `incomplete_determinate` with a
-single outcome. The prober is not missing determinability here — the determinability
-genuinely is not there, as a direct consequence of the take-up decision.
+| declared | shelter deduction | SNAP $/mo | elderly-or-disabled? |
+|---|---|---|---|
+| nothing | 712.00 (capped) | 450.00 | no |
+| `is_disabled=True` only | 712.00 (capped) | 450.00 | no |
+| SSI **amount** $967/mo | 712.00 (capped) | 160.00 | no |
+| **SSDI $1,200/mo** | 2,647.00 (uncapped) | **536.00** | yes |
+| **disabled veteran** | 2,647.00 (uncapped) | **536.00** | yes |
+| age 60 | 2,647.00 (uncapped) | 536.00 | yes (elderly) |
 
-Do not build a T1b case around disability for SNAP in v0 without re-checking this.
+The subtlety that matters for narrative design: 7 CFR 271.2 keys on *receipt of a
+qualifying benefit*, implemented as `is_usda_disabled` = OR over
+`gov.usda.disabled_programs` = {`is_ssi_disabled`, `social_security_disability`,
+`is_permanently_disabled_veteran`, `is_surviving_spouse_of_disabled_veteran`,
+`is_surviving_child_of_disabled_veteran`}. **`ssi` is not in that list** — only
+`is_ssi_disabled`, the determination, is. So a narrative stating an SSI dollar amount does
+not establish disability status; one stating SSDI receipt or veteran disability does.
 
+Both directions are usable T1b facts, and they move opposite ways: declared SSDI raises
+the benefit (cap exemption), declared SSI lowers it (counted income).
+
+## 13. California's Limited Utility Allowance is unobservable
+
+Because `always_standard` is `True` for California, every CA household receives the
+Standard Utility Allowance and the LUA is never reached;
+`snap_limited_utility_allowance_by_household_size` returns 0. The published CA LUA
+($166 FFY2025, $170 FFY2026) therefore **cannot be validated** against the engine. This is
+a direct consequence of the gap in §11, and is asserted as such in
+`tests/test_parameter_drift.py` so that we are told if California ever becomes conditional
+upstream.
+
+## 14. States implement HR 1 differently
+
+A California-scoped fix will not generalise, and neither will a California-scoped
+validation. For example, **Illinois** requires a qualifying member to receive **$21 or
+more** in LIHEAP to establish the heating standard, where California used the $20.01 SUAS
+nominal payment. Any future multi-state expansion must treat the HR 1 SUA rules as
+per-state parameters, and must re-run the external validation per state — the FFY2026
+figures validated here are the 48-state federal maxima plus California's own utility
+allowances, and neither generalises to a state with its own options.
+
+## 15. Parameter drift detection
+
+`tests/test_parameter_drift.py` compares the engine's parameter values against externally
+published figures and fails the build on divergence — see CLAUDE.md for the policy.
+Currently 14 checks covering FFY2025 and FFY2026 allotments, standard deductions, shelter
+caps, homeless shelter deduction, CA SUA, structural rates, the October fiscal-year
+boundary, and the known HR 1 divergence.
+
+**A gap this exposed:** the FFY2026 standard deduction is externally sourced for household
+sizes **1-3 only** (FNS FY2026 COLA memo). The engine holds 223 / 261 / 299 for sizes
+4 / 5 / 6+, and those are **not** asserted, because asserting the engine's own value
+against itself proves nothing. FFY2026 FORMULA validation is limited to sizes 1-3 for the
+same reason.

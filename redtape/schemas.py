@@ -20,6 +20,7 @@ from pydantic import BaseModel, ConfigDict, Field
 # input variable exactly, so provenance is unambiguous.
 WITHHOLDABLE_FACTS = (
     "employment_income",
+    "declared_benefits",
     "immigration_status",
     "housing_cost",
     "age",
@@ -44,12 +45,41 @@ class Strict(BaseModel):
 # --------------------------------------------------------------------------------------
 
 
+class DeclaredBenefit(Strict):
+    """A benefit the narrative STATES the household receives.
+
+    Distinct from a benefit the engine would impute. Declared receipt is visible to the
+    agent and therefore fair game for the answer key; imputed receipt is not.
+    Establishing receipt of SSI, SSDI or VA disability is what makes a household
+    "disabled" for SNAP - a self-reported `is_disabled` flag does not.
+    """
+
+    program: str = Field(description="PolicyEngine variable name; see DECLARABLE_PROGRAMS")
+    annual_amount: float = Field(description="US dollars per YEAR")
+
+
 class Person(Strict):
     person_id: str
     age: int | None = Field(description="years; None means withheld, not zero")
     employment_income: float | None = Field(description="US dollars per YEAR; None means withheld")
     immigration_status: ImmigrationStatus | None = None
     is_disabled: bool | None = None
+    declared_benefits: tuple[DeclaredBenefit, ...] = Field(
+        default=(),
+        description="benefits the narrative states this person receives; empty means none stated",
+    )
+
+    declared_statuses: tuple[str, ...] = Field(
+        default=(),
+        description="boolean status facts the narrative states, e.g. is_permanently_disabled_veteran",
+    )
+
+    @property
+    def declared_annual_total(self) -> float:
+        return sum(b.annual_amount for b in self.declared_benefits)
+
+    def declarations(self) -> dict[str, float]:
+        return {b.program: b.annual_amount for b in self.declared_benefits}
 
     def withheld(self) -> list[str]:
         return [f for f in ("age", "employment_income", "immigration_status", "is_disabled")

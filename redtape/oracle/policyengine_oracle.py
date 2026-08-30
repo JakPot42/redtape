@@ -83,9 +83,10 @@ def build_situation(hh: Household) -> dict:
         "households": {"hh": {"members": members, "state_name": {year: hh.state}}},
         "marital_units": marital_units,
     }
-    # The narrative states earnings and shelter only. Anything else the engine would
-    # pay this household is an unstated take-up assumption; zero it.
-    return apply_suppression(situation, hh.tax_year)
+    # Suppress imputed take-up, but pass through anything the narrative declares.
+    declarations = {p.person_id: p.declarations() for p in hh.people}
+    statuses = {p.person_id: p.declared_statuses for p in hh.people if p.declared_statuses}
+    return apply_suppression(situation, hh.tax_year, declarations, statuses)
 
 
 # (answer field, variable, period accessor). SNAP is monthly; the rest are annual.
@@ -116,9 +117,10 @@ def compute(hh: Household) -> OracleResult:
     sim = Simulation(situation=build_situation(hh))
     year, month = hh.tax_year, hh.month
 
-    # Fails loudly if a modelled programme we did not suppress leaked income in.
+    # Fails loudly if an imputed programme we did not suppress leaked income in.
     stated_monthly_earned = sum(p.employment_income for p in hh.people) / 12
-    assert_no_unstated_income(sim, month, stated_monthly_earned)
+    stated_monthly_unearned = sum(p.declared_annual_total for p in hh.people) / 12
+    assert_no_unstated_income(sim, month, stated_monthly_earned, stated_monthly_unearned)
 
     eligible = bool(sim.calculate("is_snap_eligible", month)[0])
     benefit = float(sim.calculate("snap", month)[0])

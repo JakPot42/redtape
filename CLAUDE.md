@@ -194,12 +194,49 @@ income *below* the stated figure is correct behaviour. Only invented income is a
 two-sided version produced a false positive the moment a determinability sweep aged an
 earner into childhood.
 
-**Known cost of this decision.** SNAP's definition of a "disabled member" requires
-receipt of a disability benefit, not a self-reported flag. Because SSI take-up is
-suppressed, `is_disabled=True` no longer makes a household "elderly or disabled" for
-SNAP, so **disability is not a decisive fact for SNAP in v0** — measured, not assumed
-(`scripts/probe_decisive.py`). Age 60 *is* decisive, via the excess-shelter-cap
-exemption. Do not build a T1b case around disability for SNAP without re-checking this.
+**Suppress imputation, permit declaration.** These are different things and the code
+keeps them apart. Imputation — the engine deciding on its own that a household takes up a
+programme — is always suppressed, because it is invisible to the agent and so can never
+be part of a fair answer key. Declaration — the narrative stating that the household
+receives a benefit, exactly as it states employment income — is always permitted and
+passed through. An earlier version zeroed the variables outright, which conflated the two
+and cost a real determinability axis.
+
+**How disability actually works for SNAP.** 7 CFR 271.2 defines an elderly-or-disabled
+member by *receipt of a qualifying benefit*, and PolicyEngine implements this as
+`is_usda_disabled`, an OR over `gov.usda.disabled_programs`:
+
+    is_ssi_disabled                          (bool — an SSI DETERMINATION)
+    social_security_disability               (float — SSDI receipt)
+    is_permanently_disabled_veteran          (bool)
+    is_surviving_spouse_of_disabled_veteran  (bool)
+    is_surviving_child_of_disabled_veteran   (bool)
+
+Three consequences, all measured (`scripts/probe_decisive.py`), 2-person household,
+$1,500/mo earned, $2,500/mo rent, CA, 2025-04, FFY2025 shelter cap $712:
+
+| declared | shelter deduction | SNAP $/mo | elderly-or-disabled? |
+|---|---|---|---|
+| nothing | 712.00 (capped) | 450.00 | no |
+| `is_disabled=True` only | 712.00 (capped) | 450.00 | **no** |
+| SSI **amount** $967/mo | 712.00 (capped) | 160.00 | **no** |
+| **SSDI $1,200/mo** | 2,647.00 (uncapped) | **536.00** | **yes** |
+| **disabled veteran** | 2,647.00 (uncapped) | **536.00** | **yes** |
+| age 60 | 2,647.00 (uncapped) | 536.00 | yes (elderly) |
+
+1. A self-reported `is_disabled` flag is inert. It always was — it is not what the
+   regulation keys on.
+2. **Declaring an SSI dollar amount does not establish disability**, because `ssi` is not
+   in `gov.usda.disabled_programs`; only `is_ssi_disabled`, the determination, is. A
+   narrative saying "receives $967/month in SSI" does *not* make the household
+   elderly-or-disabled. It is still decisive, but through the income channel and in the
+   opposite direction ($450 → $160).
+3. **Declaring SSDI receipt or veteran disability status does establish it**, and the
+   axis returns: the excess-shelter-cap exemption applies and the benefit moves
+   $450 → $536.
+
+So disability **is** a usable T1b fact for SNAP, provided the narrative states the right
+thing. Age 60 is decisive independently, via `is_usda_elderly` (threshold 60).
 
 ---
 
@@ -226,6 +263,30 @@ Consequently:
 - **Prefer LSNC (`calfresh.guide`) as the primary California source.** It was reachable,
   is well-cited to the MPP and the CFR, and is maintained. eCFR, USDA FNS, and CBPP all
   blocked or timed out; Cornell LII works for federal regulation text.
+
+---
+
+## Oracle freshness is a structural risk **[decided]**
+
+PolicyEngine implements `is_snap_abawd_hr1_in_effect` but not the HR 1 SUA changes, so
+its coverage of major legislation is **partial and lagging by an unknown amount**. That is
+a risk to the "PolicyEngine as ground truth" thesis itself, not a one-off defect.
+
+`tests/test_parameter_drift.py` asserts the engine's parameter values against externally
+published figures — allotments, standard deduction, shelter cap, SUA, homeless shelter
+deduction, income-limit multipliers, elderly threshold, fiscal-year boundary — and **fails
+the build on divergence**. This gives continuous evidence of where the oracle is stale
+instead of discovering it case by case.
+
+Two rules for that file:
+
+- **Every expected value must come from an external published source, never from the
+  engine.** A value copied from the engine makes the test self-confirming and worthless.
+  Where no external source exists — FFY2026 standard deduction for sizes 4+ — the cell is
+  deliberately absent rather than filled in from the engine.
+- **`test_known_divergence_hr1_sua_still_unmodelled` asserts the current, known-WRONG
+  behaviour on purpose.** When upstream implements the rule, that test fails, which is the
+  notification we want. Do not "fix" it by changing the assertion.
 
 ---
 
