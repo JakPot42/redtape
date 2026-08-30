@@ -14,3 +14,4 @@ __pycache__/
 
 # Evaluation outputs are committed deliberately, not incidentally.
 results/*.tmp.json
+data/dev/t1_smoke.jsonl

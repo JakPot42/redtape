@@ -54,6 +54,39 @@ EXTREMES = {
 # Disagreements that have been investigated and explained. Anything NOT here fails.
 # Key: (oracle variable, sibling variable) -> the explanation.
 EXPLAINED = {
+    # --- cross-type pairs: an amount and a boolean under the same stem. This is the
+    # `medicaid` trap. Each is listed so the schema's choice is deliberate, not implicit.
+    ("is_medicaid_eligible", "medicaid"):
+        "`medicaid` is a DOLLAR VALUE, `is_medicaid_eligible` a boolean. The answer "
+        "asks about eligibility, so the boolean is correct. Reading the dollar value "
+        "here is the original instance of this bug class. docs/LIMITS.md 20.",
+    ("is_snap_eligible", "snap"):
+        "`snap` is the monthly benefit, `is_snap_eligible` the eligibility boolean. "
+        "The answer carries BOTH, as separate fields, so neither stands in for the other.",
+    ("eitc", "eitc_eligible"):
+        "`eitc_eligible` is a boolean gate; the answer asks for the amount, which is "
+        "`eitc`. A household can be eligible and receive a small credit, so the boolean "
+        "is not a substitute.",
+    ("snap", "is_snap_eligible"):
+        "same pair as above, seen from the amount side. Both are in the answer.",
+    ("snap", "snap_normal_allotment"):
+        "`snap_normal_allotment` excludes emergency allotments; `snap` is the total "
+        "benefit. Emergency allotments are zero for 2025, so they agree in practice, "
+        "but `snap` is the right field.",
+    ("snap", "snap_max_allotment"):
+        "the maximum for the household size, before the 30% expected contribution. Not "
+        "what the household receives.",
+    # The sibling search strips the `is_` prefix, so the eligibility field shares a stem
+    # with every SNAP amount variable. Each pairing still needs its own reason.
+    ("is_snap_eligible", "snap_normal_allotment"):
+        "an amount compared against an eligibility boolean. `snap.eligible` asks whether "
+        "the household qualifies; the allotment is carried separately in `snap.benefit`.",
+    ("is_snap_eligible", "snap_max_allotment"):
+        "the household-size maximum, not an eligibility determination. Carried nowhere "
+        "in the answer; `snap.benefit` holds the actual allotment.",
+    ("is_medicaid_eligible", "medicaid_value"):
+        "a dollar value under the same stem. The answer asks about eligibility.",
+    # --- same-type pairs: gross entitlement vs received value.
     ("ctc_value", "ctc"):
         "`ctc` is the GROSS credit before limitation; `ctc_value` is what the household "
         "receives. This is the bug this module exists to catch. docs/LIMITS.md 21.",
@@ -77,6 +110,8 @@ def _siblings(name: str, vs) -> list[str]:
     cands = [
         base, f"{base}_value", f"refundable_{base}", f"non_refundable_{base}",
         f"{base}_amount", f"uncapped_{base}", f"{base}_normal_allotment",
+        f"is_{base}_eligible", f"{base}_eligible", f"is_{base}",
+        f"{base}_max_allotment", f"max_{base}",
     ]
     return [c for c in dict.fromkeys(cands) if c in vs and c != name]
 
@@ -141,10 +176,10 @@ def test_no_unexplained_divergence_at_extremes(dim, end, variables):
                 theirs, other_type = _read(sim, other, variables)
             except Exception:
                 continue
-            # Compare like with like. A bool-vs-float pair is a naming hazard, handled
-            # separately; it is not a value disagreement.
-            if mine_type != other_type:
-                continue
+            # Types are deliberately NOT required to match. The narrow version caught
+            # `ctc` vs `ctc_value` (both float) but would have missed `medicaid` (float)
+            # vs `is_medicaid_eligible` (bool) - one of the two known instances. Every
+            # name-stem sibling needs a written reason, agreeing types or not.
             if abs(mine - theirs) <= 1.0:
                 continue
             if (name, other) in EXPLAINED:
