@@ -96,10 +96,15 @@ published rules, should not qualify for one after 2025-07-04.
 - **No California Heat-and-Eat or LIHEAP variable exists.** The only `ca_*` LIHEAP
   variables are `ca_riv_liheap_countable_income` and `ca_riv_liheap_eligible`, which are a
   Riverside County programme. Illinois and DC have LIHEAP variables; California does not.
-- **HR 1 is partially implemented.** `is_snap_abawd_hr1_in_effect` exists, so the model
-  does track HR 1 — for ABAWD work requirements, a different provision. This suggests the
-  SUA provisions were not part of the same implementation pass rather than that HR 1 was
-  overlooked entirely.
+- **HR 1 is implemented carefully elsewhere in the same area of the model.** The ABAWD
+  work-requirement provisions are not merely present but detailed: `is_snap_abawd_exempt`
+  distinguishes a `pre_hr1_exempt` set (including the homeless, veteran and former foster
+  youth exemptions) from a `post_hr1_exempt` set (which drops those three and adds the
+  American Indian / Alaska Native exemption), gated on `is_snap_abawd_hr1_in_effect` —
+  which in turn reads a California-specific parameter and **cites CDSS ACL 25-93** for
+  California's delayed adoption. That is current, state-aware, well-sourced work on the
+  same statute. It is why we read the SUA gap as a specific omission rather than general
+  staleness.
 - **A structural side effect:** because `always_standard` is `True` for California, the
   Limited Utility Allowance is unreachable there. `snap_limited_utility_allowance_by_household_size`
   returns `0` for a California household, so the published CA LUA ($166 FFY2025, $170
@@ -193,11 +198,20 @@ inputs exist.
 
 - We have not audited any state other than California.
 - We have not verified whether the maintainers already know about this.
-- We are not asserting the engine is wrong about anything else; every other SNAP figure we
-  checked against published CDSS and FNS tables matched exactly (26/26 comparisons,
-  including the FFY2025 and FFY2026 maximum allotment tables, standard deductions, shelter
-  caps, homeless shelter deduction, and the California SUA for both fiscal years).
+- We are not asserting the engine is wrong about anything else. Every other figure we
+  checked against published sources matched exactly:
+  **33/33 SNAP comparisons** against CDSS, FNS and county-published tables (FFY2025 and
+  FFY2026 maximum allotments, standard deductions, shelter caps, homeless shelter
+  deduction, California SUA for both fiscal years, and end-to-end benefit calculations for
+  household sizes 1–6 including the dependent care channel — among them CBPP's published
+  FY2026 worked example, reproduced to the cent), and **34/34 EITC and CTC checks**
+  against IRS and Tax Foundation figures across the phase-in, plateau and phase-out
+  regions for 0, 1, 2 and 3+ children.
+- Where we initially suspected a divergence and were wrong, the engine was right and we
+  were not: ABAWD time limits do not bind in California for two correct reasons we had not
+  accounted for, and the model cites the specific CDSS letter for one of them.
 
-That last point is the reason we think this report is worth making: the engine is accurate
-enough that a user has every reason to trust it, which is exactly what makes an
-undocumented gap costly.
+Those points are the reason we think this report is worth making. The engine is accurate,
+current and well-sourced almost everywhere we looked, which is exactly what makes a
+narrow, undocumented gap costly: a downstream user has every reason to trust it and no
+signal telling them where not to.
