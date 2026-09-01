@@ -35,6 +35,13 @@ include = ["redtape*"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-q"
+# `eval/` is a top-level directory, not an installed package (packages.find takes
+# `redtape*` only), so importing it depends on the repo root being on sys.path. Running
+# `python -m pytest` injects the cwd and hides that; running `pytest` does not. Local runs
+# passed and the first CI run failed with ModuleNotFoundError purely on that difference.
+# Setting it here makes both invocations identical rather than leaving the suite dependent
+# on how it happened to be launched.
+pythonpath = ["."]
 
 [tool.ruff]
 line-length = 100
