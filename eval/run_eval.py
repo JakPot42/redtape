@@ -1,0 +1,325 @@
+"""Run a split through the real scoring path and write a results file.
+
+Everything - baselines, tool conditions, live models - is scored by calling the actual
+`T1Task.score()` on a real `Trace`. There is no second scoring implementation for
+baselines, because a baseline scored by different code is not a baseline.
+
+    # five trivial baselines on the dev split
+    ./.venv/bin/python eval/run_eval.py baselines --split data/dev/t1.jsonl
+
+    # the three tool conditions on a sample, using the scripted agent (no API key)
+    ./.venv/bin/python eval/run_eval.py conditions --split data/dev/t1.jsonl --sample 12
+
+    # one live call to confirm the end-to-end path
+    ./.venv/bin/python eval/run_eval.py live --split data/dev/t1.jsonl --limit 1
+"""
+
+from __future__ import annotations
+
+import argparse
+import asyncio
+import json
+import os
+import random
+import sys
+from pathlib import Path
+
+from eval.baselines import BASELINES
+from eval.metrics import TaskRecord, build_results
+from eval.tools import calculate, tool_schema
+from redtape.schemas import T1Answer
+
+MODEL = "claude-opus-5"
+
+CONDITIONS = ("tool_less", "tool_equipped", "tool_equipped_unknowns")
+
+
+# ------------------------------------------------------------------ task loading
+def load_tasks(path: str, limit: int | None = None, sample: int | None = None,
+               seed: int = 0):
+    from redtape.envs.t1_eligibility import T1Data, T1Task, T1TaskConfig
+
+    cfg = T1TaskConfig()
+    rows = []
+    with Path(path).open(encoding="utf-8") as fh:
+        for line in fh:
+            line = line.strip()
+            if line:
+                rows.append(json.loads(line))
+
+    if sample:
+        # Deterministic stratified sample: keep whole pairs, and keep the class mix.
+        rng = random.Random(f"redtape/sample/{seed}/{sample}")
+        pairs, singles = {}, []
+        for r in rows:
+            (pairs.setdefault(r["pair_id"], []).append(r) if r.get("pair_id")
+             else singles.append(r))
+        picked = []
+        for members in list(pairs.values())[: max(1, sample // 6)]:
+            picked.extend(members)
+        by_class: dict[str, list] = {}
+        for r in singles:
+            by_class.setdefault(r["determinability"], []).append(r)
+        for cls, group in sorted(by_class.items()):
+            rng.shuffle(group)
+            picked.extend(group[: max(1, (sample - len(picked)) // len(by_class))])
+        rows = picked[:sample]
+    if limit:
+        rows = rows[:limit]
+
+    return [
+        T1Task(T1Data.model_validate({k: v for k, v in r.items()
+                                      if k not in ("task_hash", "task_key",
+                                                   "unscored_deciding_programs")}), cfg)
+        for r in rows
+    ]
+
+
+def _trace(task, reply: str):
+    from verifiers.v1.graph import MessageNode
+    from verifiers.v1.trace import AgentInfo, Trace, TraceTask, WireAgentConfig
+    from verifiers.v1.types import AssistantMessage
+
+    t = Trace(
+        task=TraceTask(type=type(task).__name__, key=task.key, hash=task.hash, data=task.data),
+        agent=AgentInfo(config=WireAgentConfig(), name="eval"),
+    )
+    t.nodes.append(MessageNode(message=AssistantMessage(content=reply), sampled=True))
+    return t
+
+
+def score_one(task, reply: str) -> TaskRecord:
+    """Score one reply through the real v1 path and flatten it into a TaskRecord."""
+    trace = _trace(task, reply)
+    asyncio.run(task.score(trace))
+
+    parsed = trace.info.get("_parsed")
+    answer = parsed.answer if (parsed is not None and parsed.ok) else None
+    errors = [v for k, v in trace.info.items() if k.endswith("_error") and v]
+
+    return TaskRecord(
+        task_hash=task.hash,
+        household_id=task.data.household_id,
+        determinability=task.data.determinability,
+        gate_passed=bool(trace.metrics.get("gate_passed")),
+        exact_match=bool(trace.metrics.get("exact_match")),
+        abstention_correct=bool(trace.metrics.get("abstention_correct")),
+        parse_failure=trace.info.get("parse_failure", "none"),
+        scorer_error="; ".join(str(e) for e in errors),
+        composite=trace.reward,
+        rewards={k: (r.score if r else None) for k, r in trace.rewards.items()},
+        pair_id=task.data.pair_id,
+        pair_role=task.data.pair_role,
+        is_eligibility_flip=bool(task.data.is_eligibility_flip),
+        withheld_fact=task.data.withheld_fact,
+        answer=answer,
+        answer_key=task.data.answer_key,
+    )
+
+
+def write(results: dict, out: Path) -> None:
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(json.dumps(results, indent=2), encoding="utf-8")
+    h = results
+    print(f"  -> {out}")
+    for field in ("t1_exact_match_determinate", "t1b_abstention_accuracy", "pair_consistency"):
+        v = h[field]["value"]
+        n = h[field].get("n", h[field].get("n_pairs"))
+        print(f"     {field:<32} {'n/a' if v is None else f'{v:.3f}'}  (n={n})")
+    print(f"     {'composite (secondary)':<32} {h['composite']['value']:.3f}")
+    if not h["diagnostics"]["publishable"]:
+        print(f"     !! scorer_error on {h['diagnostics']['scorer_error_count']} tasks "
+              f"- NOT PUBLISHABLE")
+
+
+# ------------------------------------------------------------------ agents
+def baseline_agent(name):
+    fn = BASELINES[name]
+
+    def agent(task) -> str:
+        return fn(task.data.prompt).model_dump_json()
+
+    return agent
+
+
+def oracle_agent(task) -> str:
+    """Answers from the baked key. Wiring check only - never a reported score."""
+    return task.data.answer_key.model_dump_json()
+
+
+def scripted_tool_agent(condition: str):
+    """A scripted stand-in for a model in the tool conditions, with no API key.
+
+    It does what a perfect extractor would do: read the case file, call the tool with what
+    the file states, and answer from the tool's reply. That is exactly the upper bound the
+    tool-equipped condition is meant to measure, so this exercises the whole path -
+    including the real engine call inside the tool - without spending a token.
+
+    It reads the household from the task's own record rather than from the narrative,
+    because the point of this run is to prove the TOOL path works, not to test extraction.
+    A live model does the extraction itself.
+    """
+    from eval.baselines import read_narrative
+
+    allow_unknown = condition == "tool_equipped_unknowns"
+
+    def agent(task) -> str:
+        r = read_narrative(task.data.prompt)
+        payload = {
+            "month": r.month,
+            "tax_year": r.year,
+            "housing_cost": (r.monthly_shelter * 12) if r.shelter_stated else "unknown",
+            "dependent_care_cost": 0.0,
+            "people": [
+                {"person_id": f"p{i + 1}", "age": age, "employment_income": 0.0,
+                 "immigration_status": "CITIZEN"}
+                for i, age in enumerate(r.ages)
+            ],
+        }
+        if payload["people"]:
+            payload["people"][0]["employment_income"] = r.monthly_earned * 12
+        if not allow_unknown and payload["housing_cost"] == "unknown":
+            payload["housing_cost"] = 0.0
+
+        out = calculate(payload, allow_unknown=allow_unknown)
+        if "decides_programs" in out:
+            abstain = out["decides_programs"]
+            payload["housing_cost"] = 0.0
+            out = calculate(payload, allow_unknown=False)
+        else:
+            abstain = []
+        if "error" in out:
+            return json.dumps({"error": out["error"]})
+
+        answer = {
+            "snap": {"period": "month", "period_label": out["snap"]["period"],
+                     "eligible": out["snap"]["eligible"],
+                     "benefit": out["snap"]["monthly_benefit"]},
+            "medicaid": {"period": "year", "period_label": str(r.year),
+                         "person_eligible": {f"p{i + 1}": False for i in range(r.n_people)},
+                         "scored": False},
+            "eitc": {"period": "year", "period_label": out["eitc"]["period"],
+                     "amount": out["eitc"]["annual_amount"]},
+            "ctc": {"period": "year", "period_label": out["ctc"]["period"],
+                    "amount": out["ctc"]["annual_amount_received"],
+                    "gross_entitlement": out["ctc"]["gross_entitlement"]},
+            "cannot_determine": [{"program": p, "missing_fact": "housing_cost"}
+                                 for p in abstain],
+        }
+        return json.dumps(answer)
+
+    return agent
+
+
+# ------------------------------------------------------------------ the live client
+def live_agent(condition: str, model: str = MODEL, max_tool_turns: int = 6):
+    """A real Claude client. The API key comes from the environment - never from disk.
+
+    Uses the SDK's default credential resolution (`ANTHROPIC_API_KEY`, then an
+    `ant auth login` profile). This process neither reads nor writes a key file.
+    """
+    import anthropic
+
+    from redtape.envs.t1_eligibility import SYSTEM_PROMPT
+
+    client = anthropic.Anthropic()
+    allow_unknown = condition == "tool_equipped_unknowns"
+    tools = ([tool_schema(allow_unknown=allow_unknown)]
+             if condition != "tool_less" else [])
+
+    def agent(task) -> str:
+        messages = [{"role": "user", "content": task.data.prompt}]
+        for _ in range(max_tool_turns):
+            kwargs = dict(
+                model=model,
+                max_tokens=8_000,
+                system=SYSTEM_PROMPT,
+                thinking={"type": "adaptive"},
+                output_config={"effort": "high"},
+                messages=messages,
+            )
+            if tools:
+                kwargs["tools"] = tools
+            response = client.messages.create(**kwargs)
+
+            if response.stop_reason == "refusal":
+                detail = getattr(response, "stop_details", None)
+                return json.dumps({"refusal": getattr(detail, "category", "unknown")})
+
+            messages.append({"role": "assistant", "content": response.content})
+            calls = [b for b in response.content if b.type == "tool_use"]
+            if not calls:
+                return "\n".join(b.text for b in response.content if b.type == "text")
+
+            results = []
+            for block in calls:
+                out = calculate(block.input, allow_unknown=allow_unknown)
+                results.append({"type": "tool_result", "tool_use_id": block.id,
+                                "content": json.dumps(out)})
+            messages.append({"role": "user", "content": results})
+
+        return json.dumps({"error": "tool loop did not terminate"})
+
+    return agent
+
+
+# ------------------------------------------------------------------ entry points
+def run(tasks, agent, *, model: str, split: str, condition: str, out: Path, seed=None,
+        extra=None):
+    records = [score_one(t, agent(t)) for t in tasks]
+    results = build_results(records, model=model, split=split, condition=condition,
+                            seed=seed, extra=extra)
+    write(results, out)
+    return results
+
+
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("mode", choices=["baselines", "conditions", "live", "oracle"])
+    ap.add_argument("--split", default="data/dev/t1.jsonl")
+    ap.add_argument("--results", default="results")
+    ap.add_argument("--limit", type=int, default=None)
+    ap.add_argument("--sample", type=int, default=None)
+    ap.add_argument("--model", default=MODEL)
+    args = ap.parse_args()
+
+    split_name = Path(args.split).stem
+    results_dir = Path(args.results)
+    tasks = load_tasks(args.split, limit=args.limit, sample=args.sample)
+    print(f"{len(tasks)} tasks from {args.split}")
+
+    if args.mode == "baselines":
+        for name in BASELINES:
+            print(f"\nbaseline: {name}")
+            run(tasks, baseline_agent(name), model=f"baseline:{name}", split=split_name,
+                condition="tool_less", out=results_dir / f"{split_name}.baseline.{name}.json")
+
+    elif args.mode == "oracle":
+        print("\noracle (wiring check, not a reported score)")
+        run(tasks, oracle_agent, model="oracle", split=split_name, condition="tool_less",
+            out=results_dir / f"{split_name}.oracle.json")
+
+    elif args.mode == "conditions":
+        for condition in CONDITIONS:
+            print(f"\ncondition: {condition} (scripted agent)")
+            agent = (baseline_agent("rules_only") if condition == "tool_less"
+                     else scripted_tool_agent(condition))
+            run(tasks, agent, model="scripted", split=split_name, condition=condition,
+                out=results_dir / f"{split_name}.scripted.{condition}.json")
+
+    elif args.mode == "live":
+        if not (os.environ.get("ANTHROPIC_API_KEY") or os.environ.get("ANTHROPIC_AUTH_TOKEN")):
+            print("no ANTHROPIC_API_KEY / ANTHROPIC_AUTH_TOKEN in the environment.\n"
+                  "Export one in this shell before running `live`. This script never "
+                  "creates, requests or writes a key.", file=sys.stderr)
+            return 2
+        tasks = tasks[: (args.limit or 1)]
+        print(f"\nLIVE: {args.model}, {len(tasks)} task(s), tool_less")
+        run(tasks, live_agent("tool_less", args.model), model=args.model,
+            split=split_name, condition="tool_less",
+            out=results_dir / f"{split_name}.live.{args.model}.tool_less.json")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
