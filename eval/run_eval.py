@@ -25,7 +25,7 @@ import sys
 from pathlib import Path
 
 from eval.baselines import BASELINES
-from eval.metrics import TaskRecord, build_results
+from eval.metrics import TaskRecord, assert_publishable, build_results, redact
 from eval.tools import calculate, tool_schema
 from redtape.schemas import T1Answer
 
@@ -117,11 +117,29 @@ def score_one(task, reply: str) -> TaskRecord:
     )
 
 
-def write(results: dict, out: Path) -> None:
+def write(results: dict, out: Path, *, seed: int | None = None) -> None:
+    """Write the full results file, and beside it a redacted one that is safe to publish.
+
+    The redacted sibling is written ALWAYS, not only for held-out runs. Making it
+    conditional would mean deciding, at write time, whether this particular run is the
+    sensitive one - and a check that has to fire on the right run is a check that
+    eventually does not. The dev seed is public, so redacting a dev run costs nothing;
+    the habit of quoting numbers out of `.public.json` is what is actually being bought.
+
+    `assert_publishable` runs on the redacted copy before it is written, so a future field
+    formatted from the seed fails here rather than in a published file.
+    """
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(json.dumps(results, indent=2), encoding="utf-8")
+
+    public = redact(results)
+    assert_publishable(public, seed)
+    public_out = out.with_suffix(".public.json")
+    public_out.write_text(json.dumps(public, indent=2), encoding="utf-8")
+
     h = results
     print(f"  -> {out}")
+    print(f"  -> {public_out}  (redacted; quote numbers from this one)")
     for field in ("t1_exact_match_determinate", "t1b_abstention_accuracy", "pair_consistency"):
         v = h[field]["value"]
         n = h[field].get("n", h[field].get("n_pairs"))
@@ -269,7 +287,7 @@ def run(tasks, agent, *, model: str, split: str, condition: str, out: Path, seed
     records = [score_one(t, agent(t)) for t in tasks]
     results = build_results(records, model=model, split=split, condition=condition,
                             seed=seed, extra=extra)
-    write(results, out)
+    write(results, out, seed=seed)
     return results
 
 

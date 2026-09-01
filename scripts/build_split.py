@@ -38,6 +38,7 @@ import time
 from importlib.metadata import version
 from pathlib import Path
 
+from redtape.config import DEV, SPLIT_KINDS, resolve_seed, seed_fingerprint
 from redtape.generator.households import generate, withhold
 from redtape.generator.narratives import render
 from redtape.oracle.determinability import probe
@@ -279,8 +280,11 @@ def with_hashes(rows):
 
 def main():
     ap = argparse.ArgumentParser()
+    ap.add_argument("--split", choices=SPLIT_KINDS, default=DEV,
+                    help="dev uses the PUBLIC seed; heldout requires REDTAPE_HELDOUT_SEED "
+                         "and never falls back")
     ap.add_argument("--seed", type=int, default=None,
-                    help="omit to read REDTAPE_SEED, then fall back to the public seed")
+                    help="dev only. A held-out build refuses an explicit seed.")
     ap.add_argument("--n", type=int, default=1200)
     ap.add_argument("--indeterminate", type=float, default=0.15)
     ap.add_argument("--incomplete", type=float, default=0.12)
@@ -289,20 +293,36 @@ def main():
     ap.add_argument("--workers", type=int, default=max(1, (os.cpu_count() or 2) - 1))
     ap.add_argument("--chunk", type=int, default=200)
     ap.add_argument("--max-candidates", type=int, default=20_000)
-    ap.add_argument("--out", default="data/dev/t1.jsonl")
+    ap.add_argument("--out", default=None,
+                    help="defaults to data/<split>/t1.jsonl")
     args = ap.parse_args()
 
-    seed = args.seed
-    if seed is None:
-        env = os.environ.get("REDTAPE_SEED")
-        seed = int(env) if env else 20260828
+    # Fail closed. `resolve_seed` raises MissingHeldoutSeed rather than defaulting, so a
+    # held-out build with no seed STOPS instead of quietly producing a split with public
+    # provenance. See redtape/config.py for why the two seeds have separate variable names.
+    seed = resolve_seed(args.split, override=args.seed)
+
+    out = Path(args.out) if args.out else Path(f"data/{args.split}/t1.jsonl")
+    # A held-out split must not be writable into the committed dev tree. The directory is
+    # the only thing standing between a private artifact and `git add data/dev`.
+    expected_dir = Path("data") / args.split
+    if out.parent != expected_dir:
+        raise SystemExit(
+            f"a {args.split} split must be written under {expected_dir}/, not "
+            f"{out.parent}/. The output directory is what keeps held-out data out of the "
+            f"committed tree."
+        )
 
     targets = {
         "flip": round(args.n * args.flip),
         "indeterminate": round(args.n * args.indeterminate),
         "incomplete_determinate": round(args.n * args.incomplete),
     }
-    print(f"building n={args.n} seed={seed} workers={args.workers}", flush=True)
+    # A held-out seed is never printed. The fingerprint identifies the run without
+    # putting the seed into a terminal, a CI log, or a screenshot.
+    shown = seed if args.split == DEV else f"<{args.split}, fp {seed_fingerprint(seed)}>"
+    print(f"building n={args.n} split={args.split} seed={shown} "
+          f"workers={args.workers}", flush=True)
     print(f"  targets: {targets}, pairs={args.pairs}", flush=True)
 
     # Warm the engine in the parent so forked workers inherit it instead of each paying
@@ -322,7 +342,7 @@ def main():
     if len({r["task_hash"] for r in rows}) != len(rows):
         raise SystemExit("duplicate task hashes; tasks are not distinct")
 
-    path = Path(args.out)
+    path = out
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("w", encoding="utf-8") as fh:
         for r in rows:
@@ -334,7 +354,11 @@ def main():
         k = "eligibility_flip" if r["is_eligibility_flip"] else r["determinability"]
         mix[k] = mix.get(k, 0) + 1
     manifest = {
-        "seed": seed,
+        "split": args.split,
+        # The dev seed is public and worth recording verbatim; the held-out seed is not.
+        # Regeneration reads .env either way, so the manifest never needs the real value.
+        "seed": seed if args.split == DEV else None,
+        "seed_fingerprint": seed_fingerprint(seed),
         "n": n,
         "targets": {
             "indeterminate": args.indeterminate,

@@ -30,6 +30,7 @@ nor never-differ can score well.
 
 from __future__ import annotations
 
+import json
 import platform
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
@@ -261,3 +262,92 @@ def build_results(records, *, model: str, split: str, condition: str = "tool_les
             for r in records
         ],
     }
+
+
+# ------------------------------------------------------------------ publishing held-out
+#
+# A results file from a held-out run carries the private seed in three places, none of
+# them obvious on inspection:
+#
+#   run.seed                   the seed, verbatim
+#   per_task[].household_id    "hh-{seed}-{index:05d}"   - the seed is the first component
+#   per_task[].pair_id         "pair-{seed}-{index:05d}" - the same
+#
+# Gitignoring `results/*heldout*` stops the file being committed by accident, but ignoring
+# a file is a backstop and not a mechanism: the file still exists, and publishing a number
+# means somebody eventually copies something out of it. `redact` is the mechanism. It emits
+# `task_hash` - the identity CLAUDE.md's contamination story already asks for, produced by
+# the library rather than invented here, and not invertible without regenerating the
+# household through the oracle - and drops every seed-derived field.
+#
+# Answer keys were never serialised into `per_task`, so held-out *answers* were never at
+# risk here. The seed was.
+
+SEED_DERIVED_TASK_FIELDS = ("household_id", "pair_id")
+"""Per-task fields formatted from the seed. A new field of this shape must be added here;
+`assert_publishable` is what makes forgetting loud rather than silent."""
+
+
+class SeedLeak(AssertionError):
+    """Something about to be published carries the private seed, or is derived from it."""
+
+
+def redact(results: dict) -> dict:
+    """Return a publishable copy of a results file: no seed, no seed-derived identifier.
+
+    Every headline, diagnostic and per-task score survives. What goes is identity that
+    could be run backwards to the seed.
+
+    Pairs are **renumbered** rather than hashed. A hash of `pair-{seed}-{index}` would be
+    invertible by anyone willing to enumerate seeds and hash a short string, and the index
+    range is small and known - so hashing would look like protection while offering
+    roughly none. Sequential labels in first-appearance order keep pair grouping legible
+    and carry no seed material at all.
+    """
+    out = json.loads(json.dumps(results))  # deep copy; results are plain JSON already
+
+    run = out.setdefault("run", {})
+    run.pop("seed", None)
+    run["redacted"] = True
+    run["redaction_note"] = (
+        "Seed and all seed-derived identifiers removed. Tasks are identified by "
+        "task_hash, the library's content hash of the task's wire data."
+    )
+
+    # Pair labels are assigned from the ORIGINAL rows, so grouping survives field removal.
+    pair_labels: dict[str, str] = {}
+    for original, row in zip(results.get("per_task", []), out.get("per_task", []),
+                             strict=True):
+        pid = original.get("pair_id") or ""
+        if pid:
+            row["pair"] = pair_labels.setdefault(pid, f"pair-{len(pair_labels) + 1:04d}")
+        for name in SEED_DERIVED_TASK_FIELDS:
+            row.pop(name, None)
+
+    return out
+
+
+def assert_publishable(results: dict, seed: int | None = None) -> None:
+    """Raise `SeedLeak` unless `results` is free of the seed and everything derived from it.
+
+    Call this on anything about to leave the machine. When the seed is supplied the check
+    is a scan of the serialised text rather than a field checklist, deliberately: a
+    checklist only covers the fields somebody remembered, and the failure this guards
+    against is precisely a field nobody thought of.
+    """
+    if seed is not None and str(seed) in json.dumps(results):
+        raise SeedLeak(
+            "the seed appears somewhere in this results file. It must not be published. "
+            "Use redact() and publish its output instead."
+        )
+
+    if "seed" in results.get("run", {}):
+        raise SeedLeak("run.seed is present. Use redact() before publishing.")
+
+    for row in results.get("per_task", []):
+        for name in SEED_DERIVED_TASK_FIELDS:
+            if name in row:
+                raise SeedLeak(
+                    f"per_task carries {name!r}, which is formatted from the seed "
+                    f"(hh-{{seed}}-{{index}}). Use redact() before publishing."
+                )
