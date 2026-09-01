@@ -67,14 +67,39 @@ def _person_sentence(rng: random.Random, p: Person, is_first: bool) -> str:
     if p.immigration_status is not None:
         bits.append(rng.choice(_STATUS_PHRASE[p.immigration_status.value]))
 
-    if p.is_disabled:
+    # Boolean facts are stated in BOTH directions, and omitted only when withheld.
+    #
+    # These used to render only when true, so "not a student" and "student status was
+    # withheld" produced identical text. That made the eligibility-flip class - the
+    # scarcest and most valuable T1b class - unanswerable: a reader had no way to know a
+    # fact was missing, so correct abstention was not achievable from the narrative, and a
+    # model could only have scored well by abstaining on every case mentioning no student.
+    #
+    # It is exactly the pathology in docs/LIMITS.md 3 ("omitting a fact and stating it as
+    # zero are indistinguishable") reproduced in our own renderer, for the one fact
+    # confirmed to flip eligibility. Age, income and immigration status never had the
+    # problem, because for those an absent clause is itself the signal.
+    #
+    # `None` means withheld and stays silent. That silence is now informative.
+    if p.is_disabled is True:
         bits.append("reports a disability")
-    if p.is_higher_ed_student:
+    elif p.is_disabled is False:
+        bits.append(rng.choice(["reports no disability", "does not report a disability"]))
+
+    if p.is_higher_ed_student is True:
         bits.append(
             rng.choice([
                 "is enrolled full-time at a community college",
                 "attends university more than half-time",
                 "is enrolled more than half-time in a degree programme",
+            ])
+        )
+    elif p.is_higher_ed_student is False:
+        bits.append(
+            rng.choice([
+                "is not enrolled in college",
+                "is not attending a degree programme",
+                "is not a student",
             ])
         )
     for b in p.declared_benefits:
