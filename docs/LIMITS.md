@@ -120,16 +120,49 @@ Two measured cautions:
 The intended replacement is SMT-based determinability (see CLAUDE.md, deferred design
 decisions), which answers the same question exactly.
 
-## 5. Cross-platform determinism
+## 5. Determinism and oracle drift
 
-**Status: verified, and re-checked in CI.**
+**Status: enforced by `tests/test_determinism.py` against a committed fixture, and run in
+CI on every push (`.github/workflows/tests.yml`).**
 
-Identical oracle output on Windows and WSL2/Linux for the same household: `snap` 969.0,
-`eitc` 4328.0, `ctc` 2200.0, `household_net_income` 32658.21, `medicaid`
-[11360.863, 7112.096]. Both on CPython 3.13.15.
+`tests/data/determinism_reference.json` holds five households serialised in full, each
+with the exact oracle output it produced and the engine, core and interpreter versions
+that produced it. The test recomputes and compares **exactly** - no tolerance. The +/-$1
+SNAP tolerance is a statement about what a *model* may get wrong; the engine reproducing
+its own arithmetic gets no slack, so a cent of drift is a finding.
 
-This is only evidence about the engine because the interpreter is pinned. Without the
-3.13 pin an identical result would be luck and a divergent one uninterpretable.
+The generator is checked separately, against the same fixture. An engine change and a
+generator change are different findings with different fixes, and storing each household
+in full rather than as `(seed, index)` is what stops one masking the other.
+
+### What this section used to claim, and why it changed
+
+It previously read *"verified, and re-checked in CI"*, and cited `snap` 969.0, `eitc`
+4328.0, `ctc` 2200.0, `household_net_income` 32658.21 as identical across Windows and
+WSL2/Linux. **There was no CI and no test.** Those values lived only in prose here and in
+CLAUDE.md, the household that produced them was never recorded, and the one determinism
+test in the suite asserted `compute(hh) == compute(hh)` within a single process - which
+returns a new value twice and passes after any version bump.
+
+So the old numbers are **not reproducible and are not reproduced**. There is no way to ask
+the engine the same question again, because the question was never written down. They also
+included `household_net_income`, which `compute()` does not return. The fixture above is a
+new reference over the oracle's actual output surface, first captured 2026-09-01.
+
+The cross-*platform* half of the old claim is not re-established either, and will not be:
+`verifiers.v1` cannot import on Windows at all (unguarded `import fcntl`), so Linux is the
+only platform that can produce a shipping artifact. Determinism is now enforced across
+*versions* on one platform, which is the axis that actually threatens an answer key -
+`policyengine-us` ships three to four releases a day.
+
+### What this is not
+
+Expected values in the fixture are **engine output**. The test proves the engine still says
+what it said; it says nothing about whether that is right. External validation is a
+separate track under a hard rule that its expected values never come from the engine - see
+`tests/test_parameter_drift.py` and `tests/test_external_validation.py`, and section 10.
+A golden master cited as validation would be exactly the circularity this project exists to
+avoid, so the two must not be blurred.
 
 ## 6. Scope of v0
 

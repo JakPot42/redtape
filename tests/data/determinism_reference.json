@@ -1,0 +1,357 @@
+{
+  "cases": [
+    {
+      "expected": {
+        "cannot_determine": [],
+        "ctc": {
+          "amount": 0.0,
+          "gross_entitlement": 2200.0,
+          "period": "year",
+          "period_label": "2025"
+        },
+        "eitc": {
+          "amount": 519.8599853515625,
+          "gross_entitlement": null,
+          "period": "year",
+          "period_label": "2025"
+        },
+        "medicaid": {
+          "period": "year",
+          "period_label": "2025",
+          "person_eligible": {
+            "p1": true,
+            "p2": true
+          },
+          "scored": false
+        },
+        "snap": {
+          "benefit": 536.0,
+          "eligible": true,
+          "period": "month",
+          "period_label": "2025-08"
+        }
+      },
+      "household": {
+        "dependent_care_cost": 0.0,
+        "household_id": "hh-20260828-00000",
+        "housing_cost": 11534.0,
+        "index": 0,
+        "month": "2025-08",
+        "people": [
+          {
+            "age": 51,
+            "declared_benefits": [],
+            "declared_statuses": [],
+            "employment_income": 1529.0,
+            "immigration_status": "CITIZEN",
+            "is_disabled": false,
+            "is_higher_ed_student": false,
+            "person_id": "p1"
+          },
+          {
+            "age": 4,
+            "declared_benefits": [],
+            "declared_statuses": [],
+            "employment_income": 0.0,
+            "immigration_status": "CITIZEN",
+            "is_disabled": false,
+            "is_higher_ed_student": false,
+            "person_id": "p2"
+          }
+        ],
+        "seed": 20260828,
+        "state": "CA",
+        "tax_year": 2025
+      },
+      "index": 0
+    },
+    {
+      "expected": {
+        "cannot_determine": [],
+        "ctc": {
+          "amount": 814.050048828125,
+          "gross_entitlement": 4400.0,
+          "period": "year",
+          "period_label": "2025"
+        },
+        "eitc": {
+          "amount": 3170.800048828125,
+          "gross_entitlement": null,
+          "period": "year",
+          "period_label": "2025"
+        },
+        "medicaid": {
+          "period": "year",
+          "period_label": "2025",
+          "person_eligible": {
+            "p1": true,
+            "p2": true,
+            "p3": true
+          },
+          "scored": false
+        },
+        "snap": {
+          "benefit": 768.0,
+          "eligible": true,
+          "period": "month",
+          "period_label": "2025-09"
+        }
+      },
+      "household": {
+        "dependent_care_cost": 0.0,
+        "household_id": "hh-20260828-00001",
+        "housing_cost": 0.0,
+        "index": 1,
+        "month": "2025-09",
+        "people": [
+          {
+            "age": 40,
+            "declared_benefits": [],
+            "declared_statuses": [],
+            "employment_income": 7927.0,
+            "immigration_status": "CITIZEN",
+            "is_disabled": false,
+            "is_higher_ed_student": false,
+            "person_id": "p1"
+          },
+          {
+            "age": 11,
+            "declared_benefits": [],
+            "declared_statuses": [],
+            "employment_income": 0.0,
+            "immigration_status": "CITIZEN",
+            "is_disabled": false,
+            "is_higher_ed_student": false,
+            "person_id": "p2"
+          },
+          {
+            "age": 9,
+            "declared_benefits": [],
+            "declared_statuses": [],
+            "employment_income": 0.0,
+            "immigration_status": "CITIZEN",
+            "is_disabled": false,
+            "is_higher_ed_student": false,
+            "person_id": "p3"
+          }
+        ],
+        "seed": 20260828,
+        "state": "CA",
+        "tax_year": 2025
+      },
+      "index": 1
+    },
+    {
+      "expected": {
+        "cannot_determine": [],
+        "ctc": {
+          "amount": 0.0,
+          "gross_entitlement": 0.0,
+          "period": "year",
+          "period_label": "2025"
+        },
+        "eitc": {
+          "amount": 0.0,
+          "gross_entitlement": null,
+          "period": "year",
+          "period_label": "2025"
+        },
+        "medicaid": {
+          "period": "year",
+          "period_label": "2025",
+          "person_eligible": {
+            "p1": true
+          },
+          "scored": false
+        },
+        "snap": {
+          "benefit": 298.0,
+          "eligible": true,
+          "period": "month",
+          "period_label": "2025-11"
+        }
+      },
+      "household": {
+        "dependent_care_cost": 0.0,
+        "household_id": "hh-20260828-00002",
+        "housing_cost": 26637.0,
+        "index": 2,
+        "month": "2025-11",
+        "people": [
+          {
+            "age": 35,
+            "declared_benefits": [],
+            "declared_statuses": [],
+            "employment_income": 0.0,
+            "immigration_status": "CITIZEN",
+            "is_disabled": false,
+            "is_higher_ed_student": false,
+            "person_id": "p1"
+          }
+        ],
+        "seed": 20260828,
+        "state": "CA",
+        "tax_year": 2025
+      },
+      "index": 2
+    },
+    {
+      "expected": {
+        "cannot_determine": [],
+        "ctc": {
+          "amount": 1890.0001220703125,
+          "gross_entitlement": 4400.0,
+          "period": "year",
+          "period_label": "2025"
+        },
+        "eitc": {
+          "amount": 6040.0,
+          "gross_entitlement": null,
+          "period": "year",
+          "period_label": "2025"
+        },
+        "medicaid": {
+          "period": "year",
+          "period_label": "2025",
+          "person_eligible": {
+            "p1": true,
+            "p2": true,
+            "p3": true
+          },
+          "scored": false
+        },
+        "snap": {
+          "benefit": 768.0,
+          "eligible": true,
+          "period": "month",
+          "period_label": "2025-10"
+        }
+      },
+      "household": {
+        "dependent_care_cost": 0.0,
+        "household_id": "hh-20260828-00003",
+        "housing_cost": 29673.0,
+        "index": 3,
+        "month": "2025-10",
+        "people": [
+          {
+            "age": 44,
+            "declared_benefits": [],
+            "declared_statuses": [],
+            "employment_income": 15100.0,
+            "immigration_status": "CITIZEN",
+            "is_disabled": false,
+            "is_higher_ed_student": false,
+            "person_id": "p1"
+          },
+          {
+            "age": 16,
+            "declared_benefits": [],
+            "declared_statuses": [],
+            "employment_income": 0.0,
+            "immigration_status": "CITIZEN",
+            "is_disabled": false,
+            "is_higher_ed_student": false,
+            "person_id": "p2"
+          },
+          {
+            "age": 5,
+            "declared_benefits": [],
+            "declared_statuses": [],
+            "employment_income": 0.0,
+            "immigration_status": "LEGAL_PERMANENT_RESIDENT",
+            "is_disabled": false,
+            "is_higher_ed_student": false,
+            "person_id": "p3"
+          }
+        ],
+        "seed": 20260828,
+        "state": "CA",
+        "tax_year": 2025
+      },
+      "index": 3
+    },
+    {
+      "expected": {
+        "cannot_determine": [],
+        "ctc": {
+          "amount": 0.0,
+          "gross_entitlement": 4400.0,
+          "period": "year",
+          "period_label": "2025"
+        },
+        "eitc": {
+          "amount": 0.0,
+          "gross_entitlement": null,
+          "period": "year",
+          "period_label": "2025"
+        },
+        "medicaid": {
+          "period": "year",
+          "period_label": "2025",
+          "person_eligible": {
+            "p1": true,
+            "p2": true,
+            "p3": true
+          },
+          "scored": false
+        },
+        "snap": {
+          "benefit": 536.0,
+          "eligible": true,
+          "period": "month",
+          "period_label": "2025-09"
+        }
+      },
+      "household": {
+        "dependent_care_cost": 0.0,
+        "household_id": "hh-20260828-00004",
+        "housing_cost": 15957.0,
+        "index": 4,
+        "month": "2025-09",
+        "people": [
+          {
+            "age": 49,
+            "declared_benefits": [],
+            "declared_statuses": [],
+            "employment_income": 0.0,
+            "immigration_status": "CITIZEN",
+            "is_disabled": false,
+            "is_higher_ed_student": false,
+            "person_id": "p1"
+          },
+          {
+            "age": 13,
+            "declared_benefits": [],
+            "declared_statuses": [],
+            "employment_income": 0.0,
+            "immigration_status": "CITIZEN",
+            "is_disabled": false,
+            "is_higher_ed_student": false,
+            "person_id": "p2"
+          },
+          {
+            "age": 13,
+            "declared_benefits": [],
+            "declared_statuses": [],
+            "employment_income": 0.0,
+            "immigration_status": "UNDOCUMENTED",
+            "is_disabled": false,
+            "is_higher_ed_student": false,
+            "person_id": "p3"
+          }
+        ],
+        "seed": 20260828,
+        "state": "CA",
+        "tax_year": 2025
+      },
+      "index": 4
+    }
+  ],
+  "note": "Golden master for oracle drift. Expected values are ENGINE OUTPUT, not externally validated figures - this file detects change, it does not establish correctness. External validation lives in tests/test_external_validation.py and tests/test_parameter_drift.py, whose expected values must never come from the engine. Keep the two apart.",
+  "policyengine_core": "3.31.0",
+  "policyengine_us": "1.821.4",
+  "python": "3.13.15",
+  "seed": 20260828,
+  "seed_is_public": true
+}

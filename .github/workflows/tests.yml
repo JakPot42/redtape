@@ -1,0 +1,62 @@
+# The mechanism behind docs/LIMITS.md 5.
+#
+# That section claimed the determinism check was "re-checked in CI" while there was no CI
+# and no test. Rather than soften the claim, this makes it true. If this workflow is ever
+# removed, the claim in LIMITS.md 5 must be removed in the same commit.
+#
+# Linux only, and 3.13 only, deliberately:
+#   * verifiers.v1 cannot import on Windows (unguarded `import fcntl`), so a Windows job
+#     would not be a weaker signal, it would be no signal.
+#   * `verifiers` requires <3.14 and both machine defaults here are 3.14. CLAUDE.md treats
+#     the 3.13 pin as measurement apparatus rather than setup: two runs agreeing is only
+#     evidence about the engine if the interpreter is identical. A matrix across
+#     interpreters would make every result uninterpretable, which is the opposite of the
+#     point.
+name: tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      # --python-preference only-managed: never fall through to the runner's system
+      # interpreter. A silent substitution of the wrong Python is exactly the class of
+      # failure this repo keeps finding in other people's tooling.
+      - name: Pin CPython 3.13
+        run: uv python install 3.13
+
+      # --frozen: fail if uv.lock disagrees with pyproject.toml rather than silently
+      # re-resolving. The lock exists because clearing a cache floated policyengine-core
+      # from 3.31.0 to 3.31.1 with nothing to stop it.
+      - name: Sync dependencies from the lockfile
+        run: uv sync --frozen --extra dev
+
+      - name: Record the resolved environment
+        run: |
+          uv run python -c "
+          import platform
+          from importlib.metadata import version
+          print('python           ', platform.python_version())
+          for p in ('verifiers','policyengine-us','policyengine-core','numpy','pandas'):
+              print(f'{p:<18}', version(p))
+          "
+
+      # No .env exists here, which is the point: the held-out tests assert that a build
+      # with no seed STOPS. CI is the one environment guaranteed not to have the secret,
+      # so it is the strongest place for that assertion to run.
+      - name: Tests
+        run: uv run pytest -v --durations=10
