@@ -29,7 +29,6 @@ from __future__ import annotations
 
 import json
 
-from redtape.generator.households import withhold
 from redtape.oracle.determinability import SWEEPS, probe
 from redtape.oracle.policyengine_oracle import compute
 from redtape.schemas import Household, ImmigrationStatus, Person

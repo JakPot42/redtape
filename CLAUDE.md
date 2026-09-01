@@ -59,6 +59,57 @@ Note the spelling is `Taskset`, not `TaskSet`.
 
 ---
 
+## Every green signal must be checked for what it is NOT measuring **[decided]**
+
+This is the standing principle, and it outranks any individual check below. It has now
+been learned five times on this project, each time from a different direction, and each
+time the failure looked exactly like success right up until someone asked what the signal
+actually covered.
+
+| # | The green signal | What it was not measuring |
+|---|---|---|
+| 1 | `medicaid` returns a plausible dollar amount | it is not `is_medicaid_eligible`; the boolean was what the question asked for |
+| 2 | `ctc` returns 4,400 for a family with two children | it is the **gross** credit; `ctc_value` — what they receive — is 0 |
+| 3 | a held-out split builds without error | it built from the **public** seed, so it had public provenance and was worthless |
+| 4 | 183 tests pass locally | they passed because `python -m pytest` injects the cwd into `sys.path`. `eval/` was never importable; bare `pytest` — what CI runs — could not import it at all |
+| 5 | CI reports "green" | `-q` in `addopts` cancelled `-v` in the workflow, hiding **5 skipped tests** on `test_env.py`, the module covering the real `verifiers.v1` env and scoring path |
+
+**The general form.** A passing check reports on the region it covers and says nothing
+whatsoever about the region it does not — but it is *read* as a statement about the whole.
+The gap is invisible by construction, because the artifact that would reveal it is the one
+that was not produced: the variable not queried, the file not built, the test not
+collected, the line not printed.
+
+**So the question is never "did it pass?" It is "what would still have passed if the thing
+I care about were broken?"** If the honest answer is "this exact check", the check is
+real. If it is "quite a lot", the green is decoration.
+
+Practical obligations, all of which have caught something here:
+
+- **Read the count, not the colour.** `202 passed, 5 skipped` is not `207 passed`. Any
+  skip, xfail or deselect in a reported run must be surfaced with its reason (`pytest -rs`)
+  and understood. A skip is a hole in the claim, not a neutral event.
+- **Run the check the way the consumer runs it.** Local `python -m pytest` and CI's bare
+  `pytest` are different programs with different `sys.path`. A signal that only holds under
+  one invocation is a signal about the invocation.
+- **Prefer a check that fails closed.** `resolve_seed` raises where the old code defaulted.
+  A default is a green signal manufactured out of nothing.
+- **Give the check teeth, then verify the teeth.** Break the thing on purpose and confirm
+  the check goes red — `test_invariant_has_teeth`,
+  `test_build_split_no_longer_contains_a_default_seed`, and the
+  `test_known_divergence_hr1_sua_still_unmodelled` pattern all exist for this. An assertion
+  never observed failing is an assumption.
+- **Distrust a check whose expected value came from the thing under test.** The engine
+  agreeing with itself is not validation; see "Only externally validated cells are scored".
+
+**This principle is the thesis of the benchmark, applied to ourselves.** Redtape exists
+because PolicyEngine answers every question plausibly and never says "I cannot determine" —
+a system that is silently confident where it should abstain. Five times now our own tooling
+has done the same thing to us. We do not get to ship a benchmark about undetectable
+confident wrongness while running on undetectable confident greenness.
+
+---
+
 ## Two hard rules
 
 These are requirements, not preferences. Violating either corrupts published numbers.
@@ -415,6 +466,31 @@ The perturbation prober described above is the interim stand-in. It is a finite-
 - `data/heldout/` is never committed. The private seed lives in a **gitignored `.env` at repo root** **[decided]**.
 - License: **Apache-2.0** **[decided]**.
 - API keys and evaluation budget are **deferred to Phase 3** **[decided]**; nothing before then should require a model call.
+
+---
+
+## Dev fixtures may be committed; held-out data never is **[decided]**
+
+The two are not the same kind of artifact and the `.gitignore` must not treat them alike.
+
+**Committable: anything derived from the PUBLIC dev seed** (`DEV_SEED = 20260828`). It is
+public by construction, deterministic, and reproducible by anyone from the seed alone, so
+committing it discloses nothing that was not already disclosed. `data/dev/t1_smoke.jsonl`
+(28KB) is committed for exactly this reason: without it, five tests in `tests/test_env.py`
+skip on every CI run, and those are the tests covering the real `verifiers.v1` env and
+scoring path — the code most likely to break silently. Five permanently skipped tests on
+the most important module is a worse trade than three minutes of engine warm-up per run.
+
+**Never committable, under any circumstances: anything derived from
+`REDTAPE_HELDOUT_SEED`.** `data/heldout/` in full, any manifest naming the seed, any raw
+results file from a held-out run. Publishing held-out numbers goes through `redact()` and
+the `.public.json` it writes — never by committing an artifact and trusting a reader not
+to look at the wrong field.
+
+The test for which side a file falls on is one question: **could someone regenerate this
+from information that is already public?** If yes, committing it costs nothing. If no, it
+does not go in the repository, and a `.gitignore` entry is a backstop rather than the
+mechanism.
 
 ---
 

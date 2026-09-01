@@ -14,7 +14,7 @@ from pathlib import Path
 from verifiers.v1.trace import Trace
 from verifiers.v1.types import AssistantMessage
 
-from redtape.envs.t1_eligibility import T1Config, T1Data, T1Task, T1TaskConfig
+from redtape.envs.t1_eligibility import T1Data, T1Task, T1TaskConfig
 
 
 def make_trace(task: "T1Task", reply: str) -> Trace:

@@ -47,7 +47,7 @@ def main() -> None:
     sim = Simulation(situation=SITUATION)
 
     print(f"California household, tax year {TAX_YEAR}, month {MONTH}")
-    print(f"  parent age 35, employment_income $24,000/yr; child age 5; housing_cost $18,000/yr")
+    print("  parent age 35, employment_income $24,000/yr; child age 5; housing_cost $18,000/yr")
     print()
     print(f"{'variable':<24} {'entity':<10} {'period':<7} {'qty':<6} {'queried':<9} value")
     print("-" * 78)

@@ -16,7 +16,7 @@ from redtape.generator.households import generate, generate_many, withhold
 from redtape.oracle.determinability import SWEEPS, probe
 from redtape.oracle.policyengine_oracle import MissingFactError, build_situation, compute
 from redtape.scoring.rules_lint import lint
-from redtape.schemas import Determinability, Household, Person, SnapAnswer
+from redtape.schemas import Determinability, Person, SnapAnswer
 
 RULES = Path(__file__).resolve().parents[1] / "rules" / "verification_requirements.yaml"
 SEED = 20260828

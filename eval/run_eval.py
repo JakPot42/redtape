@@ -27,7 +27,6 @@ from pathlib import Path
 from eval.baselines import BASELINES
 from eval.metrics import TaskRecord, assert_publishable, build_results, redact
 from eval.tools import calculate, tool_schema
-from redtape.schemas import T1Answer
 
 MODEL = "claude-opus-5"
 

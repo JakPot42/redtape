@@ -58,6 +58,12 @@ jobs:
       # No .env exists here, which is the point: the held-out tests assert that a build
       # with no seed STOPS. CI is the one environment guaranteed not to have the secret,
       # so it is the strongest place for that assertion to run.
+      # scripts/ is in scope too. A probe script that stops running is a probe whose
+      # recorded finding can no longer be reproduced, and this repo's findings are its
+      # product.
+      - name: Lint
+        run: uv run ruff check redtape eval tests scripts
+
       # -rs reports the reason for every skip. The first green run here was
       # "202 passed, 5 skipped" and the skips were invisible, which is the same shape as
       # the LIMITS.md 5 problem this workflow was built to fix: a control that reads as

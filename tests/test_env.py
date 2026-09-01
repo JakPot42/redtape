@@ -17,7 +17,6 @@ from redtape.scoring.core import (
     score_abstention,
     score_amounts,
     score_antihack,
-    score_eligibility,
 )
 from redtape.scoring.parsing import ParseFailure, parse_answer
 from redtape.schemas import (

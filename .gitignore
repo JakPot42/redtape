@@ -14,7 +14,13 @@ __pycache__/
 
 # Evaluation outputs are committed deliberately, not incidentally.
 results/*.tmp.json
-data/dev/t1_smoke.jsonl
+
+# data/dev/ is COMMITTED. Everything under it derives from the PUBLIC dev seed
+# (DEV_SEED = 20260828), so it is reproducible by anyone from the seed alone and
+# discloses nothing. t1_smoke.jsonl in particular must stay committed: without it the
+# five tests in tests/test_env.py covering the real verifiers.v1 env and scoring path
+# skip on every CI run. See CLAUDE.md, "Dev fixtures may be committed; held-out data
+# never is". Held-out data is excluded above and that line is not negotiable.
 
 # Any local env file, not just .env. A seed-bearing file must never be
 # one typo away from being committed.
