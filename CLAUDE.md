@@ -415,3 +415,56 @@ The perturbation prober described above is the interim stand-in. It is a finite-
 - `data/heldout/` is never committed. The private seed lives in a **gitignored `.env` at repo root** **[decided]**.
 - License: **Apache-2.0** **[decided]**.
 - API keys and evaluation budget are **deferred to Phase 3** **[decided]**; nothing before then should require a model call.
+
+---
+
+## Held-out seed: established 2026-09-01 **[decided]**
+
+**The private seed did not exist until 2026-09-01.** `.gitignore` had reserved `.env` from
+the very first commit, and both this file and SPEC.md §5 described the seed as living
+there — but the file was never created. `scripts/build_split.py` reads `REDTAPE_SEED` from
+the environment and, when it is absent, **falls back silently to the public default
+`20260828`** — the same seed as the dev split.
+
+**Any held-out split generated before 2026-09-01 is void** and must be regenerated. In
+fact none was: `data/heldout/` was empty and `results/` had never been written, so nothing
+was published and no number is retracted. The window closed before it cost anything.
+
+The seed established on 2026-09-01 is an 18-digit CSPRNG value (`secrets`), stored in
+`.env` at repo root, mode `0600`. Its fingerprint is
+
+    sha256(str(seed))[:16] = ab72ee672111f7fe
+
+Quote the **fingerprint** to identify which seed a run used. Never quote the seed.
+
+### Three consequences, none of them optional
+
+**1. Nothing auto-loads `.env`.** There is no `python-dotenv` and no loader anywhere in the
+repo — adding one would mean an unpinned dependency, so the omission stays deliberate. The
+file is inert until it is exported:
+
+    set -a; . ./.env; set +a
+
+A held-out build run without that step does not fail. It quietly uses the public seed.
+
+**2. The silent fallback must become fail-closed before the held-out split is built.**
+`seed = int(env) if env else 20260828` is precisely the failure mode this project exists to
+catch — a plausible default standing in for a real value, with nothing raised. It is the
+same shape as PolicyEngine turning a missing fact into a default, one layer up in our own
+tooling. A held-out build must *require* `REDTAPE_SEED` and exit non-zero without it. Until
+that lands, this fallback is the largest single risk to the private-split story.
+
+**3. A held-out results file leaks the seed three ways, in plaintext.** From
+`eval/metrics.py::build_results`:
+
+| field | value | why it leaks |
+|---|---|---|
+| `run.seed` | the seed | written verbatim |
+| `per_task[].household_id` | `hh-{seed}-{index:05d}` | seed is the first component |
+| `per_task[].pair_id` | `pair-{seed}-{index:05d}` | same |
+
+Answer keys are *not* serialised into `per_task`, so held-out **answers** are safe. The
+seed is not. `.gitignore` now excludes `results/*heldout*` and `.env.*`, but ignoring a file
+is a backstop, not a fix: **publishing held-out numbers requires a redacted results writer**
+that emits `task_hash` — which is what the contamination story above already asks for — and
+omits every seed-derived identifier. Do that before any held-out number leaves this machine.

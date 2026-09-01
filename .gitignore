@@ -15,3 +15,12 @@ __pycache__/
 # Evaluation outputs are committed deliberately, not incidentally.
 results/*.tmp.json
 data/dev/t1_smoke.jsonl
+
+# Any local env file, not just .env. A seed-bearing file must never be
+# one typo away from being committed.
+.env.*
+
+# Held-out RESULTS carry the private seed: metrics.py writes run.seed verbatim,
+# and every household_id/pair_id embeds it (hh-{seed}-{index}). Publishable
+# aggregates are produced deliberately, never by committing a raw results file.
+results/*heldout*
