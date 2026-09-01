@@ -53,22 +53,7 @@ def load_tasks(path: str, limit: int | None = None, sample: int | None = None,
                 rows.append(json.loads(line))
 
     if sample:
-        # Deterministic stratified sample: keep whole pairs, and keep the class mix.
-        rng = random.Random(f"redtape/sample/{seed}/{sample}")
-        pairs, singles = {}, []
-        for r in rows:
-            (pairs.setdefault(r["pair_id"], []).append(r) if r.get("pair_id")
-             else singles.append(r))
-        picked = []
-        for members in list(pairs.values())[: max(1, sample // 6)]:
-            picked.extend(members)
-        by_class: dict[str, list] = {}
-        for r in singles:
-            by_class.setdefault(r["determinability"], []).append(r)
-        for cls, group in sorted(by_class.items()):
-            rng.shuffle(group)
-            picked.extend(group[: max(1, (sample - len(picked)) // len(by_class))])
-        rows = picked[:sample]
+        rows = _stratified_sample(rows, sample, seed)
     if limit:
         rows = rows[:limit]
 
@@ -78,6 +63,76 @@ def load_tasks(path: str, limit: int | None = None, sample: int | None = None,
                                                    "unscored_deciding_programs")}), cfg)
         for r in rows
     ]
+
+
+
+def _stratified_sample(rows: list[dict], sample: int, seed: int) -> list[dict]:
+    """Deterministic stratified sample: whole pairs, class mix preserved, exact size.
+
+    The previous version returned fewer rows than asked for - `--sample 12` gave 8 - and
+    could split a matched pair. Both matter:
+
+    * **Short samples are silently wrong.** The caller believes it measured 12 tasks. Every
+      headline is then computed over an `n` nobody chose, and the shortfall does not appear
+      anywhere in the results file.
+    * **A split pair is worse than a dropped one.** `pair_consistency` counts a pair with a
+      missing member as INCONSISTENT, so truncating mid-pair does not lose a measurement,
+      it manufactures a false negative.
+
+    The bug was arithmetic: the per-class quota recomputed `(sample - len(picked)) //
+    len(by_class)` on every iteration while `picked` was growing, so each class got a
+    smaller share than the last, and integer division discarded the remainder on top.
+    """
+    rng = random.Random(f"redtape/sample/{seed}/{sample}")
+    if sample >= len(rows):
+        return rows
+
+    pairs: dict[str, list] = {}
+    singles: list[dict] = []
+    for r in rows:
+        if r.get("pair_id"):
+            pairs.setdefault(r["pair_id"], []).append(r)
+        else:
+            singles.append(r)
+
+    # Whole pairs only, and never more than the budget can hold intact.
+    picked: list[dict] = []
+    pair_groups = sorted(pairs.values(), key=lambda g: g[0]["pair_id"])
+    rng.shuffle(pair_groups)
+    for group in pair_groups:
+        if len(picked) + len(group) > max(2, sample // 6):
+            break
+        picked.extend(group)
+
+    remaining = sample - len(picked)
+    by_class: dict[str, list] = {}
+    for r in singles:
+        by_class.setdefault(r["determinability"], []).append(r)
+    for group in by_class.values():
+        rng.shuffle(group)
+
+    # Largest-remainder allocation, so the quotas sum to `remaining` exactly instead of
+    # losing a row per class to integer division.
+    total = sum(len(g) for g in by_class.values()) or 1
+    exact = {cls: remaining * len(g) / total for cls, g in by_class.items()}
+    quota = {cls: int(v) for cls, v in exact.items()}
+    for cls in sorted(exact, key=lambda c: exact[c] - quota[c], reverse=True):
+        if sum(quota.values()) >= remaining:
+            break
+        quota[cls] += 1
+
+    for cls in sorted(by_class):
+        picked.extend(by_class[cls][: quota[cls]])
+
+    # A class can be smaller than its quota. Top up from whatever is left so the caller
+    # gets the size it asked for rather than a silent shortfall.
+    if len(picked) < sample:
+        chosen = {id(r) for r in picked}
+        leftovers = [r for r in singles if id(r) not in chosen]
+        rng.shuffle(leftovers)
+        picked.extend(leftovers[: sample - len(picked)])
+
+    return picked
 
 
 def _trace(task, reply: str):

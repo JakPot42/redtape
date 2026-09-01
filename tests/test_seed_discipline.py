@@ -160,7 +160,17 @@ def _results(seed: int = 998877665544332211) -> dict:
         "schema_version": "2",
         "t1_exact_match_determinate": {"value": 0.5, "n": 2},
         "t1b_abstention_accuracy": {"value": 0.5, "n": 2},
-        "pair_consistency": {"value": 1.0, "n_pairs": 1},
+        # The headline block carries its own per-pair detail, and it embedded the raw
+        # pair_id. Redaction missed it, and only the text scan caught it - so the fixture
+        # now includes it, or the regression would be invisible to these tests too.
+        "pair_consistency": {
+            "value": 1.0,
+            "n_pairs": 1,
+            "pairs": [
+                {"pair_id": f"pair-{seed}-00001", "verdict": "consistent",
+                 "truth_pattern": [], "model_pattern": []},
+            ],
+        },
         "composite": {"value": 0.4, "n": 2},
         "diagnostics": {"publishable": True, "scorer_error_count": 0},
         "run": {"model": "m", "split": "t1", "condition": "tool_less", "seed": seed},
@@ -209,6 +219,28 @@ def test_redaction_preserves_pair_grouping_without_the_seed():
     assert rows[0]["pair"] == rows[1]["pair"], "paired tasks lost their grouping"
     assert "pair" not in rows[2], "an unpaired task was given a pair label"
     assert "-" in rows[0]["pair"] and rows[0]["pair"].startswith("pair-")
+
+
+def test_redaction_cleans_the_pair_consistency_headline_block():
+    """The leak the text scan caught on its first real run.
+
+    `redact` cleaned `run.seed` and every `per_task` row, and the headline block still
+    carried `pair-{seed}-{index}` in its nested per-pair detail. Nothing in a field
+    checklist over `per_task` could have found it, which is the whole argument for
+    `assert_publishable` scanning serialised text instead.
+    """
+    seed = 998877665544332211
+    public = redact(_results(seed))
+
+    pairs = public["pair_consistency"]["pairs"]
+    assert pairs, "the fixture must exercise the nested pair block"
+    for pair in pairs:
+        assert "pair_id" not in pair
+        assert str(seed) not in json.dumps(pair)
+
+    # The renumbered label must agree with the one used in per_task, or the two halves of
+    # the file describe different pairs.
+    assert pairs[0]["pair"] == public["per_task"][0]["pair"]
 
 
 def test_redaction_does_not_mutate_the_original():

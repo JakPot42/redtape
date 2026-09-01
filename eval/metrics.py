@@ -316,13 +316,27 @@ def redact(results: dict) -> dict:
 
     # Pair labels are assigned from the ORIGINAL rows, so grouping survives field removal.
     pair_labels: dict[str, str] = {}
+
+    def label(pid: str) -> str:
+        return pair_labels.setdefault(pid, f"pair-{len(pair_labels) + 1:04d}")
+
     for original, row in zip(results.get("per_task", []), out.get("per_task", []),
                              strict=True):
         pid = original.get("pair_id") or ""
         if pid:
-            row["pair"] = pair_labels.setdefault(pid, f"pair-{len(pair_labels) + 1:04d}")
+            row["pair"] = label(pid)
         for name in SEED_DERIVED_TASK_FIELDS:
             row.pop(name, None)
+
+    # The pair_consistency headline carries its own per-pair detail, and it embeds the
+    # raw `pair_id` - so the seed survived redaction in a block nobody had thought to
+    # check. A field checklist over per_task could never have found this; the text scan in
+    # assert_publishable did, on its first real run. That is the argument for the scan
+    # being the mechanism rather than the checklist, made by the thing it caught.
+    for pair in out.get("pair_consistency", {}).get("pairs", []) or []:
+        pid = pair.pop("pair_id", "")
+        if pid:
+            pair["pair"] = label(pid)
 
     return out
 
