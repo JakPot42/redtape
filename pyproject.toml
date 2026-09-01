@@ -11,6 +11,10 @@ requires-python = "==3.13.*"
 dependencies = [
     "verifiers==0.3.1",
     "policyengine-us==1.821.4",
+    # Pinned explicitly, not left transitive. Clearing the uv cache floated this from
+    # 3.31.0 to 3.31.1 with nothing to stop it; "pin every dependency" has to mean the
+    # closure, not just the names we happened to write down. See CLAUDE.md.
+    "policyengine-core==3.31.1",
     "pydantic==2.12.3",
     "pyyaml==6.0.3",
 ]

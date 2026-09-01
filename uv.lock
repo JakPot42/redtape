@@ -1752,6 +1752,7 @@ name = "redtape"
 version = "0.0.1"
 source = { editable = "." }
 dependencies = [
+    { name = "policyengine-core" },
     { name = "policyengine-us" },
     { name = "pydantic" },
     { name = "pyyaml" },
@@ -1766,6 +1767,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
+    { name = "policyengine-core", specifier = "==3.31.1" },
     { name = "policyengine-us", specifier = "==1.821.4" },
     { name = "pydantic", specifier = "==2.12.3" },
     { name = "pytest", marker = "extra == 'dev'", specifier = "==8.4.2" },

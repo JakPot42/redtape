@@ -36,7 +36,7 @@ The 3.13 pin is **not a workaround for a packaging inconvenience — it is what 
 
 **Pin every dependency to an exact version** (`==`, never `>=`). See "Version drift" below.
 
-Reference versions: `verifiers==0.3.1`, `policyengine-us==1.821.4`, `policyengine-core==3.31.0`, `pandas==3.0.5`, `numpy==2.5.2`.
+Reference versions: `verifiers==0.3.1`, `policyengine-us==1.821.4`, `policyengine-core==3.31.1`, `pandas==3.0.5`, `numpy==2.5.2`. `policyengine-core` is a DIRECT pin as of 2026-09-01 and `uv.lock` is committed - see the bottom of this file.
 
 ---
 
@@ -422,9 +422,14 @@ The perturbation prober described above is the interim stand-in. It is a finite-
 
 **The private seed did not exist until 2026-09-01.** `.gitignore` had reserved `.env` from
 the very first commit, and both this file and SPEC.md §5 described the seed as living
-there — but the file was never created. `scripts/build_split.py` reads `REDTAPE_SEED` from
-the environment and, when it is absent, **falls back silently to the public default
-`20260828`** — the same seed as the dev split.
+there — but the file was never created. `scripts/build_split.py` *used to* read
+`REDTAPE_SEED` from the environment and, when it was absent, **fall back silently to the
+public default `20260828`** — the same seed as the dev split. So a held-out build with no
+`.env` did not fail; it produced a split with public provenance and called it held-out.
+That is the third appearance of this project's own pathology in our own tooling, after
+`medicaid` (a dollar amount where a boolean was meant) and `ctc` (gross entitlement where
+received value was meant): a plausible value standing exactly where the real one belongs,
+with nothing raised. It is fixed below.
 
 **Any held-out split generated before 2026-09-01 is void** and must be regenerated. In
 fact none was: `data/heldout/` was empty and `results/` had never been written, so nothing
@@ -437,34 +442,96 @@ The seed established on 2026-09-01 is an 18-digit CSPRNG value (`secrets`), stor
 
 Quote the **fingerprint** to identify which seed a run used. Never quote the seed.
 
-### Three consequences, none of them optional
+### The three consequences, all now closed
 
-**1. Nothing auto-loads `.env`.** There is no `python-dotenv` and no loader anywhere in the
-repo — adding one would mean an unpinned dependency, so the omission stays deliberate. The
-file is inert until it is exported:
+**1. `.env` auto-loads.** `redtape/config.py::load_dotenv` reads it with the standard
+library — no `python-dotenv`, because adding a pinned dependency to parse `KEY=VALUE` buys
+nothing. It never overrides a variable already in the environment: the auto-load exists to
+stop a *forgotten* export falling back silently, not to overrule a deliberate one.
 
-    set -a; . ./.env; set +a
+**2. The held-out path fails closed.** `resolve_seed("heldout")` raises
+`MissingHeldoutSeed`. There is no default and no `--seed` override — a seed typed on a
+command line can be typed wrong and ends up in shell history. The two seeds also have
+**separate variable names**, `REDTAPE_SEED` (dev, public) and `REDTAPE_HELDOUT_SEED`: one
+variable plus an "is this held-out?" flag would still let a single value serve both roles.
+`build_split.py` now takes `--split {dev,heldout}` and refuses to write a held-out split
+anywhere but `data/heldout/`.
 
-A held-out build run without that step does not fail. It quietly uses the public seed.
+`tests/test_seed_discipline.py` (20 tests) covers it, including two with teeth:
+`test_build_split_no_longer_contains_a_default_seed` asserts the literal `20260828` is
+absent from the script, because the fix is the *absence* of a constant and no ordinary test
+can see that; and an end-to-end test asserting the CLI exits non-zero **before the engine
+warm-up**. Both were verified to fail when the fallback was temporarily reintroduced.
 
-**2. The silent fallback must become fail-closed before the held-out split is built.**
-`seed = int(env) if env else 20260828` is precisely the failure mode this project exists to
-catch — a plausible default standing in for a real value, with nothing raised. It is the
-same shape as PolicyEngine turning a missing fact into a default, one layer up in our own
-tooling. A held-out build must *require* `REDTAPE_SEED` and exit non-zero without it. Until
-that lands, this fallback is the largest single risk to the private-split story.
+**3. Redaction is the mechanism; gitignore is the backstop.** `eval/metrics.py::redact`
+strips `run.seed` and every seed-derived identifier; `assert_publishable` re-checks by
+scanning the serialised text, deliberately rather than by field checklist — a checklist
+only covers fields somebody remembered, and the failure being guarded against is a field
+nobody thought of. `eval/run_eval.py::write` now emits a `.public.json` beside every
+results file **always, not only for held-out runs**: a check that has to fire on the right
+run is a check that eventually does not, and redacting a public dev run costs nothing.
 
-**3. A held-out results file leaks the seed three ways, in plaintext.** From
-`eval/metrics.py::build_results`:
+Pairs are **renumbered, not hashed**. A hash of `pair-{seed}-{index}` is invertible by
+anyone willing to enumerate seeds and hash a short string over a small known index range,
+so hashing would look like protection while offering roughly none.
 
-| field | value | why it leaks |
-|---|---|---|
-| `run.seed` | the seed | written verbatim |
-| `per_task[].household_id` | `hh-{seed}-{index:05d}` | seed is the first component |
-| `per_task[].pair_id` | `pair-{seed}-{index:05d}` | same |
+Quote numbers out of `.public.json`. Quote the seed nowhere; `seed_fingerprint()` gives a
+publishable identifier.
 
-Answer keys are *not* serialised into `per_task`, so held-out **answers** are safe. The
-seed is not. `.gitignore` now excludes `results/*heldout*` and `.env.*`, but ignoring a file
-is a backstop, not a fix: **publishing held-out numbers requires a redacted results writer**
-that emits `task_hash` — which is what the contamination story above already asks for — and
-omits every seed-derived identifier. Do that before any held-out number leaves this machine.
+---
+
+## Determinism is a test now, not a paragraph **[decided]**
+
+CLAUDE.md said to re-run the determinism check after any dependency bump and
+`docs/LIMITS.md` §5 said it was "re-checked in CI". **Neither was true.** There was no CI,
+no test, and no record of the household behind the published values (`snap` 969.0, `eitc`
+4328.0, `ctc` 2200.0, `household_net_income` 32658.21) — so the check could not be re-run
+by anyone, including us. `test_oracle_is_deterministic` asserts `compute(hh) == compute(hh)`
+within one process, which returns a new value twice and passes after any version bump.
+
+A documented control that does not exist is worse than no control, because work gets
+approved on the strength of it.
+
+- `tests/data/determinism_reference.json` — five households serialised **in full**, each
+  with its exact oracle output and the versions that produced it. Stored in full rather
+  than as `(seed, index)` so an engine change and a generator change cannot mask one
+  another; `tests/test_determinism.py` checks each separately.
+- Comparison is **exact, with no tolerance**. The ±$1 SNAP tolerance says what a *model*
+  may get wrong; the engine reproducing its own arithmetic gets no slack.
+- `.github/workflows/tests.yml` runs the suite on Linux/3.13 on every push, with
+  `uv sync --frozen` so a lockfile disagreement fails rather than silently re-resolving.
+  **If that workflow is ever removed, the CI claim in `docs/LIMITS.md` §5 goes with it in
+  the same commit.**
+- **Re-capturing the fixture is a decision, never a build step.** If it stops matching,
+  that is the finding it exists to surface. Re-capturing to make the test pass deletes the
+  evidence.
+
+The old cross-*platform* claim is not re-established and will not be: `verifiers.v1` cannot
+import on Windows at all, so Linux is the only platform that can produce a shipping
+artifact. Determinism is now enforced across *versions* on one platform, which is the axis
+that actually threatens an answer key — `policyengine-us` ships three to four releases a
+day.
+
+**These expected values are engine output.** The test proves the engine still says what it
+said, not that it is right. External validation stays a separate track whose expected
+values never come from the engine (`test_parameter_drift.py`, `test_external_validation.py`).
+A golden master cited as validation would be the exact circularity this project exists to
+avoid.
+
+---
+
+## `policyengine-core` is pinned directly, and the bump was tested **[decided]**
+
+The four direct dependencies were pinned exactly, but the transitive closure was not
+locked, so `uv sync` after a cache clear floated `policyengine-core` **3.31.0 → 3.31.1**
+with nothing to stop it. "Pin every dependency" has to mean the closure, not just the names
+we wrote down.
+
+- `uv.lock` is committed. It never had been.
+- `policyengine-core` is now a **direct** exact pin in `pyproject.toml`.
+- The bump was made deliberately, in the order the fixture makes possible: pin back to
+  3.31.0 → capture the reference there → **207 passed** → move to 3.31.1 → **207 passed,
+  oracle output byte-identical**. 3.31.1 is what is pinned now.
+
+Reference versions: `verifiers==0.3.1`, `policyengine-us==1.821.4`,
+`policyengine-core==3.31.1`, `pandas==3.0.5`, `numpy==2.5.2`, CPython 3.13.15.
