@@ -20,6 +20,7 @@ from pydantic import BaseModel, ConfigDict
 from redtape.oracle.policyengine_oracle import compute
 from redtape.schemas import (
     SAFE_IMMIGRATION_STATUSES,
+    SCORED_PROGRAMS,
     Determinability,
     Household,
     ImmigrationStatus,
@@ -77,6 +78,15 @@ class DeterminabilityLabel(BaseModel):
     label: Determinability
     per_program: tuple[ProgramVerdict, ...]
     deciding_programs: tuple[str, ...]
+    """SCORED programs the fact decides. The label is derived from this, never from the
+    full set - see `unscored_deciding_programs`."""
+    unscored_deciding_programs: tuple[str, ...] = ()
+    """Programs the fact decides that v0 does not score (Medicaid). Recorded for audit
+    and never used to label a task.
+
+    Keeping this visible rather than discarding it is the point: a fact that decides
+    Medicaid alone is genuinely interesting, and if Medicaid ever gains external
+    validation and enters SCORED_PROGRAMS, these are the tasks whose labels change."""
 
 
 def _restore(hh: Household, fact: str, value: Any) -> Household:
@@ -141,7 +151,13 @@ def probe(hh: Household, fact: str, tolerance: float = DEFAULT_TOLERANCE) -> Det
         deciding = any(_differs(obs[0], o, p, tolerance) for o in obs[1:])
         verdicts.append(ProgramVerdict(program=p, deciding=deciding, observed=tuple(obs)))
 
-    deciding = tuple(v.program for v in verdicts if v.deciding)
+    # The label is decided by SCORED programs only. A fact that moves Medicaid alone
+    # leaves the task determinate *as far as this benchmark can score it*, and labelling
+    # it INDETERMINATE would demand an abstention the scorer cannot credit - the
+    # Milestone 1 defect. See redtape/scoring/invariants.py for the standing rule.
+    all_deciding = tuple(v.program for v in verdicts if v.deciding)
+    deciding = tuple(p for p in all_deciding if p in SCORED_PROGRAMS)
+    unscored = tuple(p for p in all_deciding if p not in SCORED_PROGRAMS)
     label = Determinability.INDETERMINATE if deciding else Determinability.INCOMPLETE_DETERMINATE
 
     return DeterminabilityLabel(
@@ -151,4 +167,5 @@ def probe(hh: Household, fact: str, tolerance: float = DEFAULT_TOLERANCE) -> Det
         label=label,
         per_program=tuple(verdicts),
         deciding_programs=deciding,
+        unscored_deciding_programs=unscored,
     )

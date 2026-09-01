@@ -97,7 +97,10 @@ def score_abstention(
     Class 3 is what stops a model scoring well by always abstaining, so it is scored as
     strictly as class 2.
     """
-    claimed = {c.program for c in given.cannot_determine}
+    # Both sides are restricted to SCORED_PROGRAMS. A model that abstains on Medicaid is
+    # neither credited nor punished for it: v0 does not score Medicaid, so an opinion
+    # about it - in either direction - is outside what this benchmark measures.
+    claimed = {c.program for c in given.cannot_determine} & set(SCORED_PROGRAMS)
     expected = set(deciding_programs) & set(SCORED_PROGRAMS)
 
     if truth_label is Determinability.INDETERMINATE:
@@ -121,29 +124,68 @@ def score_abstention(
 
 
 @_guard
+def score_exact_match(given: T1Answer, truth: T1Answer, tol: float = TOLERANCE) -> Scored:
+    """All-correct: every scored amount within tolerance, eligibility exact, periods exact.
+
+    This is headline metric (a) and it is deliberately unforgiving. SPEC.md 4 says partial
+    credit is *reported* but the headline is all-correct; a per-component average is the
+    number that flatters, so the headline must not be one.
+    """
+    amounts = score_amounts(given, truth, tol)
+    elig = score_eligibility(given, truth)
+    periods = score_periods(given, truth)
+    for part in (amounts, elig, periods):
+        if part.error:
+            return part
+    parts = {"amounts": amounts.value, "eligibility": elig.value, "periods": periods.value}
+    return Scored(
+        value=1.0 if all(v == 1.0 for v in parts.values()) else 0.0,
+        detail={"components": parts},
+    )
+
+
+# ------------------------------------------------------------------ the antihack GATE
+#
+# Antihack is a GATE, not a weighted component (CLAUDE.md, "Antihack is a gate"). A
+# response that fails a structural check has not made a scoreable attempt, and letting it
+# collect 95% of a weighted sum for the parts that happen to look fine rewards exactly the
+# degenerate behaviour the check exists to catch. Pass/fail is also the honest shape of
+# the thing being measured: "is this a real answer" is a yes/no question, not 5% of one.
+
+
+@_guard
 def score_antihack(
     given: T1Answer, truth: T1Answer, deciding_programs: tuple[str, ...] = ()
 ) -> Scored:
-    """Cheap structural checks against degenerate answers.
+    """Structural gate against degenerate answers. 1.0 = pass, 0.0 = gate failed.
 
     Not a substitute for the trivial baselines - those measure whether the benchmark is
     gameable, this only catches an individual answer that is obviously not an attempt.
     """
     # Abstaining on every scored program is CORRECT when every scored program genuinely
     # turns on the withheld fact. It is degenerate only when nothing is deciding.
-    claimed = {c.program for c in given.cannot_determine}
+    claimed = {c.program for c in given.cannot_determine} & set(SCORED_PROGRAMS)
+    amounts = {
+        "snap": (given.snap.benefit, truth.snap.benefit),
+        "eitc": (given.eitc.amount, truth.eitc.amount),
+        "ctc": (given.ctc.amount, truth.ctc.amount),
+    }
+    # A program the response abstained on has no meaningful amount, so its zero is not
+    # evidence of a degenerate answer. Without this exemption the gate would fail every
+    # correct abstention (whose amount fields are necessarily empty), which would make the
+    # abstention headline unmeasurable for exactly the answers it exists to measure.
+    answered = {k: v for k, v in amounts.items() if k not in claimed}
     flags = {
         "abstained_on_everything": (
             claimed >= set(SCORED_PROGRAMS) and not set(deciding_programs)
         ),
-        "all_amounts_zero": all(
-            v == 0.0 for v in (given.snap.benefit, given.eitc.amount, given.ctc.amount)
-        )
-        and not all(
-            v == 0.0 for v in (truth.snap.benefit, truth.eitc.amount, truth.ctc.amount)
-        ),
-        "negative_amount": any(
-            v < 0 for v in (given.snap.benefit, given.eitc.amount, given.ctc.amount)
-        ),
+        "all_amounts_zero": bool(answered)
+        and all(g == 0.0 for g, _ in answered.values())
+        and not all(t == 0.0 for _, t in answered.values()),
+        "negative_amount": any(g < 0 for g, _ in amounts.values()),
     }
-    return Scored(value=0.0 if any(flags.values()) else 1.0, detail=flags)
+    failed = sorted(k for k, v in flags.items() if v)
+    return Scored(
+        value=0.0 if failed else 1.0,
+        detail={"flags": flags, "failed": failed, "gate": "pass" if not failed else "fail"},
+    )

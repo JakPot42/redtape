@@ -28,6 +28,7 @@ from redtape.scoring.core import (
     score_amounts,
     score_antihack,
     score_eligibility,
+    score_exact_match,
     score_periods,
 )
 from redtape.scoring.parsing import ParseFailure, parse_answer
@@ -63,6 +64,10 @@ class T1Data(TaskData):
     withheld_fact: str = ""
     pair_id: str = ""
     """Set for deliberately paired cases so pair-consistency can be reported."""
+    pair_role: str = ""
+    """Which member of the pair: "with_disability" / "without_disability"."""
+    is_eligibility_flip: bool = False
+    """The withheld fact flips SNAP *eligibility*, not merely an amount."""
     engine_version: str = ""
     python_version: str = ""
 
@@ -103,11 +108,101 @@ class T1Task(Task[T1Data, State, T1TaskConfig]):
             trace.record_metric("scorer_error", 1.0)
         return scored.value
 
+    def _gate(self, trace: Trace) -> bool:
+        """The pass/fail filter that precedes all scoring.
+
+        Two conditions, both structural rather than substantive:
+
+        * **format compliance** - the reply parses into a valid `T1Answer`;
+        * **degenerate-answer detection** - `score_antihack` finds nothing.
+
+        A response failing either has not made a scoreable attempt, so it earns nothing on
+        any component. This is the change from Milestone 1, where antihack was 5% of a
+        weighted sum: a degenerate answer could bank the other 95%, which is precisely
+        backwards. Gating also keeps the composite honest, because the components now only
+        ever describe responses that were real attempts.
+
+        The gate result is cached on the trace so every reward sees one verdict.
+        """
+        cached = trace.info.get("_gate")
+        if cached is not None:
+            return cached
+
+        p = self._parsed(trace)
+        if not p.ok:
+            trace.info["_gate"] = False
+            trace.info["gate_failure"] = f"format:{p.failure.value}"
+            return False
+
+        scored = score_antihack(
+            p.answer, self.data.answer_key, tuple(self.data.deciding_programs)
+        )
+        self._record(trace, "antihack", scored)
+        passed = scored.ok and scored.value == 1.0
+        trace.info["_gate"] = passed
+        if not passed:
+            trace.info["gate_failure"] = "antihack:" + ",".join(
+                scored.detail.get("failed", []) or ["scorer_error"]
+            )
+        return passed
+
     # ---------------------------------------------------------------- metrics
     @metric
     async def parsed_ok(self, trace: Trace) -> float:
         """Format failures are reported SEPARATELY from wrong answers (SPEC 4)."""
         return 1.0 if self._parsed(trace).ok else 0.0
+
+    @metric
+    async def gate_passed(self, trace: Trace) -> float:
+        """Format compliance AND degenerate-answer detection, as a pass/fail filter."""
+        return 1.0 if self._gate(trace) else 0.0
+
+    @metric
+    async def antihack_pass(self, trace: Trace) -> float:
+        """Antihack alone, so a gate failure can be attributed to format or to hacking."""
+        p = self._parsed(trace)
+        if not p.ok:
+            return 0.0
+        s = score_antihack(p.answer, self.data.answer_key, tuple(self.data.deciding_programs))
+        return 1.0 if (s.ok and s.value == 1.0) else 0.0
+
+    # -------------------------------------------------- headline metric inputs
+    # The three headline numbers (CLAUDE.md, "Three headline metrics") are computed from
+    # these per-task metrics by eval/metrics.py. They are metrics, not rewards, because a
+    # headline must not move when a weight is retuned.
+
+    @metric
+    async def exact_match(self, trace: Trace) -> float:
+        """All-correct on this task. Headline (a) averages this over DETERMINATE tasks."""
+        if not self._gate(trace):
+            return 0.0
+        return self._record(
+            trace, "exact_match",
+            score_exact_match(self._parsed(trace).answer, self.data.answer_key,
+                              self.config.tolerance),
+        )
+
+    @metric
+    async def abstention_correct(self, trace: Trace) -> float:
+        """Fully right on the abstention decision. Headline (b) averages this over T1b."""
+        if not self._gate(trace):
+            return 0.0
+        s = score_abstention(
+            self._parsed(trace).answer,
+            Determinability(self.data.determinability),
+            tuple(self.data.deciding_programs),
+        )
+        return 1.0 if (s.ok and s.value == 1.0) else 0.0
+
+    @metric
+    async def is_determinate(self, trace: Trace) -> float:
+        """Task class, carried into the results file so headlines can be recomputed."""
+        return 1.0 if self.data.determinability == Determinability.DETERMINATE.value else 0.0
+
+    @metric
+    async def is_t1b(self, trace: Trace) -> float:
+        """A fact was withheld: indeterminate OR incomplete-determinate."""
+        return 0.0 if self.data.determinability == Determinability.DETERMINATE.value else 1.0
 
     @metric
     async def malformed_json(self, trace: Trace) -> float:
@@ -124,54 +219,60 @@ class T1Task(Task[T1Data, State, T1TaskConfig]):
         return 0.0
 
     # ---------------------------------------------------------------- rewards
-    @reward(weight=0.30)
+    #
+    # Weights sum to 1.0 over four components. Antihack is no longer among them - it is
+    # the gate above. Its vacated 0.05 was redistributed across amounts, eligibility and
+    # periods in proportion to their existing weights, holding **abstention at exactly
+    # 0.35**, because 0.35 is a deliberate signal about where the novelty of this
+    # benchmark lies and it should not drift as a side-effect of a bookkeeping change.
+    #
+    #     amounts       0.30 -> 0.325
+    #     eligibility   0.20 -> 0.215
+    #     periods       0.10 -> 0.110
+    #     abstention    0.35 -> 0.350   (unchanged, by decision)
+    #     antihack      0.05 -> gate
+    #
+    # The composite is reported but is NOT the headline. See eval/metrics.py.
+
+    @reward(weight=0.325)
     async def amounts(self, trace: Trace) -> float:
-        p = self._parsed(trace)
-        if not p.ok:
+        if not self._gate(trace):
             return 0.0
         return self._record(
             trace, "amounts",
-            score_amounts(p.answer, self.data.answer_key, self.config.tolerance),
+            score_amounts(self._parsed(trace).answer, self.data.answer_key,
+                          self.config.tolerance),
         )
 
-    @reward(weight=0.20)
+    @reward(weight=0.215)
     async def eligibility(self, trace: Trace) -> float:
-        p = self._parsed(trace)
-        if not p.ok:
+        if not self._gate(trace):
             return 0.0
-        return self._record(trace, "eligibility", score_eligibility(p.answer, self.data.answer_key))
+        return self._record(
+            trace, "eligibility",
+            score_eligibility(self._parsed(trace).answer, self.data.answer_key),
+        )
 
-    @reward(weight=0.10)
+    @reward(weight=0.110)
     async def periods(self, trace: Trace) -> float:
-        p = self._parsed(trace)
-        if not p.ok:
+        if not self._gate(trace):
             return 0.0
-        return self._record(trace, "periods", score_periods(p.answer, self.data.answer_key))
+        return self._record(
+            trace, "periods",
+            score_periods(self._parsed(trace).answer, self.data.answer_key),
+        )
 
-    @reward(weight=0.35)
+    @reward(weight=0.350)
     async def abstention(self, trace: Trace) -> float:
-        """The core of what v0 adds. Weighted highest of the four."""
-        p = self._parsed(trace)
-        if not p.ok:
+        """The core of what v0 adds. Weighted highest of the four, by decision."""
+        if not self._gate(trace):
             return 0.0
         return self._record(
             trace, "abstention",
             score_abstention(
-                p.answer,
+                self._parsed(trace).answer,
                 Determinability(self.data.determinability),
                 tuple(self.data.deciding_programs),
-            ),
-        )
-
-    @reward(weight=0.05)
-    async def antihack(self, trace: Trace) -> float:
-        p = self._parsed(trace)
-        if not p.ok:
-            return 0.0
-        return self._record(
-            trace, "antihack",
-            score_antihack(
-                p.answer, self.data.answer_key, tuple(self.data.deciding_programs)
             ),
         )
 
