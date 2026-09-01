@@ -327,15 +327,30 @@ def redact(results: dict) -> dict:
     return out
 
 
-def assert_publishable(results: dict, seed: int | None = None) -> None:
+def assert_publishable(results: dict, seed: int) -> None:
     """Raise `SeedLeak` unless `results` is free of the seed and everything derived from it.
 
-    Call this on anything about to leave the machine. When the seed is supplied the check
-    is a scan of the serialised text rather than a field checklist, deliberately: a
-    checklist only covers the fields somebody remembered, and the failure this guards
-    against is precisely a field nobody thought of.
+    Call this on anything about to leave the machine. The strongest check here is a scan of
+    the serialised text rather than a field checklist, deliberately: a checklist only covers
+    the fields somebody remembered, and the failure this guards against is precisely a field
+    nobody thought of.
+
+    **`seed` is required and may not be None.** It used to default to None, and every call
+    site left it there, so the text scan never ran on a single real invocation - the guard
+    reported success while performing only the weak half of its job. That is the exact
+    failure this project keeps finding (CLAUDE.md, "Every green signal must be checked for
+    what it is NOT measuring"), reproduced inside the check written to prevent it. A guard
+    that cannot scan is not a guard, so it now refuses to run rather than passing.
     """
-    if seed is not None and str(seed) in json.dumps(results):
+    if seed is None:
+        raise SeedLeak(
+            "assert_publishable requires the seed the results were produced from. Without "
+            "it only the field-name checks run, which cannot see a seed that landed "
+            "somewhere nobody listed - and passing would report a safety that was never "
+            "established."
+        )
+
+    if str(seed) in json.dumps(results):
         raise SeedLeak(
             "the seed appears somewhere in this results file. It must not be published. "
             "Use redact() and publish its output instead."

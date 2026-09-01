@@ -4,14 +4,19 @@ Everything - baselines, tool conditions, live models - is scored by calling the 
 `T1Task.score()` on a real `Trace`. There is no second scoring implementation for
 baselines, because a baseline scored by different code is not a baseline.
 
+Run it as a MODULE, not as a file path. `python eval/run_eval.py` puts `eval/` itself on
+sys.path instead of the repo root, so `from eval.baselines import ...` fails with
+ModuleNotFoundError - the invocation this docstring used to document never worked, and
+nobody found out because the file had never been run.
+
     # five trivial baselines on the dev split
-    ./.venv/bin/python eval/run_eval.py baselines --split data/dev/t1.jsonl
+    ./.venv/bin/python -m eval.run_eval baselines --split data/dev/t1.jsonl
 
     # the three tool conditions on a sample, using the scripted agent (no API key)
-    ./.venv/bin/python eval/run_eval.py conditions --split data/dev/t1.jsonl --sample 12
+    ./.venv/bin/python -m eval.run_eval conditions --split data/dev/t1.jsonl --sample 12
 
     # one live call to confirm the end-to-end path
-    ./.venv/bin/python eval/run_eval.py live --split data/dev/t1.jsonl --limit 1
+    ./.venv/bin/python -m eval.run_eval live --split data/dev/t1.jsonl --limit 1
 """
 
 from __future__ import annotations
@@ -26,7 +31,8 @@ from pathlib import Path
 
 from eval.baselines import BASELINES
 from eval.metrics import TaskRecord, assert_publishable, build_results, redact
-from eval.tools import calculate, tool_schema
+from eval.tools import UNKNOWN, calculate, tool_schema
+from redtape.config import load_dotenv
 
 MODEL = "claude-opus-5"
 
@@ -116,7 +122,7 @@ def score_one(task, reply: str) -> TaskRecord:
     )
 
 
-def write(results: dict, out: Path, *, seed: int | None = None) -> None:
+def write(results: dict, out: Path, *, seed: int) -> None:
     """Write the full results file, and beside it a redacted one that is safe to publish.
 
     The redacted sibling is written ALWAYS, not only for held-out runs. Making it
@@ -160,8 +166,40 @@ def baseline_agent(name):
 
 
 def oracle_agent(task) -> str:
-    """Answers from the baked key. Wiring check only - never a reported score."""
+    """Answers from the baked key, and NEVER abstains. Wiring check only.
+
+    Its abstention score is therefore capped well below 1.0 by construction - it is right
+    only on the incomplete-determinate cases, where answering is the correct move. Do not
+    read its number as a ceiling on the abstention metric; `perfect_agent` is that.
+    """
     return task.data.answer_key.model_dump_json()
+
+
+def perfect_agent(task) -> str:
+    """The CEILING check: answers from the key AND abstains on exactly the deciding
+    programs. Uses answer-key information, so it is never a reported score.
+
+    This exists because `oracle_agent` cannot establish what it appears to establish. Its
+    exact-match of 1.000 reads as "the scoring path is validated", but it never emits a
+    `cannot_determine`, so the abstention half - the novel claim of this whole benchmark -
+    was covered by nothing at all. A metric no achievable answer can score 1.0 on is broken,
+    and until this agent existed there was no way to find that out.
+
+    If this does not score 1.0 on all three headlines, the defect is in the scoring, not in
+    the agent. See CLAUDE.md, "Every green signal must be checked for what it is NOT
+    measuring".
+    """
+    from redtape.schemas import CannotDetermine, Determinability
+
+    answer = task.data.answer_key
+    if task.data.determinability == Determinability.INDETERMINATE.value:
+        answer = answer.model_copy(update={
+            "cannot_determine": tuple(
+                CannotDetermine(program=p, missing_fact=task.data.withheld_fact)
+                for p in task.data.deciding_programs
+            )
+        })
+    return answer.model_dump_json()
 
 
 def scripted_tool_agent(condition: str):
@@ -195,13 +233,42 @@ def scripted_tool_agent(condition: str):
         }
         if payload["people"]:
             payload["people"][0]["employment_income"] = r.monthly_earned * 12
-        if not allow_unknown and payload["housing_cost"] == "unknown":
+
+        # Mark the ONE fact the narrative does not state. This used to consider only
+        # housing_cost, so on the four other facts the generator withholds
+        # (p1.employment_income, p1.age, p1.immigration_status, p1.is_higher_ed_student)
+        # the unknowns condition silently degraded into an ordinary tool_equipped run and
+        # produced identical numbers - which read as "the third condition adds nothing"
+        # when the truth was "the third condition barely ran". The tool sweeps one fact per
+        # call and errors on more than one, which matches generation withholding exactly
+        # one, so first match wins.
+        if allow_unknown:
+            if r.any_age_withheld:
+                payload["people"][0]["age"] = UNKNOWN
+            elif r.any_income_withheld:
+                payload["people"][0]["employment_income"] = UNKNOWN
+            elif r.any_status_withheld:
+                payload["people"][0]["immigration_status"] = UNKNOWN
+
+        if not allow_unknown and payload["housing_cost"] == UNKNOWN:
             payload["housing_cost"] = 0.0
 
         out = calculate(payload, allow_unknown=allow_unknown)
         if "decides_programs" in out:
             abstain = out["decides_programs"]
-            payload["housing_cost"] = 0.0
+            # Fall back to the engine's own default for whichever fact was swept, so the
+            # numeric answer is still produced. Previously this reset housing_cost
+            # unconditionally, which left an "unknown" age or status in the payload and
+            # made the second call fail.
+            if payload["housing_cost"] == UNKNOWN:
+                payload["housing_cost"] = 0.0
+            for person in payload["people"]:
+                if person.get("age") == UNKNOWN:
+                    person["age"] = 40
+                if person.get("employment_income") == UNKNOWN:
+                    person["employment_income"] = 0.0
+                if person.get("immigration_status") == UNKNOWN:
+                    person["immigration_status"] = "CITIZEN"
             out = calculate(payload, allow_unknown=False)
         else:
             abstain = []
@@ -283,6 +350,19 @@ def live_agent(condition: str, model: str = MODEL, max_tool_turns: int = 6):
 # ------------------------------------------------------------------ entry points
 def run(tasks, agent, *, model: str, split: str, condition: str, out: Path, seed=None,
         extra=None):
+    # The seed is REQUIRED downstream by assert_publishable, and no call site was passing
+    # it. Deriving it from the tasks themselves means it cannot be forgotten again, and
+    # disagreement is a real problem worth stopping for: a results file covering two seeds
+    # has no single provenance to record or to redact against.
+    if seed is None:
+        seeds = {t.data.seed for t in tasks}
+        if len(seeds) != 1:
+            raise ValueError(
+                f"tasks span {len(seeds)} different seeds; a results file must describe "
+                f"exactly one split"
+            )
+        seed = seeds.pop()
+
     records = [score_one(t, agent(t)) for t in tasks]
     results = build_results(records, model=model, split=split, condition=condition,
                             seed=seed, extra=extra)
@@ -292,7 +372,8 @@ def run(tasks, agent, *, model: str, split: str, condition: str, out: Path, seed
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("mode", choices=["baselines", "conditions", "live", "oracle"])
+    ap.add_argument("mode",
+                    choices=["baselines", "conditions", "live", "oracle", "perfect"])
     ap.add_argument("--split", default="data/dev/t1.jsonl")
     ap.add_argument("--results", default="results")
     ap.add_argument("--limit", type=int, default=None)
@@ -316,6 +397,11 @@ def main():
         run(tasks, oracle_agent, model="oracle", split=split_name, condition="tool_less",
             out=results_dir / f"{split_name}.oracle.json")
 
+    elif args.mode == "perfect":
+        print("\nperfect (CEILING check, not a reported score)")
+        run(tasks, perfect_agent, model="perfect", split=split_name, condition="tool_less",
+            out=results_dir / f"{split_name}.perfect.json")
+
     elif args.mode == "conditions":
         for condition in CONDITIONS:
             print(f"\ncondition: {condition} (scripted agent)")
@@ -325,6 +411,9 @@ def main():
                 out=results_dir / f"{split_name}.scripted.{condition}.json")
 
     elif args.mode == "live":
+        # Auto-load .env so a key placed there is found. This NEVER creates, requests
+        # or writes a key - it only reads an environment the human has already set up.
+        load_dotenv()
         if not (os.environ.get("ANTHROPIC_API_KEY") or os.environ.get("ANTHROPIC_AUTH_TOKEN")):
             print("no ANTHROPIC_API_KEY / ANTHROPIC_AUTH_TOKEN in the environment.\n"
                   "Export one in this shell before running `live`. This script never "

@@ -116,6 +116,7 @@ class ReadNarrative:
     monthly_shelter: float
     any_age_withheld: bool
     any_income_withheld: bool
+    any_status_withheld: bool
 
 
 def _money_monthly(text: str) -> float | None:
@@ -141,6 +142,7 @@ def read_narrative(prompt: str) -> ReadNarrative:
     n_people = 0
     any_age_withheld = False
     any_income_withheld = False
+    any_status_withheld = False
 
     for line in prompt.splitlines():
         line = line.strip()
@@ -160,6 +162,18 @@ def read_narrative(prompt: str) -> ReadNarrative:
         elif not re.search(r"has no earnings|is not working|reports no wages", line):
             any_income_withheld = True
 
+        # Every phrasing the generator can emit for immigration status. A person line
+        # carrying none of them has had the status withheld - which is a DIFFERENT thing
+        # from stating CITIZEN, and the whole point of the unknowns condition is that the
+        # tool must not collapse the two the way the engine does (LIMITS 3).
+        if not re.search(
+            r"citizen|lawful permanent resident|green card holder|Cuban/Haitian|"
+            r"undocumented|without lawful immigration status|DACA|"
+            r"Temporary Protected Status|covered by TPS",
+            line, re.IGNORECASE,
+        ):
+            any_status_withheld = True
+
     shelter_stated = "shelter costs are" in prompt
     monthly_shelter = 0.0
     if shelter_stated:
@@ -177,6 +191,7 @@ def read_narrative(prompt: str) -> ReadNarrative:
         monthly_shelter=monthly_shelter,
         any_age_withheld=any_age_withheld,
         any_income_withheld=any_income_withheld,
+        any_status_withheld=any_status_withheld,
     )
 
 

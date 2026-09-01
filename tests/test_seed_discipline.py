@@ -220,8 +220,22 @@ def test_redaction_does_not_mutate_the_original():
 
 # ------------------------------------------------------------------- the guard has teeth
 def test_assert_publishable_rejects_an_unredacted_file():
+    """The seed is passed explicitly. Without it this test passed for the wrong reason -
+    the guard raising because it had no seed to scan with, not because it found a leak."""
     with pytest.raises(SeedLeak):
-        assert_publishable(_results())
+        assert_publishable(_results(), 998877665544332211)
+
+
+def test_assert_publishable_refuses_to_run_without_a_seed():
+    """A guard that cannot scan must not report success.
+
+    `seed` used to default to None and EVERY call site left it there, so the text scan
+    never ran once in real use - the check reported safety it had not established. This is
+    the standing principle (CLAUDE.md) reproduced inside the guard written to enforce it,
+    so the no-seed path is now an error rather than a quiet half-check.
+    """
+    with pytest.raises(SeedLeak, match="requires the seed"):
+        assert_publishable(redact(_results()), None)
 
 
 def test_assert_publishable_rejects_the_seed_hiding_in_an_unexpected_field():
