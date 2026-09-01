@@ -26,7 +26,16 @@ results/*.tmp.json
 # one typo away from being committed.
 .env.*
 
+# Raw results carry per-task identity (household_id, pair_id) and regenerate in
+# minutes. The .public.json sibling is the file meant to be read and quoted, so that
+# is the one we keep. This also means a raw file can never be committed by reflex.
+results/*.json
+!results/*.public.json
+
 # Held-out RESULTS carry the private seed: metrics.py writes run.seed verbatim,
 # and every household_id/pair_id embeds it (hh-{seed}-{index}). Publishable
 # aggregates are produced deliberately, never by committing a raw results file.
+#
+# LAST on purpose. It must override the .public.json re-inclusion above: a held-out
+# public file is still a held-out artifact and does not belong in the repository.
 results/*heldout*
