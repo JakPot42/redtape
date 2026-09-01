@@ -280,14 +280,24 @@ def scripted_tool_agent(condition: str):
             "tax_year": r.year,
             "housing_cost": (r.monthly_shelter * 12) if r.shelter_stated else "unknown",
             "dependent_care_cost": 0.0,
+            # One entry per person LINE. Building from r.ages dropped anyone whose age
+            # was withheld - which emptied the list entirely for a one-person household
+            # and crashed the engine with "No person found" - and misaligned the rest.
             "people": [
-                {"person_id": f"p{i + 1}", "age": age, "employment_income": 0.0,
-                 "immigration_status": "CITIZEN"}
-                for i, age in enumerate(r.ages)
+                {
+                    "person_id": p["person_id"],
+                    "age": p["age"] if p["age"] is not None else 40,
+                    "employment_income": (p["employment_income"]
+                                          if p["employment_income"] is not None else 0.0),
+                    "immigration_status": p["immigration_status"] or "CITIZEN",
+                }
+                for p in r.people
             ],
         }
-        if payload["people"]:
-            payload["people"][0]["employment_income"] = r.monthly_earned * 12
+        if not payload["people"]:
+            payload["people"] = [{"person_id": "p1", "age": 40,
+                                  "employment_income": 0.0,
+                                  "immigration_status": "CITIZEN"}]
 
         # Mark the ONE fact the narrative does not state. This used to consider only
         # housing_cost, so on the four other facts the generator withholds

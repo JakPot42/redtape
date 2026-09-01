@@ -117,6 +117,15 @@ class ReadNarrative:
     any_age_withheld: bool
     any_income_withheld: bool
     any_status_withheld: bool
+    people: tuple[dict, ...] = ()
+    """One entry per person line, IN ORDER, with None where the narrative states nothing.
+
+    `ages` cannot carry this: it holds only the ages that parsed, so a withheld age does
+    not leave a gap - it shifts every later age one position earlier and silently
+    reattaches it to the wrong person. And a one-person household with a withheld age
+    produces an empty tuple, which built a payload with no people at all and crashed the
+    engine with "No person found".
+    """
 
 
 def _money_monthly(text: str) -> float | None:
@@ -138,6 +147,7 @@ def read_narrative(prompt: str) -> ReadNarrative:
         mm, year = 1, 2025
 
     ages: list[int] = []
+    people: list[dict] = []
     monthly_earned = 0.0
     n_people = 0
     any_age_withheld = False
@@ -149,9 +159,15 @@ def read_narrative(prompt: str) -> ReadNarrative:
         if not line.startswith("Person p"):
             continue
         n_people += 1
+        person: dict = {"age": None, "employment_income": None,
+                        "immigration_status": None}
+        pid_m = re.match(r"Person (p\d+) ", line)
+        person["person_id"] = pid_m.group(1) if pid_m else f"p{n_people}"
+
         age_m = re.match(r"Person p\d+ is (\d+)", line)
         if age_m:
             ages.append(int(age_m.group(1)))
+            person["age"] = int(age_m.group(1))
         else:
             any_age_withheld = True
 
@@ -159,7 +175,10 @@ def read_narrative(prompt: str) -> ReadNarrative:
             got = _money_monthly(line[line.index("earns"):])
             if got is not None:
                 monthly_earned += got
-        elif not re.search(r"has no earnings|is not working|reports no wages", line):
+                person["employment_income"] = got * 12
+        elif re.search(r"has no earnings|is not working|reports no wages", line):
+            person["employment_income"] = 0.0
+        else:
             any_income_withheld = True
 
         # Every phrasing the generator can emit for immigration status. A person line
@@ -173,6 +192,10 @@ def read_narrative(prompt: str) -> ReadNarrative:
             line, re.IGNORECASE,
         ):
             any_status_withheld = True
+        else:
+            person["immigration_status"] = "CITIZEN"
+
+        people.append(person)
 
     shelter_stated = "shelter costs are" in prompt
     monthly_shelter = 0.0
@@ -192,6 +215,7 @@ def read_narrative(prompt: str) -> ReadNarrative:
         any_age_withheld=any_age_withheld,
         any_income_withheld=any_income_withheld,
         any_status_withheld=any_status_withheld,
+        people=tuple(people),
     )
 
 
