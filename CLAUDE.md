@@ -506,6 +506,27 @@ approved on the strength of it.
   that is the finding it exists to surface. Re-capturing to make the test pass deletes the
   evidence.
 
+### CI is green but not complete: 5 tests skip there
+
+The first fully green CI run read **202 passed, 5 skipped**, against 207 passed locally.
+The five are in `tests/test_env.py`, which needs `data/dev/t1_smoke.jsonl` — a **gitignored**
+file, so it never exists on a fresh checkout. Those are the tests that exercise the real
+`verifiers.v1` env and scoring path, which makes them among the more valuable in the suite.
+
+The workflow runs `pytest -rs` so the skips are always printed with their reason. That
+stops the gap being silent; it does not close it. **CI green currently means "202 of 207",
+and nobody should read it as more than that.**
+
+Two ways to close it, and it is a decision rather than an obvious fix:
+
+- **Build the smoke split as a CI step.** Keeps the artifact out of git, costs roughly
+  three extra minutes per run (the engine cold import dominates).
+- **Commit `data/dev/t1_smoke.jsonl`.** It is 28KB, deterministic, and built from the
+  *public* dev seed, so nothing about it is sensitive. It would mean revisiting the
+  `.gitignore` line that currently excludes it.
+
+Until one of those happens, this note is the record that the number is 202 and not 207.
+
 The old cross-*platform* claim is not re-established and will not be: `verifiers.v1` cannot
 import on Windows at all, so Linux is the only platform that can produce a shipping
 artifact. Determinism is now enforced across *versions* on one platform, which is the axis

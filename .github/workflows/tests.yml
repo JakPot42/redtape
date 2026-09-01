@@ -58,5 +58,11 @@ jobs:
       # No .env exists here, which is the point: the held-out tests assert that a build
       # with no seed STOPS. CI is the one environment guaranteed not to have the secret,
       # so it is the strongest place for that assertion to run.
+      # -rs reports the reason for every skip. The first green run here was
+      # "202 passed, 5 skipped" and the skips were invisible, which is the same shape as
+      # the LIMITS.md 5 problem this workflow was built to fix: a control that reads as
+      # complete while quietly not covering something. tests/test_env.py needs
+      # data/dev/t1_smoke.jsonl, which is gitignored and so never exists here - see the
+      # note in CLAUDE.md. Keep -rs so that stays visible rather than becoming folklore.
       - name: Tests
-        run: uv run pytest -v --durations=10
+        run: uv run pytest -rs --durations=10
