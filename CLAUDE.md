@@ -110,6 +110,54 @@ confident wrongness while running on undetectable confident greenness.
 
 ---
 
+## Build the environment before scaling generation **[decided]**
+
+`eval/` was written carefully, read carefully, and committed with an honest label saying it
+had never been run. Running it found **eight defects. Six were invisible to reading.** Two
+were not tooling bugs at all — they were product bugs that would have shipped in the
+benchmark.
+
+| # | defect | visible by reading? |
+|---|---|---|
+| 1 | `assert_publishable(seed=None)` defaulted, and every call site left it there — the text scan never ran once | no |
+| 2 | `redact()` missed `pair_consistency.pairs[].pair_id`, so the seed survived redaction | no — found only once #1 was fixed |
+| 3 | **`is_higher_ed_student` rendered only when true**, so a withheld boolean was textually identical to a stated false, making the eligibility-flip class unanswerable | no |
+| 4 | **A withheld age deleted the person** — empty payload, `"No person found"`, and silent age/person misalignment in multi-person households | no |
+| 5 | `tool_equipped_unknowns` marked only `housing_cost`, so all three conditions printed identical numbers | no |
+| 6 | `--sample 12` returned 8, and could split a matched pair | no |
+| 7 | the documented invocation (`python eval/run_eval.py`) never worked | yes, in principle |
+| 8 | `oracle_agent` never abstains, so it capped at 0.375 on the abstention headline while reading as validation | yes, in principle |
+
+**Why reading could not have caught most of these.** Every one of #1–#6 is an *absence*: a
+scan that did not happen, a field nobody enumerated, a clause the renderer never emitted, a
+person the parser never produced, a fact the agent never marked, a row the sampler never
+picked. Reading code shows what it does. These defects were all in what it did not do, and
+the artifact that would have revealed each one — the exception, the crash, the diverging
+number — is exactly the artifact that only exists at runtime.
+
+Note the pattern in #1 and #2: the broken guard *hid* the leak the guard existed to catch.
+Fixing the first immediately surfaced the second. Layered defects do not appear one at a
+time under inspection; they appear one at a time under execution.
+
+**The rule.** Build and exercise the environment end-to-end on a small split **before**
+scaling generation. Specifically:
+
+- Run every mode of the eval harness against a committed dev fixture before any large build.
+  Two 1200-task builds were killed mid-flight over defect #3; discovering it after
+  publication would have meant retracting the benchmark's headline class.
+- **Add a ceiling check whenever a metric is introduced.** `perfect_agent` scoring
+  1.000/1.000/1.000 is the only evidence that a metric is achievable at all rather than
+  accidentally unreachable, and `oracle_agent`'s 1.000 exact-match had been reading as that
+  evidence while covering none of the abstention half.
+- Treat "committed but never run" as **unvalidated**, and label it that way in the commit
+  message. It was labelled `NOT YET EXERCISED`; that label was accurate and it was right to
+  keep the code, but it is not a substitute for running it.
+
+This is the strongest evidence in the project's history for the standing principle above.
+Reading is how you form a hypothesis about code. Running it is how you find out.
+
+---
+
 ## Two hard rules
 
 These are requirements, not preferences. Violating either corrupts published numbers.

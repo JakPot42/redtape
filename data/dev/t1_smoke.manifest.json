@@ -7,7 +7,8 @@
     "indeterminate": 0.21,
     "incomplete_determinate": 0.125,
     "eligibility_flip": 0.08,
-    "pairs": 2
+    "pairs": 2,
+    "pair_differ_fraction": 0.5
   },
   "achieved": {
     "determinate": {
@@ -30,7 +31,7 @@
   "generation": {
     "candidates_consumed": 200,
     "candidates_discarded": 180,
-    "seconds": 286.3,
+    "seconds": 425.8,
     "buckets": {
       "eligibility_flip": {
         "target": 2,
@@ -49,7 +50,18 @@
         "achieved": 10
       }
     },
-    "pairs": 2
+    "pairs": 2,
+    "pair_mix": {
+      "differ": {
+        "target": 1,
+        "achieved": 1
+      },
+      "same": {
+        "target": 1,
+        "achieved": 1
+      }
+    },
+    "pair_candidates_discarded": 198
   },
   "policyengine_us": "1.821.4",
   "python": "3.13.15",

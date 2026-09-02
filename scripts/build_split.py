@@ -85,7 +85,7 @@ def _snap_eligibility_flips(label) -> bool:
 
 
 def _row(hh, narrative, key, label_value, deciding, withheld, *, pair_id="", pair_role="",
-         is_flip=False, unscored_deciding=()):
+         is_flip=False, unscored_deciding=(), pair_truth_differs=None):
     return {
         "prompt": narrative,
         "name": hh.household_id,
@@ -100,6 +100,10 @@ def _row(hh, narrative, key, label_value, deciding, withheld, *, pair_id="", pai
         "withheld_fact": withheld,
         "pair_id": pair_id,
         "pair_role": pair_role,
+        # Build-time metadata, stripped before a task is constructed: whether declaring the
+        # status actually moved the scored answer. Recorded so the achieved ratio is a
+        # measured property of the split rather than something re-derived downstream.
+        "pair_truth_differs": pair_truth_differs,
         "is_eligibility_flip": is_flip,
         "engine_version": key.engine_version,
         "python_version": key.python_version,
@@ -147,14 +151,38 @@ def build_pair(args) -> list[dict]:
         }
     )
 
-    out = []
+    keys = {}
     for hh, role in ((base, "without_disability"), (with_disability, "with_disability")):
-        key = compute(hh)
+        keys[role] = (hh, compute(hh))
+
+    differs = _scored_differs(keys["without_disability"][1].answer,
+                              keys["with_disability"][1].answer)
+
+    out = []
+    for role, (hh, key) in keys.items():
         out.append(
             _row(hh, render(hh), key, Determinability.DETERMINATE.value, (), "",
-                 pair_id=pair_id, pair_role=role)
+                 pair_id=pair_id, pair_role=role, pair_truth_differs=differs)
         )
     return out
+
+
+def _scored_differs(a, b, tol: float = 1.0) -> bool:
+    """Does ground truth differ across a pair, by the SAME rule the metric applies?
+
+    `eval/metrics.py::_scored_fields` compares snap.eligible, snap.benefit, eitc.amount and
+    ctc.amount, with a $1 tolerance on floats. Binning pairs by any other rule would let a
+    pair be filed as "differing" while `pair_consistency` scored it as identical, so the
+    two definitions are deliberately the same one.
+    """
+    if a.snap.eligible != b.snap.eligible:
+        return True
+    for x, y in ((a.snap.benefit, b.snap.benefit),
+                 (a.eitc.amount, b.eitc.amount),
+                 (a.ctc.amount, b.ctc.amount)):
+        if abs(x - y) > tol:
+            return True
+    return False
 
 
 def _pair_candidate(seed: int, index: int) -> bool:
@@ -169,7 +197,8 @@ def _pair_candidate(seed: int, index: int) -> bool:
     return hh.people[0].age is not None and hh.people[0].age >= 18 and (hh.housing_cost or 0) > 0
 
 
-def build(seed, n, targets, n_pairs, workers, chunk, max_candidates, log=print):
+def build(seed, n, targets, n_pairs, workers, chunk, max_candidates,
+          pair_differ_fraction=0.5, log=print):
     """Fill every bucket, then carve pairs out of the determinate budget."""
     n_pair_tasks = n_pairs * 2
     budget = {
@@ -228,21 +257,53 @@ def build(seed, n, targets, n_pairs, workers, chunk, max_candidates, log=print):
                 f"({discarded} discarded, {time.time() - t0:.0f}s) still short: {short}")
 
         # Pairs, from indices past the candidate stream so no household is reused.
-        pair_rows: list[dict] = []
+        #
+        # Filled into TWO buckets to an explicit ratio, because the ratio is what makes the
+        # metric discriminating and it must not be left to whatever the selector happens to
+        # produce. At 40 pairs selected only on "adult p1 with shelter costs", ground truth
+        # differed in 4 - so a baseline that never differs banked 36/40 = 0.900 for free and
+        # the metric's stated property, that neither always-differ nor never-differ can
+        # score well, was false as measured.
+        #
+        #   differing pairs     test whether the model tracks the mechanism;
+        #   non-differing pairs stop it learning "declared disability always changes it".
+        #
+        # Both are needed, so both are targets.
+        pair_buckets: dict[str, list] = {"differ": [], "same": []}
+        pair_budget = {
+            "differ": round(n_pairs * pair_differ_fraction),
+            "same": n_pairs - round(n_pairs * pair_differ_fraction),
+        }
         pair_index = index + chunk
-        limit = pair_index + max_candidates
-        while len(pair_rows) < n_pair_tasks and pair_index < limit:
-            wanted = (n_pair_tasks - len(pair_rows)) // 2
+        limit = pair_index + max_candidates * 4
+        pair_discarded = 0
+
+        def _pairs_short():
+            return {k: pair_budget[k] - len(pair_buckets[k])
+                    for k in pair_budget if len(pair_buckets[k]) < pair_budget[k]}
+
+        while _pairs_short() and pair_index < limit:
             cands = []
-            while len(cands) < wanted and pair_index < limit:
+            while len(cands) < chunk and pair_index < limit:
                 if _pair_candidate(seed, pair_index):
                     cands.append((seed, pair_index))
                 pair_index += 1
             if not cands:
                 break
             for pair in pool.imap(build_pair, cands, chunksize=1):
+                bucket = "differ" if pair[0]["pair_truth_differs"] else "same"
+                if len(pair_buckets[bucket]) < pair_budget[bucket]:
+                    pair_buckets[bucket].append(pair)
+                else:
+                    pair_discarded += 1
+            done = sum(len(v) for v in pair_buckets.values())
+            log(f"  pairs: {done}/{n_pairs} ({pair_discarded} discarded, "
+                f"{time.time() - t0:.0f}s) still short: {_pairs_short()}")
+
+        pair_rows: list[dict] = []
+        for bucket in ("differ", "same"):
+            for pair in pair_buckets[bucket]:
                 pair_rows.extend(pair)
-            log(f"  pairs: {len(pair_rows) // 2}/{n_pairs} ({time.time() - t0:.0f}s)")
 
     rows = []
     for k in ("determinate", "indeterminate", "incomplete_determinate", "eligibility_flip"):
@@ -256,6 +317,11 @@ def build(seed, n, targets, n_pairs, workers, chunk, max_candidates, log=print):
         "seconds": round(time.time() - t0, 1),
         "buckets": {k: {"target": budget[k], "achieved": len(accepted[k])} for k in budget},
         "pairs": len(pair_rows) // 2,
+        "pair_mix": {
+            k: {"target": pair_budget[k], "achieved": len(pair_buckets[k])}
+            for k in pair_budget
+        },
+        "pair_candidates_discarded": pair_discarded,
     }
     return rows, stats
 
@@ -272,7 +338,8 @@ def with_hashes(rows):
     cfg = T1TaskConfig()
     out = []
     for row in rows:
-        payload = {k: v for k, v in row.items() if k != "unscored_deciding_programs"}
+        payload = {k: v for k, v in row.items()
+                   if k not in ("unscored_deciding_programs", "pair_truth_differs")}
         task = T1Task(T1Data.model_validate(payload), cfg)
         out.append({**row, "task_hash": task.hash, "task_key": task.key})
     return out
@@ -289,7 +356,11 @@ def main():
     ap.add_argument("--indeterminate", type=float, default=0.15)
     ap.add_argument("--incomplete", type=float, default=0.12)
     ap.add_argument("--flip", type=float, default=0.08)
-    ap.add_argument("--pairs", type=int, default=40)
+    ap.add_argument("--pairs", type=int, default=200,
+                    help="matched disability pairs. 40 gave roughly +/-8pp on a headline "
+                         "metric; 200 is near +/-3.5pp.")
+    ap.add_argument("--pair-differ-fraction", type=float, default=0.5,
+                    help="fraction of pairs where ground truth actually differs")
     ap.add_argument("--workers", type=int, default=max(1, (os.cpu_count() or 2) - 1))
     ap.add_argument("--chunk", type=int, default=200)
     ap.add_argument("--max-candidates", type=int, default=20_000)
@@ -333,6 +404,7 @@ def main():
 
     rows, stats = build(seed, args.n, targets, args.pairs, args.workers, args.chunk,
                         args.max_candidates,
+                        pair_differ_fraction=args.pair_differ_fraction,
                         log=lambda m: print(m, flush=True))
 
     # The standing invariant. A scope change makes this fail the build, loudly, rather
@@ -365,6 +437,7 @@ def main():
             "incomplete_determinate": args.incomplete,
             "eligibility_flip": args.flip,
             "pairs": args.pairs,
+            "pair_differ_fraction": args.pair_differ_fraction,
         },
         "achieved": {k: {"n": v, "fraction": round(v / n, 4)} for k, v in sorted(mix.items())},
         "generation": stats,

@@ -345,6 +345,50 @@ def rules_only(prompt: str) -> T1Answer:
                    abstain=abstain)
 
 
+# ------------------------------------------------------- pair-consistency diagnostics
+#
+# These are NOT model baselines and are not among the five reported. They exist to test the
+# METRIC rather than a model: `pair_consistency` claims that neither always-differ nor
+# never-differ can score well, and that claim has to be checked rather than asserted.
+#
+# With ground truth differing in half the pairs, both should land near 0.5. If either banks
+# a high score the metric is not discriminating, whatever its definition says.
+
+_VETERAN = "permanently disabled veteran"
+
+
+def pair_never_differ(prompt: str) -> T1Answer:
+    """Identical answer for both members of every pair.
+
+    `snap_estimate` keys on income, size and shelter and never on disability, so the two
+    narratives - which differ only in the veteran clause - produce the same answer by
+    construction.
+    """
+    r = read_narrative(prompt)
+    eligible, snap = snap_estimate(r)
+    return _answer(r, eligible=eligible, snap=snap, eitc=0.0, ctc=ctc_estimate(r))
+
+
+def pair_always_differ(prompt: str) -> T1Answer:
+    """Always invents a difference where the veteran clause appears.
+
+    It moves SNAP by more than the $1 tolerance whenever the status is declared, so it
+    differs on exactly the pairs a never-differ baseline does not - and is wrong on every
+    pair where ground truth does not move.
+    """
+    r = read_narrative(prompt)
+    eligible, snap = snap_estimate(r)
+    if _VETERAN in prompt:
+        snap = snap + 100.0
+    return _answer(r, eligible=eligible, snap=snap, eitc=0.0, ctc=ctc_estimate(r))
+
+
+PAIR_DIAGNOSTICS = {
+    "pair_never_differ": pair_never_differ,
+    "pair_always_differ": pair_always_differ,
+}
+
+
 BASELINES = {
     "always_abstain": always_abstain,
     "never_abstain": never_abstain,

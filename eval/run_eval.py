@@ -29,7 +29,7 @@ import random
 import sys
 from pathlib import Path
 
-from eval.baselines import BASELINES
+from eval.baselines import BASELINES, PAIR_DIAGNOSTICS
 from eval.metrics import TaskRecord, assert_publishable, build_results, redact
 from eval.tools import UNKNOWN, calculate, tool_schema
 from redtape.config import load_dotenv
@@ -60,7 +60,8 @@ def load_tasks(path: str, limit: int | None = None, sample: int | None = None,
     return [
         T1Task(T1Data.model_validate({k: v for k, v in r.items()
                                       if k not in ("task_hash", "task_key",
-                                                   "unscored_deciding_programs")}), cfg)
+                                                   "unscored_deciding_programs",
+                                                   "pair_truth_differs")}), cfg)
         for r in rows
     ]
 
@@ -211,8 +212,8 @@ def write(results: dict, out: Path, *, seed: int) -> None:
 
 
 # ------------------------------------------------------------------ agents
-def baseline_agent(name):
-    fn = BASELINES[name]
+def baseline_agent(name, registry=None):
+    fn = (registry or BASELINES)[name]
 
     def agent(task) -> str:
         return fn(task.data.prompt).model_dump_json()
@@ -438,7 +439,8 @@ def run(tasks, agent, *, model: str, split: str, condition: str, out: Path, seed
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("mode",
-                    choices=["baselines", "conditions", "live", "oracle", "perfect"])
+                    choices=["baselines", "conditions", "live", "oracle", "perfect",
+                             "pairdiag"])
     ap.add_argument("--split", default="data/dev/t1.jsonl")
     ap.add_argument("--results", default="results")
     ap.add_argument("--limit", type=int, default=None)
@@ -461,6 +463,16 @@ def main():
         print("\noracle (wiring check, not a reported score)")
         run(tasks, oracle_agent, model="oracle", split=split_name, condition="tool_less",
             out=results_dir / f"{split_name}.oracle.json")
+
+    elif args.mode == "pairdiag":
+        # Tests the METRIC, not a model. Both of these should land near 0.5 once ground
+        # truth differs in half the pairs; a high score for either means pair_consistency
+        # is still not discriminating.
+        for name, agent in PAIR_DIAGNOSTICS.items():
+            print(f"\npair diagnostic: {name}")
+            run(tasks, baseline_agent(name, PAIR_DIAGNOSTICS), model=f"pairdiag:{name}",
+                split=split_name, condition="tool_less",
+                out=results_dir / f"{split_name}.pairdiag.{name}.json")
 
     elif args.mode == "perfect":
         print("\nperfect (CEILING check, not a reported score)")
