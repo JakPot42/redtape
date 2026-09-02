@@ -3,7 +3,10 @@
 **Status: draft, not yet filed.** Prepared for review before any issue or pull request is
 opened with the PolicyEngine maintainers.
 
-**Package:** `policyengine-us==1.821.4` (with `policyengine-core==3.31.0`)
+**Package:** `policyengine-us==1.821.4` (with `policyengine-core==3.31.1`)
+**Also confirmed on:** `policyengine-core==3.31.0` — we pinned back to 3.31.0, captured a
+five-household golden master of oracle output, moved to 3.31.1 and re-ran it. Output is
+byte-identical across the bump, so nothing below depends on which of the two you use.
 **Reported by:** the Redtape project, 2026-08-30
 **Reproduction:** `scripts/probe_hr1.py` in this repository
 **Severity:** moderate — over-states SNAP benefits for a specific, identifiable
@@ -200,13 +203,24 @@ inputs exist.
 - We have not verified whether the maintainers already know about this.
 - We are not asserting the engine is wrong about anything else. Every other figure we
   checked against published sources matched exactly:
-  **33/33 SNAP comparisons** against CDSS, FNS and county-published tables (FFY2025 and
-  FFY2026 maximum allotments, standard deductions, shelter caps, homeless shelter
-  deduction, California SUA for both fiscal years, and end-to-end benefit calculations for
-  household sizes 1–6 including the dependent care channel — among them CBPP's published
-  FY2026 worked example, reproduced to the cent), and **34/34 EITC and CTC checks**
-  against IRS and Tax Foundation figures across the phase-in, plateau and phase-out
-  regions for 0, 1, 2 and 3+ children.
+  **22/22 SNAP comparisons** against CDSS, FNS and county-published tables, and
+  **34/34 EITC and CTC checks** against IRS and Tax Foundation figures across the
+  phase-in, plateau and phase-out regions for 0, 1, 2 and 3+ children.
+
+  We report the SNAP figure by kind rather than as a bare total, because the three are
+  not equally strong evidence:
+
+  | kind | n | what it tests |
+  |---|---|---|
+  | FORMULA | 9 | calculation logic — full hand calculation from the published tables and formula, household sizes 1–6 |
+  | ALLOTMENT | 8 | parameter loading — a zero-income household must receive the published maximum allotment, sizes 1–8 |
+  | PARAMETER | 5 | engine parameter values read directly against published figures |
+
+  Only the 9 FORMULA cases exercise calculation logic; the ALLOTMENT cases would pass
+  even if the deduction logic were wrong. Among the FORMULA cases is CBPP's published
+  FY2026 worked example, reproduced to the cent. FORMULA cases are restricted to months
+  before 2025-07-04 — after that date they would be comparing the engine against the
+  rules this report says it does not implement.
 - Where we initially suspected a divergence and were wrong, the engine was right and we
   were not: ABAWD time limits do not bind in California for two correct reasons we had not
   accounted for, and the model cites the specific CDSS letter for one of them.
