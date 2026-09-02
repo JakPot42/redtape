@@ -562,9 +562,52 @@ was published and no number is retracted. The window closed before it cost anyth
 The seed established on 2026-09-01 is an 18-digit CSPRNG value (`secrets`), stored in
 `.env` at repo root, mode `0600`. Its fingerprint is
 
-    sha256(str(seed))[:16] = ab72ee672111f7fe
+    sha256(str(seed))[:16] = b80dea37628d57fe   # current, from 2026-09-02
+                              ab72ee672111f7fe   # VOID, rotated out
 
 Quote the **fingerprint** to identify which seed a run used. Never quote the seed.
+
+### Rotated 2026-09-02 after partial exposure **[decided]**
+
+**The seed established on 2026-09-01 was rotated on 2026-09-02 and is void.** So is
+**any held-out split generated before the 2026-09-02 rotation**, in addition to anything
+generated before the 2026-09-01 establishment. The held-out split was rebuilt from the new
+seed the same day.
+
+| | fingerprint |
+|---|---|
+| established 2026-09-01, now VOID | `ab72ee672111f7fe` |
+| current, from 2026-09-02 | `b80dea37628d57fe` |
+
+**What was exposed, precisely.** Not the seed. While verifying that `.env` loaded, a
+household id was printed truncated — `hh-72959...` — as evidence that the id embeds the
+seed. Since `household_id` is `f"hh-{seed}-{index:05d}"`, that disclosed the **leading 5 of
+18 digits**, cutting the search space from ~9x10^17 to ~10^13. Confirmed on rotation: the
+old seed did begin `72959`.
+
+10^13 is not trivially brute-forceable, and reconstructing a split from a candidate seed
+requires a full oracle pass per household, so the practical exposure was small. Rotation
+was still the right call: the value of a private seed is entirely in its being private, a
+partial disclosure is not a *kind* of privacy, and the file exists precisely to keep this
+value out of transcripts.
+
+**The mistake was mine and it was a demonstration, not an accident of tooling.** The
+redaction machinery worked exactly as designed throughout — `redact()` stripped the seed
+from every results file, `assert_publishable` scanned for it, `.gitignore` kept `.env` out
+of every commit, and no seed-derived identifier ever reached the repository. The leak
+happened in a place none of that covers: **a diagnostic print in a terminal.**
+
+Two rules follow, and they are the point of this entry:
+
+- **Never print a seed-derived identifier, truncated or not.** `household_id`, `pair_id`,
+  and any future `f"...{seed}..."` string are seed material. A prefix is seed material.
+  Use `seed_fingerprint()`, which exists for exactly this and discloses nothing.
+- **Redaction covers artifacts, not conversation.** Every guard in this repo protects files
+  that get written and committed. None of them sees a `print()`. The channel with no
+  automated guard on it is the one a human is watching, which makes it the channel where
+  discipline has to be manual — and the one where a plausible-looking, "obviously safe"
+  truncation slips through. Same pathology as everywhere else in this project: the
+  protection covered the region everyone was looking at, and the gap was outside it.
 
 ### The three consequences, all now closed
 
