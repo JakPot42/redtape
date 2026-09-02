@@ -96,6 +96,41 @@ uv pip install --python .venv/bin/python -e ".[dev]"
    2025-10-31 effective dates. Disclosed as a scope limitation with the affected months
    named, not scored against the oracle. `docs/LIMITS.md` §11.
 
+## Pair-consistency: both degenerate strategies fail, and they fail differently
+
+One of the three headline metrics is **pair consistency**, scored over matched pairs of
+households that are identical except for whether p1 declares a qualifying disability
+(`is_permanently_disabled_veteran`, which establishes elderly-or-disabled status for SNAP
+under 7 CFR 271.2 without adding any income).
+
+Each split carries **200 pairs, half of which ground truth actually separates** — an
+explicit `--pair-differ-fraction` recorded in the manifest as both target and achieved, not
+whatever the household sampler happened to produce.
+
+A pair counts as consistent only when the model's **difference pattern matches ground
+truth's**. Both failure directions are scored as failures: giving identical answers to a
+pair that differs, and inventing a difference in a pair that does not.
+
+That produces a property worth stating explicitly, because it is stronger than "neither
+strategy wins" and it is easy to assume the two are symmetric:
+
+| strategy | pair consistency |
+|---|---|
+| never differ (identical answers to both members) | **0.495** |
+| always differ (perturb whenever the status is declared) | **0.380** |
+| answers correctly and differs correctly (ceiling) | **1.000** |
+
+Never-differ lands at chance, which is what a 50/50 split implies. **Always-differ scores
+*below* chance, and that is by design rather than an artifact.** Because consistency
+requires matching the *shape* of the difference and not merely its presence, a strategy that
+invents a difference fails on the half where truth does not move *and* on much of the half
+where it does — the difference it invents is the wrong one. Guessing "these should differ"
+is therefore worse than never guessing at all.
+
+This is what stops the metric from being gameable in either direction, and it is why the
+number is reported over 200 pairs rather than the 40 used during development: 40 pairs
+carries roughly ±8pp, which is too coarse to distinguish 0.495 from 0.380.
+
 ## Rules table confidence
 
 10 rules · high **0** · medium **6** · low **4** · scored (excludes `low`) **6**

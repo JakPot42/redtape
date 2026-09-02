@@ -732,3 +732,50 @@ will catch the next instance, but applying it retroactively did not reveal a thi
 matching value types. A gross-versus-received pair under an unrelated name would still
 pass. It narrows the class; it does not close it.
 
+
+## 24. Pair-phase cost, and a retracted "discrepancy"
+
+**Planning numbers.** Declaring `is_permanently_disabled_veteran` on p1 moves the scored
+answer for roughly **22%** of pair candidates. Filling 200 pairs at a 50/50 differ ratio
+consumes about **600 pair candidates** (1,200 oracle calls) and takes about **325 seconds**
+on three workers, uncontended.
+
+**A retraction, recorded because the mistake is more instructive than the number.** An
+earlier session report claimed the differ rate was ~3% against a pre-build probe's ~26%,
+called that an unexplained 8x gap, and recommended 3% for planning. **There is no gap. The
+3% was an arithmetic error**, and both the "finding" and the cost figure derived from it
+were wrong.
+
+What went wrong: the candidate count was inferred from elapsed wall-time rather than read
+from the `pair_candidates_discarded` counter the builder already emits. The wall-time was
+itself inflated, because the dev build's pair phase (4,021s) ran while the full test suite
+and other eval jobs were competing for the same four cores; the held-out build, run
+uncontended, took 325s for identical work.
+
+Three measurements of the same quantity, once computed correctly, agree:
+
+| measurement | differ rate |
+|---|---|
+| `probe_pair_rate.py`, 150 households | 26% |
+| direct comparison, 40 households per index range | 18-30% |
+| the real build, chunks 1-2 before the bucket filled | 22.5% |
+
+Two candidate explanations for the phantom gap were tested and eliminated before the
+arithmetic error was found, and both results are worth keeping:
+
+- **Tolerance is not a factor.** Comparing rounded values exactly and applying the metric's
+  $1 tolerance produce *identical* differ counts in both index ranges — zero pairs differ
+  by less than a dollar. The two comparison rules agree completely on this data.
+- **`declared_statuses` replacement is not a factor.** `build_pair` replaces p1's
+  `declared_statuses` rather than appending, which would perturb a second channel in any
+  household that already declared a benefit. **Zero of 300** households in the pair index
+  range declare anything on p1, so there is nothing to overwrite. The concern is void as
+  the generator currently stands - but it is latent, and would become real if the generator
+  ever starts declaring benefits on p1.
+
+**The lesson, which is the reason this section exists.** The builder emits an exact
+counter; the report used an estimate derived from a timer that was measuring something else
+(CPU contention). That is this project's own recurring pathology - a plausible number
+standing where the real one belongs, with nothing raising - applied to our own reporting
+rather than to our code. Read the counter. See CLAUDE.md, "Every green signal must be
+checked for what it is NOT measuring."
