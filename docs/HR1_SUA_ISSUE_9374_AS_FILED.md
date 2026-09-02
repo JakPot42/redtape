@@ -1,24 +1,11 @@
-# PolicyEngine divergence report: HR 1 SUA changes not implemented for California
-
-**Status: FILED 2026-09-02** as
-[PolicyEngine/policyengine-us#9374](https://github.com/PolicyEngine/policyengine-us/issues/9374).
-
-Filed as ONE issue rather than two. The offer to split the SUA and immigrant-eligibility
-divergences is kept in the text below and left to the maintainers, but they were submitted
-together deliberately: the strongest claim here is structural - HR 1's SNAP provisions are
-implemented for ABAWD work requirements and not for either the SUA or immigrant
-eligibility - and that pattern is only visible when both appear side by side.
-
-The filed version is self-contained: it inlines a standalone reproduction depending only on
-`policyengine-us`, rather than pointing at `scripts/probe_hr1.py` in this repository, which
-maintainers cannot read while it is private.
-
 **Package:** `policyengine-us==1.821.4` (with `policyengine-core==3.31.1`)
 **Also confirmed on:** `policyengine-core==3.31.0` — we pinned back to 3.31.0, captured a
 five-household golden master of oracle output, moved to 3.31.1 and re-ran it. Output is
 byte-identical across the bump, so nothing below depends on which of the two you use.
-**Reported by:** the Redtape project, 2026-08-30
-**Reproduction:** `scripts/probe_hr1.py` in this repository
+**Reported by:** Jak Potvin, 2026-09-02 (found while building a public-benefits
+evaluation benchmark that uses policyengine-us as its ground-truth oracle)
+**Reproduction:** self-contained script at the end of this issue — depends only on
+`policyengine-us`, no other code required
 **Severity:** moderate — over-states SNAP benefits for a specific, identifiable
 population in a bounded month range; no crash, no obviously wrong output.
 
@@ -239,3 +226,144 @@ Those points are the reason we think this report is worth making. The engine is 
 current and well-sourced almost everywhere we looked, which is exactly what makes a
 narrow, undocumented gap costly: a downstream user has every reason to trust it and no
 signal telling them where not to.
+
+---
+
+## Appendix: self-contained reproduction
+
+Depends only on `policyengine-us`. No other code required.
+
+```bash
+pip install policyengine-us==1.821.4
+python repro.py
+```
+
+```python
+"""Self-contained reproduction: HR 1 SUA changes not implemented for California.
+
+Depends only on policyengine-us. No third-party code.
+
+    pip install policyengine-us==1.821.4
+    python repro.py
+"""
+
+from policyengine_us import CountryTaxBenefitSystem, Simulation
+
+MONTHS = ["2025-05", "2025-06", "2025-07", "2025-08",
+          "2025-09", "2025-10", "2025-11", "2025-12"]
+
+
+def household(age, disabled=False):
+    """One adult, CA, $12k/yr earned, $10.8k/yr shelter, NO heating/cooling expense."""
+    sit = {
+        "people": {
+            "p1": {
+                "age": {"2025": age},
+                "employment_income": {"2025": 12_000},
+                "immigration_status": {"2025": "CITIZEN"},
+                "is_disabled": {"2025": disabled},
+            }
+        },
+        "tax_units": {"tu": {"members": ["p1"]}},
+        "families": {"f": {"members": ["p1"]}},
+        "spm_units": {
+            "s": {
+                "members": ["p1"],
+                "housing_cost": {"2025": 10_800},
+                # The households the published rules withdraw the SUA from are exactly
+                # those with NO separately billed heating or cooling expense.
+                "has_heating_cooling_expense": {"2025": False},
+            }
+        },
+        "households": {"h": {"members": ["p1"], "state_name": {"2025": "CA"}}},
+        "marital_units": {"m": {"members": ["p1"]}},
+    }
+    return Simulation(situation=sit)
+
+
+print("A. The California parameter, across both HR 1 effective dates")
+print("   gov.usda.snap.income.deductions.utility.always_standard\n")
+P = CountryTaxBenefitSystem().parameters
+node = P.gov.usda.snap.income.deductions.utility.always_standard
+for instant in ("2025-05-01", "2025-07-05", "2025-10-01", "2025-11-01"):
+    at = node(instant)
+    ca = at._children.get("CA") if hasattr(at, "_children") else at
+    print(f"   {instant}   CA = {ca}")
+
+print("\nB. snap_utility_allowance, household with NO heating/cooling expense")
+print("   Published rules withdraw the SUA from non-elderly, non-disabled households")
+print("   from 2025-07-04. Expect a change at July. There is none.\n")
+print(f"   {'month':<10}{'non-elderly/non-disabled':>26}{'elderly (67)':>16}{'disabled (45)':>16}")
+for m in MONTHS:
+    a = household(35).calculate("snap_utility_allowance", m)[0]
+    b = household(67).calculate("snap_utility_allowance", m)[0]
+    c = household(45, disabled=True).calculate("snap_utility_allowance", m)[0]
+    mark = "  <-- HR 1 date" if m in ("2025-07", "2025-10") else ""
+    print(f"   {m:<10}{a:>26,.2f}{b:>16,.2f}{c:>16,.2f}{mark}")
+
+print("\nC. snap_utility_allowance_type for the non-elderly, non-disabled household")
+for m in ("2025-06", "2025-08", "2025-11"):
+    sim = household(35)
+    t = sim.calculate("snap_utility_allowance_type", m).decode_to_str()[0]
+    print(f"   {m}  ->  {t}")
+
+print("\nD. Is the SUAS / Heat-and-Eat mechanism represented at all?")
+names = CountryTaxBenefitSystem().variables
+print(f"   variables matching 'suas'          : {[n for n in names if 'suas' in n.lower()]}")
+print(f"   CA LIHEAP / Heat-and-Eat variables : "
+      f"{[n for n in names if 'liheap' in n.lower() and n.startswith('ca_')]}")
+print(f"   HR 1-aware variables               : "
+      f"{[n for n in names if 'hr1' in n.lower()]}")
+
+print("\nExpected under the published rules: the first column drops from 2025-07 onward,")
+print("while the elderly and disabled columns do not. Observed: all three are identical")
+print("in every month, and the only movement is the FFY2025->FFY2026 COLA in October.")
+```
+
+<details>
+<summary>Output on <code>policyengine-us==1.821.4</code> / <code>policyengine-core==3.31.1</code> / CPython 3.13.15</summary>
+
+```
+A. The California parameter, across both HR 1 effective dates
+   gov.usda.snap.income.deductions.utility.always_standard
+
+   2025-05-01   CA = True
+   2025-07-05   CA = True
+   2025-10-01   CA = True
+   2025-11-01   CA = True
+
+B. snap_utility_allowance, household with NO heating/cooling expense
+   Published rules withdraw the SUA from non-elderly, non-disabled households
+   from 2025-07-04. Expect a change at July. There is none.
+
+   month       non-elderly/non-disabled    elderly (67)   disabled (45)
+   2025-05                       645.00          645.00          645.00
+   2025-06                       645.00          645.00          645.00
+   2025-07                       645.00          645.00          645.00  <-- HR 1 date
+   2025-08                       645.00          645.00          645.00
+   2025-09                       645.00          645.00          645.00
+   2025-10                       663.00          663.00          663.00  <-- HR 1 date
+   2025-11                       663.00          663.00          663.00
+   2025-12                       663.00          663.00          663.00
+
+C. snap_utility_allowance_type for the non-elderly, non-disabled household
+   2025-06  ->  SUA
+   2025-08  ->  SUA
+   2025-11  ->  SUA
+
+D. Is the SUAS / Heat-and-Eat mechanism represented at all?
+   variables matching 'suas'          : []
+   CA LIHEAP / Heat-and-Eat variables : ['ca_riv_liheap_eligible', 'ca_riv_liheap_countable_income']
+   HR 1-aware variables               : ['is_snap_abawd_hr1_in_effect']
+```
+
+</details>
+
+---
+
+Happy to open a PR for the `always_standard` time-varying change and the
+elderly-or-disabled carve-out if that would be useful — the SUAS three-part test and the
+certification-date dependency are the parts I would want maintainer guidance on before
+attempting.
+
+— Jak Potvin (jak.potvin@gmail.com)

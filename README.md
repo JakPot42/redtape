@@ -183,7 +183,8 @@ granted the full Standard Utility Allowance unconditionally — including the no
 non-disabled households the published rules withdraw it from. The over-statement is bounded
 by 30% of the allowance, so roughly $194–$199/month. Reported upstream in
 [`docs/HR1_SUA_DIVERGENCE.md`](docs/HR1_SUA_DIVERGENCE.md), with evidence, affected month
-ranges and a proposed fix. **Consequence adopted:** formula-validation cases are restricted
+ranges and a proposed fix, and **filed upstream as
+[PolicyEngine/policyengine-us#9374](https://github.com/PolicyEngine/policyengine-us/issues/9374)**. **Consequence adopted:** formula-validation cases are restricted
 to months before 2025-07-04, and no T1b case is generated that turns on SUA entitlement in
 the affected window. `docs/LIMITS.md` §11.
 
