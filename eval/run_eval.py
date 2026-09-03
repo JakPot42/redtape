@@ -486,6 +486,45 @@ def live_agent(condition: str, model: str = MODEL, max_tool_turns: int = 6):
 
 
 # ------------------------------------------------------------------ entry points
+def cached_subset(tasks, model: str, condition: str = "tool_less"):
+    """The tasks whose response is already cached, and - for pairs - only whole ones.
+
+    A partially-fetched run cannot be scored as if it were complete. `pair_consistency`
+    counts a pair with a missing member as INCONSISTENT, so scoring a 94%-complete run
+    would report the missing 6% as model failures and depress the pair headline by the
+    fetch shortfall rather than by anything the model did. Dropping incomplete pairs keeps
+    the metric honest about what it measured; the reduced `n_pairs` is what tells the
+    reader the run was partial.
+    """
+    from redtape.envs.t1_eligibility import SYSTEM_PROMPT
+
+    allow_unknown = condition == "tool_equipped_unknowns"
+    tools = ([tool_schema(allow_unknown=allow_unknown)]
+             if condition != "tool_less" else [])
+    params = {"max_tokens": 8_000, "thinking": {"type": "adaptive"},
+              "output_config": {"effort": "high"}}
+
+    def cached(t):
+        k = cache_key(model=model, system=SYSTEM_PROMPT, prompt=t.data.prompt,
+                      tools=tools, params=params)
+        return cache_get(k, partition(t.data.seed)) is not None
+
+    kept = [t for t in tasks if cached(t)]
+
+    # Drop any pair that lost a member, or the metric reports a fetch gap as a model failure.
+    by_pair = {}
+    for t in kept:
+        if t.data.pair_id:
+            by_pair.setdefault(t.data.pair_id, []).append(t)
+    broken = {pid for pid, members in by_pair.items() if len(members) != 2}
+    kept = [t for t in kept if not (t.data.pair_id and t.data.pair_id in broken)]
+
+    dropped = len(tasks) - len(kept)
+    print(f"  cached-only: scoring {len(kept)}/{len(tasks)} tasks "
+          f"({dropped} not cached, incl. {len(broken)} incomplete pairs dropped)")
+    return kept
+
+
 def prewarm(tasks, agent, *, workers: int = 8, log_every: int = 25) -> None:
     """Fetch every response concurrently into the cache, then return.
 
@@ -572,6 +611,9 @@ def main():
     ap.add_argument("--model", default=MODEL)
     ap.add_argument("--progress-every", type=int, default=25,
                     help="print a running cost line every N tasks")
+    ap.add_argument("--cached-only", action="store_true",
+                    help="score only tasks already in the cache, dropping pairs that "
+                         "lost a member; for reporting a partially-fetched run")
     ap.add_argument("--workers", type=int, default=1,
                     help="concurrent API requests during cache pre-warm; scoring is "
                          "always sequential")
@@ -627,6 +669,8 @@ def main():
             return 2
         if args.limit:
             tasks = tasks[: args.limit]
+        if args.cached_only:
+            tasks = cached_subset(tasks, args.model)
         print(f"\nLIVE: {args.model}, {len(tasks)} task(s), tool_less")
         agent = live_agent("tool_less", args.model)
         if args.workers > 1:

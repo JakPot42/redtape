@@ -1,0 +1,1 @@
+{"reply": "", "usage": {"input_tokens": 939, "output_tokens": 8000}, "model": "claude-opus-5", "condition": "tool_less", "task_hash": "fc8b0b4e5a3b3664d9c1e14081e7f17821e3a97f0431acabe31f7943c0e72c9e", "cached_at": 1788411383.3330178}
