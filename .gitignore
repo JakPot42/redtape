@@ -26,6 +26,19 @@ results/*.tmp.json
 # one typo away from being committed.
 .env.*
 
+# Editor swap and backup files, because a vim swap of `.env` is named `..env.swp`
+# and matches NEITHER `.env` NOR `.env.*` - it starts with two dots. Such a file
+# holds the full plaintext of whatever was being edited, so for `.env` that is the
+# held-out seed and any API key. One was observed untracked-and-not-ignored in this
+# repo on 2026-09-02 while `.env` was open in an editor; a `git add -A` at that
+# moment would have committed both secrets.
+.*.sw?
+*.swp
+*.swo
+*~
+*.bak
+*.orig
+
 # Raw results carry per-task identity (household_id, pair_id) and regenerate in
 # minutes. The .public.json sibling is the file meant to be read and quoted, so that
 # is the one we keep. This also means a raw file can never be committed by reflex.
