@@ -562,8 +562,9 @@ was published and no number is retracted. The window closed before it cost anyth
 The seed established on 2026-09-01 is an 18-digit CSPRNG value (`secrets`), stored in
 `.env` at repo root, mode `0600`. Its fingerprint is
 
-    sha256(str(seed))[:16] = b80dea37628d57fe   # current, from 2026-09-02
-                              ab72ee672111f7fe   # VOID, rotated out
+    sha256(str(seed))[:16] = b80dea37628d57fe   # in use, but EXPOSED 2026-09-02
+                                                 # rotate before publishing anything
+                              ab72ee672111f7fe   # VOID, rotated out 2026-09-02
 
 Quote the **fingerprint** to identify which seed a run used. Never quote the seed.
 
@@ -608,6 +609,53 @@ Two rules follow, and they are the point of this entry:
   discipline has to be manual — and the one where a plausible-looking, "obviously safe"
   truncation slips through. Same pathology as everywhere else in this project: the
   protection covered the region everyone was looking at, and the gap was outside it.
+
+### Exposed a SECOND time 2026-09-02 — rotation DEFERRED, not skipped **[decided]**
+
+**The seed established on 2026-09-02 (`b80dea37628d57fe`) is exposed.** The full contents of
+`.env` were pasted into a chat log on 2026-09-02, which discloses the seed in its entirety —
+not a prefix this time, the whole value.
+
+**Rotation is deferred, not skipped.** This is a deliberate scheduling decision, not a
+judgement that the exposure does not matter. It carries a hard gate:
+
+> **The seed MUST be rotated before any held-out number is published or shared, and the
+> held-out split MUST be regenerated from the new seed. Until both are done, the current
+> held-out split is VOID FOR PUBLICATION.**
+
+Rotating the seed alone is not sufficient. The split is a *function of* the seed, so the
+existing `data/heldout/t1.jsonl` remains reproducible by anyone holding the exposed value.
+It has to be rebuilt, and the new task hashes re-checked for zero overlap with dev.
+
+**What the split may still be used for in the meantime:** local development, pipeline
+testing, and anything whose output stays on this machine. What it may not be used for is any
+number that leaves it — a paper, a leaderboard entry, a README results table, a message to a
+lab, a screenshot. The distinction is disclosure, not correctness: the split is not *wrong*,
+it is merely no longer *private*, and a held-out split that is not private is not held out.
+
+**Exposure history, kept in full because the pattern is the finding:**
+
+| date | seed fingerprint | what was disclosed | how |
+|---|---|---|---|
+| 2026-09-01 | `ab72ee672111f7fe` | leading 5 of 18 digits | a truncated `household_id` printed as diagnostic output |
+| 2026-09-02 | `b80dea37628d57fe` | the entire seed | the full `.env` pasted into a chat log |
+
+**Both exposures happened in conversation, and neither was caught by any automated guard.**
+`redact()`, `assert_publishable`, and `.gitignore` all worked correctly throughout, on both
+occasions — because all three protect *artifacts*, and both leaks were in *transcript*. The
+rule already recorded above ("never print a seed-derived identifier, truncated or not") was
+necessary and insufficient: it constrains what this tooling prints, and says nothing about
+what a human pastes.
+
+So the standing conclusion is stronger than the first entry implied. **A secret that is
+routinely read by a person during debugging will eventually be pasted by that person.** The
+durable fix is not more discipline about printing; it is to stop the seed needing to be
+looked at. Concretely, for the next rotation: generate it in place, never display it, and
+make `seed_fingerprint()` the only thing any tool, log, or human ever has cause to quote.
+
+**Also exposed in the same paste: `ANTHROPIC_API_KEY`.** That one is already dead — it was
+the July 7 rotated-out key and now returns 401 — so the practical damage is nil, but it
+should be treated as burned and never reinstated.
 
 ### The three consequences, all now closed
 
