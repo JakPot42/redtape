@@ -410,7 +410,8 @@ class _Ledger:
 LEDGER = _Ledger()
 
 
-def live_agent(condition: str, model: str = MODEL, max_tool_turns: int = 6):
+def live_agent(condition: str, model: str = MODEL, max_tool_turns: int = 6,
+               system_prompt: str | None = None):
     """A real Claude client. The API key comes from the environment - never from disk.
 
     Uses the SDK's default credential resolution (`ANTHROPIC_API_KEY`, then an
@@ -418,7 +419,12 @@ def live_agent(condition: str, model: str = MODEL, max_tool_turns: int = 6):
     """
     import anthropic
 
-    from redtape.envs.t1_eligibility import SYSTEM_PROMPT
+    from redtape.envs.t1_eligibility import SYSTEM_PROMPT as _DEFAULT_PROMPT
+
+    # An override exists so a prompt variant can be A/B'd against the shipped prompt on the
+    # same tasks. It is hashed into the cache key like everything else, so the two arms
+    # cannot collide and arm A costs nothing when its responses are already cached.
+    SYSTEM_PROMPT = system_prompt if system_prompt is not None else _DEFAULT_PROMPT
 
     client = anthropic.Anthropic()
     allow_unknown = condition == "tool_equipped_unknowns"

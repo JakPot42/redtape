@@ -834,3 +834,91 @@ now a real model behaviour and is reported as such rather than suppressed. And t
 contains no test that drives a raw model-shaped *string* through `parse_answer` — the fix
 addressed the prompt, not the coverage gap that hid it. Until such a test exists, this class
 of defect can recur in any other externally-supplied input.
+
+## 26. The abstention prompt was one-sided; we A/B'd it before publishing
+
+**Status: confound identified, tested, and NOT supported. The abstention result stands, and
+this section is part of why it should be believed.**
+
+### The confound
+
+The shipped `SYSTEM_PROMPT` describes abstention in three places — a populated
+`cannot_determine` entry in the schema example, a field note, and a closing paragraph
+instructing the model to list a program there "instead of guessing". So the headline
+abstention figure is **not** a measure of whether the model knows the mechanism exists.
+
+But that closing paragraph ends:
+
+> "...a needless abstention is scored as wrong as a wrong number."
+
+**The scoring is symmetric; that sentence is not.** Abstaining needlessly and failing to
+abstain cost exactly the same, and the prompt names only the first. A model reading it has
+been told what it loses by abstaining wrongly and nothing about what it loses by staying
+silent. Claude Opus 5 scored **0.006 on the indeterminate class** and emitted
+`cannot_determine` on 5.6% of the dev split; publishing that as calibration, with that
+clause in the prompt, invites the obvious charge that the result was written into the
+instructions.
+
+We found this ourselves, before publication, and tested it.
+
+### Design
+
+60 tasks from the dev split, deterministically sampled and **weighted toward the classes
+where abstention is the correct answer**: 24 indeterminate, 20 eligibility-flip, 10
+incomplete-determinate, 6 determinate. The last two are retained so a rise in *needless*
+abstention would be visible — a clause that merely made the model abstain more everywhere
+would not be evidence of better calibration.
+
+- **Arm A** — the shipped prompt, unchanged.
+- **Arm B** — identical except the clause is **balanced, not deleted**: *"...a needless
+  abstention is scored as wrong as a wrong number, and answering when a required fact is
+  missing is scored as wrong as a needless abstention."*
+
+Deleting the clause would have compared silence against a deterrent, which is a different
+question: removal also strips the benchmark's genuine warning about needless abstention, so
+any movement could be attributed to that loss alone. Balancing holds information content
+constant and changes only symmetry, which is the variable under test.
+
+Same model, same tasks, identical sampling parameters. The response cache keys on the
+system prompt, so arm A was served from the existing dev-split cache at zero cost and arm B
+correctly missed.
+
+### Result — arm B barely moves
+
+| | arm A (shipped) | arm B (balanced) | delta | Fisher exact (2-sided) |
+|---|---|---|---|---|
+| indeterminate | 0 / 24 = 0.000 | 0 / 24 = 0.000 | +0.000 | — (no events) |
+| eligibility-flip | 2 / 20 = 0.100 | 4 / 20 = 0.200 | +0.100 | p = 0.661 |
+| incomplete-determinate | 8 / 10 = 0.800 | 8 / 10 = 0.800 | +0.000 | — |
+| **ALL T1b** | 10 / 54 = 0.185 | 12 / 54 = 0.222 | +0.037 | p = 0.812 |
+| **replies containing any `cannot_determine`** | **12 / 60** | **12 / 60** | **+0.000** | p = 1.000 |
+
+The cleanest behavioural measure — how often the model volunteers an abstention at all — is
+**identical to the task**: 12 of 60 in both arms. Not similar, identical. The model abstained
+on a slightly different *set* of tasks, not a larger number of them. Nothing reaches
+significance, and the indeterminate class produced zero correct abstentions under either
+prompt.
+
+### Which claim this leaves us with
+
+**Models fail to recognise that a required fact is missing, even when told plainly and
+symmetrically what failing to flag it costs.** That is the stronger of the two available
+claims and the one the data supports. The alternative — that models can recognise
+indeterminacy but suppress it under mild discouragement — predicts a rise in arm B, and the
+rise is absent at the level of raw behaviour.
+
+### What this test does NOT establish
+
+- **It is not powered to exclude a modest effect.** At a 12/60 base rate, 60 tasks per arm
+  can only reliably detect roughly a doubling. A real but moderate effect — say 12 → 18 of
+  60 — would not have been detected here. The claim is "no detectable effect at this power",
+  not "no effect".
+- **One prompt pair, one model.** A differently-worded balancing, a stronger instruction, or
+  a few-shot example of a correct abstention could all move the number. This tests the
+  specific asymmetry we shipped, not the general question of whether abstention is
+  promptable.
+- **It does not rule out the prompt suppressing abstention in some other way**, only that
+  restoring symmetry to this clause does not change behaviour.
+
+The honest summary: the one-sided clause is a real defect in the prompt and should be
+balanced regardless of measured effect, but it is not the explanation for the 0.006.
