@@ -779,3 +779,58 @@ counter; the report used an estimate derived from a timer that was measuring som
 standing where the real one belongs, with nothing raising - applied to our own reporting
 rather than to our code. Read the counter. See CLAUDE.md, "Every green signal must be
 checked for what it is NOT measuring."
+
+## 25. The prompt was never tested, and 242 tests could not have caught it
+
+**Status: fixed 2026-09-02. Recorded because the failure mode is general and the fix is not
+the interesting part.**
+
+The first live model run against the dev split returned **0.000 on all three headline
+metrics**. Nothing was wrong with the model.
+
+`SYSTEM_PROMPT` said *"Answer with a single JSON object and nothing else"* and named **no
+fields at all**. Claude Opus 5 produced correct, well-argued determinations — right SNAP
+arithmetic, sensible abstentions, explicit reasoning about which facts were missing — using
+the field names `monthly_benefit`, `annual_amount` and `period`. `T1Answer` requires
+`benefit`, `amount` and `period_label`. All ten sampled responses were rejected as
+`schema_invalid`, gate pass rate 0.0.
+
+Had that run been scaled and reported, the published claim would have been that a frontier
+model scores zero on public-benefits determinability. The actual finding would have been that
+our prompt omitted the schema.
+
+**Why the test suite was silent.** Every agent in `eval/` — five baselines, three scripted
+tool conditions, `oracle_agent`, `perfect_agent` — builds a `T1Answer` **in Python** and
+serialises it. None can emit a wrong shape. The suite covered
+`T1Answer -> JSON -> parse -> score` exhaustively and covered
+`SYSTEM_PROMPT -> model -> JSON -> parse -> score` **zero times**. The prompt was an
+untested input to a scored pipeline.
+
+`tests/test_env.py`'s parse tests are the sharpest illustration: they feed `parse_answer`
+strings produced by `T1Answer.model_dump_json()`. That can only fail if the class disagrees
+with itself. It cannot fail when the *prompt* disagrees with the class, which is the failure
+that actually occurred.
+
+**The general rule, which is the reason this section exists:** a test whose input is
+constructed on the far side of the interface under test is not testing that interface. If the
+fixture is built by the same code that consumes it, the fixture cannot be wrong in the way
+real input can be — and every metric downstream reports confidently on a path nothing
+traverses.
+
+**Fix.** `SYSTEM_PROMPT` now renders the exact answer shape from `T1Answer` itself via
+`_answer_shape()`, so a schema change updates the prompt rather than silently diverging from
+it. Measured effect on the same ten tasks:
+
+| | exact-match | gate pass rate | `schema_invalid` |
+|---|---|---|---|
+| before | 0.000 | 0.00 | 10 / 10 |
+| after | 1.000 | 0.80 | 1 / 10 |
+
+Cost per task fell from $0.0485 to $0.0338 at the same time, because the model stopped
+spending output tokens deciding what shape to use.
+
+**What is still not covered, stated plainly.** The residual 1-in-10 `schema_invalid` rate is
+now a real model behaviour and is reported as such rather than suppressed. And the suite still
+contains no test that drives a raw model-shaped *string* through `parse_answer` — the fix
+addressed the prompt, not the coverage gap that hid it. Until such a test exists, this class
+of defect can recur in any other externally-supplied input.

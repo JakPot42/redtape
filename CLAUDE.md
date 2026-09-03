@@ -158,6 +158,73 @@ Reading is how you form a hypothesis about code. Running it is how you find out.
 
 ---
 
+## Tests that bypass the interface under test measure something else **[decided]**
+
+The first live model run scored **0.000 on every headline metric**. It was not a model
+result. It was a harness bug that 242 passing tests, five baselines, three tool conditions
+and a 1.000/1.000/1.000 ceiling check had all failed to detect, and it would have shipped as
+a published finding about frontier model capability.
+
+**What was wrong.** `SYSTEM_PROMPT` instructed the model to "Answer with a single JSON object
+and nothing else" and **named not one field**. The model returned well-reasoned, arithmetically
+correct answers using `monthly_benefit`, `annual_amount` and `period` where `T1Answer`
+requires `benefit`, `amount` and `period_label`. Every response was rejected as
+`schema_invalid`. The metric measured whether a model can guess our field names.
+
+**Why nothing caught it.** Every baseline in `eval/baselines.py`, every scripted tool agent,
+`oracle_agent` and `perfect_agent` all construct a `T1Answer` **object, in Python**, and
+serialise it with `.model_dump_json()`. They are structurally incapable of producing a schema
+mismatch. So the suite exercised:
+
+    T1Answer object -> JSON -> parser -> scorer          (covered many times over)
+
+and never once exercised the only path a real model takes:
+
+    SYSTEM_PROMPT -> model -> JSON -> parser -> scorer   (covered zero times)
+
+The prompt was an untested input. `parse_answer` was tested against strings *we* generated
+from the very class it parses into, which is a tautology dressed as a test: it can only fail
+if serialisation and deserialisation disagree with each other, never if the prompt and the
+schema disagree.
+
+### The general form
+
+**A test that constructs its input on the far side of the interface under test is not testing
+that interface.** It is testing the code *after* it, using a fixture that is correct by
+construction. The interface itself — the contract with whatever is outside the system — stays
+unmeasured, and every metric downstream of it silently reports on a path nobody takes.
+
+The tell is worth learning to see: **if your fixture is built by the same code that consumes
+it, the fixture cannot be wrong in the way the real input can.** Here the "real input" is a
+language model reading English and deciding on a JSON shape; the fixture was a Pydantic model
+calling its own serialiser. Those two things can never disagree, which is exactly why the
+test suite was quiet.
+
+This is the sharpest instance of the standing principle above. The other instances were green
+signals that covered less than they appeared to. This one covered a *different thing entirely*
+and still read as coverage — 242 tests genuinely testing the scoring path, presented as
+confidence in a pipeline whose first stage had never run.
+
+### Obligations
+
+- **At least one test must traverse every external interface end to end**, with input produced
+  the way the outside world produces it — not by our own constructors. For this project that
+  means a fixture of raw model-shaped *text* going through `parse_answer`, not a `T1Answer`
+  round-trip.
+- **Any prompt that specifies a format is code, and drifts like code.** `SYSTEM_PROMPT` now
+  renders the answer shape from `T1Answer` itself (`_answer_shape()`), so a schema change
+  updates the prompt automatically rather than leaving the two to diverge silently. A
+  hand-written schema in a prompt is a copy waiting to go stale.
+- **Ask what the fixtures cannot express.** A fixture set that cannot represent the failure
+  mode you care about will never report it. Before trusting a suite, name the malformed input
+  it is incapable of constructing.
+- **A ceiling check does not cover this.** `perfect_agent` scoring 1.000 on all three
+  headlines was real evidence that the metrics are achievable — and it was produced by
+  building a `T1Answer` in Python, so it says nothing whatsoever about whether a model can
+  produce one. Two different claims; only one was tested.
+
+---
+
 ## Two hard rules
 
 These are requirements, not preferences. Violating either corrupts published numbers.
