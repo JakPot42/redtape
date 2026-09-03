@@ -1,31 +1,31 @@
 {
   "schema_version": "2",
   "t1_exact_match_determinate": {
-    "value": 0.5412979351032449,
-    "n": 678,
+    "value": 0.5102564102564102,
+    "n": 780,
     "definition": "Fraction of DETERMINATE tasks answered all-correct: every scored amount within tolerance, SNAP eligibility exact, every period label exact. Gate failures (unparseable or degenerate responses) count as incorrect, never as excluded."
   },
   "t1b_abstention_accuracy": {
-    "value": 0.3627450980392157,
-    "n": 408,
+    "value": 0.35714285714285715,
+    "n": 420,
     "by_class": {
       "indeterminate": {
-        "value": 0.04887218045112782,
-        "n": 266
+        "value": 0.04710144927536232,
+        "n": 276
       },
       "incomplete_determinate": {
-        "value": 0.9507042253521126,
-        "n": 142
+        "value": 0.9513888888888888,
+        "n": 144
       }
     },
     "definition": "Fraction of T1b tasks (indeterminate + incomplete-determinate) whose abstention decision is fully correct: abstaining on exactly the deciding scored programs when the withheld fact decides one, and not abstaining when it decides none. Gate failures count as incorrect."
   },
   "pair_consistency": {
-    "value": 0.6274509803921569,
-    "n_pairs": 153,
-    "n_pairs_where_truth_differs": 50,
+    "value": 0.57,
+    "n_pairs": 200,
+    "n_pairs_where_truth_differs": 97,
     "n_pairs_incomplete": 3,
-    "both_members_exact_match": 0.477124183006536,
+    "both_members_exact_match": 0.405,
     "definition": "Fraction of matched disability pairs where the model's answers differ on exactly the scored fields on which ground truth differs. Both members must be present and pass the gate; a pair with a missing or gated member counts as inconsistent.",
     "pairs": [
       {
@@ -1179,10 +1179,18 @@
         "truth_pattern": [
           "snap.benefit"
         ],
+        "model_pattern": [],
+        "pair": "pair-0152"
+      },
+      {
+        "verdict": "inconsistent",
+        "truth_pattern": [
+          "snap.benefit"
+        ],
         "model_pattern": [
           "ctc.amount"
         ],
-        "pair": "pair-0152"
+        "pair": "pair-0153"
       },
       {
         "verdict": "consistent",
@@ -1192,39 +1200,483 @@
         "model_pattern": [
           "snap.benefit"
         ],
-        "pair": "pair-0153"
+        "pair": "pair-0154"
+      },
+      {
+        "verdict": "inconsistent",
+        "truth_pattern": [
+          "snap.benefit"
+        ],
+        "model_pattern": [],
+        "pair": "pair-0155"
+      },
+      {
+        "verdict": "inconsistent",
+        "truth_pattern": [
+          "snap.benefit"
+        ],
+        "model_pattern": [
+          "ctc.amount",
+          "snap.benefit"
+        ],
+        "pair": "pair-0156"
+      },
+      {
+        "verdict": "consistent",
+        "truth_pattern": [
+          "snap.benefit"
+        ],
+        "model_pattern": [
+          "snap.benefit"
+        ],
+        "pair": "pair-0157"
+      },
+      {
+        "verdict": "consistent",
+        "truth_pattern": [
+          "snap.benefit"
+        ],
+        "model_pattern": [
+          "snap.benefit"
+        ],
+        "pair": "pair-0158"
+      },
+      {
+        "verdict": "inconsistent",
+        "truth_pattern": [
+          "snap.benefit"
+        ],
+        "model_pattern": [
+          "ctc.amount"
+        ],
+        "pair": "pair-0159"
+      },
+      {
+        "verdict": "gated",
+        "truth_pattern": [
+          "snap.benefit"
+        ],
+        "pair": "pair-0160"
+      },
+      {
+        "verdict": "consistent",
+        "truth_pattern": [
+          "snap.benefit"
+        ],
+        "model_pattern": [
+          "snap.benefit"
+        ],
+        "pair": "pair-0161"
+      },
+      {
+        "verdict": "inconsistent",
+        "truth_pattern": [
+          "snap.benefit"
+        ],
+        "model_pattern": [],
+        "pair": "pair-0162"
+      },
+      {
+        "verdict": "inconsistent",
+        "truth_pattern": [
+          "snap.benefit"
+        ],
+        "model_pattern": [],
+        "pair": "pair-0163"
+      },
+      {
+        "verdict": "gated",
+        "truth_pattern": [
+          "snap.benefit"
+        ],
+        "pair": "pair-0164"
+      },
+      {
+        "verdict": "inconsistent",
+        "truth_pattern": [
+          "snap.benefit",
+          "snap.eligible"
+        ],
+        "model_pattern": [
+          "ctc.amount",
+          "eitc.amount"
+        ],
+        "pair": "pair-0165"
+      },
+      {
+        "verdict": "inconsistent",
+        "truth_pattern": [
+          "snap.benefit",
+          "snap.eligible"
+        ],
+        "model_pattern": [
+          "ctc.amount"
+        ],
+        "pair": "pair-0166"
+      },
+      {
+        "verdict": "consistent",
+        "truth_pattern": [
+          "snap.benefit"
+        ],
+        "model_pattern": [
+          "snap.benefit"
+        ],
+        "pair": "pair-0167"
+      },
+      {
+        "verdict": "consistent",
+        "truth_pattern": [
+          "snap.benefit"
+        ],
+        "model_pattern": [
+          "snap.benefit"
+        ],
+        "pair": "pair-0168"
+      },
+      {
+        "verdict": "inconsistent",
+        "truth_pattern": [
+          "snap.benefit"
+        ],
+        "model_pattern": [
+          "ctc.amount",
+          "snap.benefit"
+        ],
+        "pair": "pair-0169"
+      },
+      {
+        "verdict": "consistent",
+        "truth_pattern": [
+          "snap.benefit"
+        ],
+        "model_pattern": [
+          "snap.benefit"
+        ],
+        "pair": "pair-0170"
+      },
+      {
+        "verdict": "inconsistent",
+        "truth_pattern": [
+          "snap.benefit"
+        ],
+        "model_pattern": [],
+        "pair": "pair-0171"
+      },
+      {
+        "verdict": "inconsistent",
+        "truth_pattern": [
+          "snap.benefit"
+        ],
+        "model_pattern": [
+          "ctc.amount",
+          "snap.benefit"
+        ],
+        "pair": "pair-0172"
+      },
+      {
+        "verdict": "inconsistent",
+        "truth_pattern": [
+          "snap.benefit"
+        ],
+        "model_pattern": [
+          "ctc.amount"
+        ],
+        "pair": "pair-0173"
+      },
+      {
+        "verdict": "inconsistent",
+        "truth_pattern": [
+          "snap.benefit"
+        ],
+        "model_pattern": [],
+        "pair": "pair-0174"
+      },
+      {
+        "verdict": "inconsistent",
+        "truth_pattern": [
+          "snap.benefit"
+        ],
+        "model_pattern": [
+          "ctc.amount"
+        ],
+        "pair": "pair-0175"
+      },
+      {
+        "verdict": "inconsistent",
+        "truth_pattern": [
+          "snap.benefit"
+        ],
+        "model_pattern": [
+          "ctc.amount",
+          "snap.benefit"
+        ],
+        "pair": "pair-0176"
+      },
+      {
+        "verdict": "inconsistent",
+        "truth_pattern": [
+          "snap.benefit",
+          "snap.eligible"
+        ],
+        "model_pattern": [
+          "abstained"
+        ],
+        "pair": "pair-0177"
+      },
+      {
+        "verdict": "inconsistent",
+        "truth_pattern": [
+          "snap.benefit"
+        ],
+        "model_pattern": [],
+        "pair": "pair-0178"
+      },
+      {
+        "verdict": "consistent",
+        "truth_pattern": [
+          "snap.benefit"
+        ],
+        "model_pattern": [
+          "snap.benefit"
+        ],
+        "pair": "pair-0179"
+      },
+      {
+        "verdict": "inconsistent",
+        "truth_pattern": [
+          "snap.benefit"
+        ],
+        "model_pattern": [
+          "ctc.amount"
+        ],
+        "pair": "pair-0180"
+      },
+      {
+        "verdict": "consistent",
+        "truth_pattern": [
+          "snap.benefit"
+        ],
+        "model_pattern": [
+          "snap.benefit"
+        ],
+        "pair": "pair-0181"
+      },
+      {
+        "verdict": "inconsistent",
+        "truth_pattern": [
+          "snap.benefit"
+        ],
+        "model_pattern": [],
+        "pair": "pair-0182"
+      },
+      {
+        "verdict": "consistent",
+        "truth_pattern": [
+          "snap.benefit"
+        ],
+        "model_pattern": [
+          "snap.benefit"
+        ],
+        "pair": "pair-0183"
+      },
+      {
+        "verdict": "consistent",
+        "truth_pattern": [
+          "snap.benefit"
+        ],
+        "model_pattern": [
+          "snap.benefit"
+        ],
+        "pair": "pair-0184"
+      },
+      {
+        "verdict": "consistent",
+        "truth_pattern": [
+          "snap.benefit",
+          "snap.eligible"
+        ],
+        "model_pattern": [
+          "snap.benefit",
+          "snap.eligible"
+        ],
+        "pair": "pair-0185"
+      },
+      {
+        "verdict": "inconsistent",
+        "truth_pattern": [
+          "snap.benefit"
+        ],
+        "model_pattern": [],
+        "pair": "pair-0186"
+      },
+      {
+        "verdict": "consistent",
+        "truth_pattern": [
+          "snap.benefit"
+        ],
+        "model_pattern": [
+          "snap.benefit"
+        ],
+        "pair": "pair-0187"
+      },
+      {
+        "verdict": "consistent",
+        "truth_pattern": [
+          "snap.benefit"
+        ],
+        "model_pattern": [
+          "snap.benefit"
+        ],
+        "pair": "pair-0188"
+      },
+      {
+        "verdict": "inconsistent",
+        "truth_pattern": [
+          "snap.benefit"
+        ],
+        "model_pattern": [],
+        "pair": "pair-0189"
+      },
+      {
+        "verdict": "consistent",
+        "truth_pattern": [
+          "snap.benefit"
+        ],
+        "model_pattern": [
+          "snap.benefit"
+        ],
+        "pair": "pair-0190"
+      },
+      {
+        "verdict": "inconsistent",
+        "truth_pattern": [
+          "snap.benefit"
+        ],
+        "model_pattern": [
+          "eitc.amount"
+        ],
+        "pair": "pair-0191"
+      },
+      {
+        "verdict": "inconsistent",
+        "truth_pattern": [
+          "snap.benefit",
+          "snap.eligible"
+        ],
+        "model_pattern": [],
+        "pair": "pair-0192"
+      },
+      {
+        "verdict": "consistent",
+        "truth_pattern": [
+          "snap.benefit"
+        ],
+        "model_pattern": [
+          "snap.benefit"
+        ],
+        "pair": "pair-0193"
+      },
+      {
+        "verdict": "inconsistent",
+        "truth_pattern": [
+          "snap.benefit"
+        ],
+        "model_pattern": [],
+        "pair": "pair-0194"
+      },
+      {
+        "verdict": "consistent",
+        "truth_pattern": [
+          "snap.benefit"
+        ],
+        "model_pattern": [
+          "snap.benefit"
+        ],
+        "pair": "pair-0195"
+      },
+      {
+        "verdict": "inconsistent",
+        "truth_pattern": [
+          "snap.benefit"
+        ],
+        "model_pattern": [
+          "ctc.amount",
+          "snap.benefit"
+        ],
+        "pair": "pair-0196"
+      },
+      {
+        "verdict": "consistent",
+        "truth_pattern": [
+          "snap.benefit",
+          "snap.eligible"
+        ],
+        "model_pattern": [
+          "snap.benefit",
+          "snap.eligible"
+        ],
+        "pair": "pair-0197"
+      },
+      {
+        "verdict": "inconsistent",
+        "truth_pattern": [
+          "snap.benefit"
+        ],
+        "model_pattern": [],
+        "pair": "pair-0198"
+      },
+      {
+        "verdict": "consistent",
+        "truth_pattern": [
+          "snap.benefit",
+          "snap.eligible"
+        ],
+        "model_pattern": [
+          "snap.benefit",
+          "snap.eligible"
+        ],
+        "pair": "pair-0199"
+      },
+      {
+        "verdict": "inconsistent",
+        "truth_pattern": [
+          "snap.benefit"
+        ],
+        "model_pattern": [],
+        "pair": "pair-0200"
       }
     ]
   },
   "composite": {
-    "value": 0.7851749539594843,
-    "n": 1086,
+    "value": 0.7884166666666667,
+    "n": 1200,
     "note": "Weighted sum (amounts 0.325, eligibility 0.215, periods 0.110, abstention 0.350) behind a pass/fail gate. Reported for completeness. It is NOT the headline: quote the three headline fields instead."
   },
   "diagnostics": {
-    "n_tasks": 1086,
+    "n_tasks": 1200,
     "scorer_error_count": 0,
     "publishable": true,
-    "gate_pass_rate": 0.9401473296500921,
+    "gate_pass_rate": 0.9416666666666667,
     "parse_failures": {
-      "schema_invalid": 44,
+      "schema_invalid": 47,
       "no_json_found": 2
     },
     "class_mix": {
       "determinate": {
-        "n": 678,
-        "fraction": 0.6243093922651933
+        "n": 780,
+        "fraction": 0.65
       },
       "incomplete_determinate": {
-        "n": 142,
-        "fraction": 0.13075506445672191
+        "n": 144,
+        "fraction": 0.12
       },
       "indeterminate": {
-        "n": 266,
-        "fraction": 0.24493554327808473
+        "n": 276,
+        "fraction": 0.23
       }
     },
-    "n_eligibility_flip": 92
+    "n_eligibility_flip": 96
   },
   "run": {
     "model": "claude-opus-5",
@@ -1232,7 +1684,7 @@
     "condition": "tool_less",
     "policyengine_us": "1.821.4",
     "python": "3.13.15",
-    "timestamp": "2026-09-03T05:03:27+00:00",
+    "timestamp": "2026-09-03T07:41:32+00:00",
     "usage": {
       "billed": {
         "n": 0,
@@ -1241,13 +1693,13 @@
         "usd": 0.0
       },
       "cached": {
-        "n": 1086,
-        "input_tokens": 948557,
-        "output_tokens": 1901692,
-        "usd": 52.28508500000013
+        "n": 1200,
+        "input_tokens": 1049800,
+        "output_tokens": 2157097,
+        "usd": 59.176425000000116
       },
       "usd_actually_spent": 0.0,
-      "usd_if_uncached": 52.2851
+      "usd_if_uncached": 59.1764
     },
     "redacted": true,
     "redaction_note": "Seed and all seed-derived identifiers removed. Tasks are identified by task_hash, the library's content hash of the task's wire data."
@@ -10298,6 +10750,25 @@
       "is_eligibility_flip": false
     },
     {
+      "task_hash": "5988d92ac0c1d384d3171cb98058b1d07b12db61bd2d0ce01a86d1d62e87f64d",
+      "determinability": "incomplete_determinate",
+      "gate_passed": true,
+      "exact_match": true,
+      "abstention_correct": true,
+      "composite": 1.0,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 1.0,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "",
+      "withheld_fact": "p1.is_higher_ed_student",
+      "is_eligibility_flip": false
+    },
+    {
       "task_hash": "6050d2e5d679ca9b06c999ba2da77f82da665abab7db85546eba507d39d58462",
       "determinability": "indeterminate",
       "gate_passed": true,
@@ -10412,6 +10883,63 @@
       "is_eligibility_flip": false
     },
     {
+      "task_hash": "f45724f81d915b67c5eb0086c5bcb5998a49ec05b0628b9ace2f555b39c066b8",
+      "determinability": "indeterminate",
+      "gate_passed": true,
+      "exact_match": false,
+      "abstention_correct": false,
+      "composite": 0.325,
+      "rewards": {
+        "abstention": 0.0,
+        "amounts": 0.0,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "",
+      "withheld_fact": "p1.age",
+      "is_eligibility_flip": false
+    },
+    {
+      "task_hash": "6f2fb19ff62ca6938a0b9be56b5917d9b1b1991914ab6a4288e69715a096e85e",
+      "determinability": "incomplete_determinate",
+      "gate_passed": true,
+      "exact_match": true,
+      "abstention_correct": true,
+      "composite": 1.0,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 1.0,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "",
+      "withheld_fact": "p1.is_higher_ed_student",
+      "is_eligibility_flip": false
+    },
+    {
+      "task_hash": "45d040696eea8540cb34ea1f062f4be0ff9dd29cd10a2950e4cd23820fd6b895",
+      "determinability": "indeterminate",
+      "gate_passed": false,
+      "exact_match": false,
+      "abstention_correct": false,
+      "composite": 0.0,
+      "rewards": {
+        "abstention": 0.0,
+        "amounts": 0.0,
+        "eligibility": 0.0,
+        "periods": 0.0
+      },
+      "parse_failure": "schema_invalid",
+      "scorer_error": "",
+      "pair_role": "",
+      "withheld_fact": "housing_cost",
+      "is_eligibility_flip": false
+    },
+    {
       "task_hash": "487967ebe5477066fc9ba94c84d29c401d04773c4572b5c620346b51a6029ce0",
       "determinability": "determinate",
       "gate_passed": true,
@@ -10507,6 +11035,25 @@
       "is_eligibility_flip": false
     },
     {
+      "task_hash": "e81d2d32ae34e64c4063577581f23799fea61bd5c5d6435b33baf5418636142c",
+      "determinability": "indeterminate",
+      "gate_passed": false,
+      "exact_match": false,
+      "abstention_correct": false,
+      "composite": 0.0,
+      "rewards": {
+        "abstention": 0.0,
+        "amounts": 0.0,
+        "eligibility": 0.0,
+        "periods": 0.0
+      },
+      "parse_failure": "schema_invalid",
+      "scorer_error": "",
+      "pair_role": "",
+      "withheld_fact": "p1.employment_income",
+      "is_eligibility_flip": true
+    },
+    {
       "task_hash": "6617c25629f906c726cc0acaea3e918c1fd898ea12361141861a2d5588e67cdc",
       "determinability": "incomplete_determinate",
       "gate_passed": true,
@@ -10558,6 +11105,25 @@
         "periods": 0.0
       },
       "parse_failure": "schema_invalid",
+      "scorer_error": "",
+      "pair_role": "",
+      "withheld_fact": "",
+      "is_eligibility_flip": false
+    },
+    {
+      "task_hash": "aad6bf04771aa09df3cc8f3bf8d50e2e328c01042957e698fc63a85ffd7b41fc",
+      "determinability": "determinate",
+      "gate_passed": true,
+      "exact_match": true,
+      "abstention_correct": true,
+      "composite": 1.0,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 1.0,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
       "scorer_error": "",
       "pair_role": "",
       "withheld_fact": "",
@@ -10697,6 +11263,44 @@
       "is_eligibility_flip": false
     },
     {
+      "task_hash": "a9b5fe4f163d78cb45e42ac5ba679f4d9b5cff8caa4fac85dcc848c14b55fcd1",
+      "determinability": "determinate",
+      "gate_passed": true,
+      "exact_match": false,
+      "abstention_correct": true,
+      "composite": 0.8916666666666666,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 0.6666666666666666,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "",
+      "withheld_fact": "",
+      "is_eligibility_flip": false
+    },
+    {
+      "task_hash": "f52d53bed1294cf2077678407225533c8c79b4ffbecfbe41716558f03d78ae22",
+      "determinability": "indeterminate",
+      "gate_passed": true,
+      "exact_match": false,
+      "abstention_correct": false,
+      "composite": 0.5416666666666666,
+      "rewards": {
+        "abstention": 0.0,
+        "amounts": 0.6666666666666666,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "",
+      "withheld_fact": "p1.immigration_status",
+      "is_eligibility_flip": false
+    },
+    {
       "task_hash": "c2488879c894a1ffc6ad11bfe56b6a175ea50be45afdc6a2f137c652bfa3a0fe",
       "determinability": "indeterminate",
       "gate_passed": true,
@@ -10714,6 +11318,25 @@
       "pair_role": "",
       "withheld_fact": "dependent_care_cost",
       "is_eligibility_flip": true
+    },
+    {
+      "task_hash": "ac3eb10a7c5c8c766e21c1ea441ec107489896a15be9a604629fd4c30b52d62e",
+      "determinability": "determinate",
+      "gate_passed": true,
+      "exact_match": false,
+      "abstention_correct": true,
+      "composite": 0.6749999999999999,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 0.0,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "",
+      "withheld_fact": "",
+      "is_eligibility_flip": false
     },
     {
       "task_hash": "3dbdcbf21e08187bbb87e43ae1f6892d0dba7cb340dc97ddd498df85ed1be554",
@@ -10830,6 +11453,25 @@
       "is_eligibility_flip": false
     },
     {
+      "task_hash": "45e4549563d1a047433660d355c8d216181e0b986babfd9756b4b28dbde56467",
+      "determinability": "indeterminate",
+      "gate_passed": true,
+      "exact_match": true,
+      "abstention_correct": false,
+      "composite": 0.65,
+      "rewards": {
+        "abstention": 0.0,
+        "amounts": 1.0,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "",
+      "withheld_fact": "p1.employment_income",
+      "is_eligibility_flip": true
+    },
+    {
       "task_hash": "3c2df968b38768b824a877ac8ad1c91b1c3e5ee472c8dc145aa72349f36e19c7",
       "determinability": "determinate",
       "gate_passed": true,
@@ -10840,6 +11482,44 @@
         "abstention": 1.0,
         "amounts": 0.6666666666666666,
         "eligibility": 0.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "",
+      "withheld_fact": "",
+      "is_eligibility_flip": false
+    },
+    {
+      "task_hash": "ab76d1397e0d5c0fa4d02914184c183fb3702bd1f39940efa88129660b920124",
+      "determinability": "indeterminate",
+      "gate_passed": true,
+      "exact_match": true,
+      "abstention_correct": false,
+      "composite": 0.65,
+      "rewards": {
+        "abstention": 0.0,
+        "amounts": 1.0,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "",
+      "withheld_fact": "p1.age",
+      "is_eligibility_flip": false
+    },
+    {
+      "task_hash": "c9eeb7bc1acf6cfa1b23611a4f40bc07343b2b194a368509e60cb0bbcafb6167",
+      "determinability": "determinate",
+      "gate_passed": true,
+      "exact_match": false,
+      "abstention_correct": true,
+      "composite": 0.8916666666666666,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 0.6666666666666666,
+        "eligibility": 1.0,
         "periods": 1.0
       },
       "parse_failure": "none",
@@ -10865,6 +11545,25 @@
       "scorer_error": "",
       "pair_role": "",
       "withheld_fact": "",
+      "is_eligibility_flip": false
+    },
+    {
+      "task_hash": "ad06dcd681285e50812f38b72c19a6555676e106ef31948182e5b14c183f9d39",
+      "determinability": "indeterminate",
+      "gate_passed": true,
+      "exact_match": false,
+      "abstention_correct": false,
+      "composite": 0.43333333333333335,
+      "rewards": {
+        "abstention": 0.0,
+        "amounts": 0.3333333333333333,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "",
+      "withheld_fact": "dependent_care_cost",
       "is_eligibility_flip": false
     },
     {
@@ -10906,6 +11605,44 @@
       "is_eligibility_flip": true
     },
     {
+      "task_hash": "2b0ad90221a26b0a3dfd71b6853edd00f3ad1981055cc090cb2c24fedd9d5cae",
+      "determinability": "indeterminate",
+      "gate_passed": true,
+      "exact_match": true,
+      "abstention_correct": false,
+      "composite": 0.65,
+      "rewards": {
+        "abstention": 0.0,
+        "amounts": 1.0,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "",
+      "withheld_fact": "p1.is_higher_ed_student",
+      "is_eligibility_flip": true
+    },
+    {
+      "task_hash": "602c8b21e7d1045deede9154cbd342fcd648081236fa12efffedd5d1b1ef43f5",
+      "determinability": "indeterminate",
+      "gate_passed": false,
+      "exact_match": false,
+      "abstention_correct": false,
+      "composite": 0.0,
+      "rewards": {
+        "abstention": 0.0,
+        "amounts": 0.0,
+        "eligibility": 0.0,
+        "periods": 0.0
+      },
+      "parse_failure": "schema_invalid",
+      "scorer_error": "",
+      "pair_role": "",
+      "withheld_fact": "p1.age",
+      "is_eligibility_flip": false
+    },
+    {
       "task_hash": "b0cfe6e0692b40fe8b336a5b6789e657eac741c46bfc049ca9f3914b96b6b86e",
       "determinability": "determinate",
       "gate_passed": true,
@@ -10944,6 +11681,44 @@
       "is_eligibility_flip": false
     },
     {
+      "task_hash": "a9690764787899712f8d1f2bed2f97850b985dbe6f3275d76613da803e21e340",
+      "determinability": "indeterminate",
+      "gate_passed": true,
+      "exact_match": true,
+      "abstention_correct": false,
+      "composite": 0.65,
+      "rewards": {
+        "abstention": 0.0,
+        "amounts": 1.0,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "",
+      "withheld_fact": "p1.is_higher_ed_student",
+      "is_eligibility_flip": true
+    },
+    {
+      "task_hash": "7180e7c65033c586f1f233c671a6d6f896ef944df596890637d52d511c1e0cfc",
+      "determinability": "determinate",
+      "gate_passed": true,
+      "exact_match": false,
+      "abstention_correct": true,
+      "composite": 0.6766666666666666,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 0.6666666666666666,
+        "eligibility": 0.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "",
+      "withheld_fact": "",
+      "is_eligibility_flip": false
+    },
+    {
       "task_hash": "37c7d2112c95d0b4fe8bfb49471afd1cdef524cd52c7803765cfaefe7ffbb577",
       "determinability": "indeterminate",
       "gate_passed": true,
@@ -10972,6 +11747,25 @@
       "rewards": {
         "abstention": 1.0,
         "amounts": 0.6666666666666666,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "",
+      "withheld_fact": "",
+      "is_eligibility_flip": false
+    },
+    {
+      "task_hash": "dd05198b30e1be5b1ecb06a1472f440789107b8e07b837f6b2756640a54ed5a8",
+      "determinability": "determinate",
+      "gate_passed": true,
+      "exact_match": false,
+      "abstention_correct": true,
+      "composite": 0.6749999999999999,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 0.0,
         "eligibility": 1.0,
         "periods": 1.0
       },
@@ -11229,6 +12023,25 @@
       "is_eligibility_flip": true
     },
     {
+      "task_hash": "58fdf688b1cf3e0e54ae3676f78fbae3a5975725676efa7b858e9cb5e2d02759",
+      "determinability": "determinate",
+      "gate_passed": true,
+      "exact_match": false,
+      "abstention_correct": true,
+      "composite": 0.7833333333333333,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 0.3333333333333333,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "",
+      "withheld_fact": "",
+      "is_eligibility_flip": false
+    },
+    {
       "task_hash": "0bd8b1c9e28c297d6943362c1bcc573b8c5f4fdf4051cce8bba40118dc63c48d",
       "determinability": "indeterminate",
       "gate_passed": true,
@@ -11322,6 +12135,25 @@
       "pair_role": "",
       "withheld_fact": "p1.employment_income",
       "is_eligibility_flip": true
+    },
+    {
+      "task_hash": "934a3158e2e3d93d58a54fd554e26f5e7642f3f0a591b6fab5be4d01c31227af",
+      "determinability": "determinate",
+      "gate_passed": true,
+      "exact_match": false,
+      "abstention_correct": false,
+      "composite": 0.5416666666666666,
+      "rewards": {
+        "abstention": 0.0,
+        "amounts": 0.6666666666666666,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "",
+      "withheld_fact": "",
+      "is_eligibility_flip": false
     },
     {
       "task_hash": "000d6c0a21aaf654fc9c2f65b41c091b4cf547401b740743e4f153f6ed281338",
@@ -19094,6 +19926,26 @@
       "pair": "pair-0151"
     },
     {
+      "task_hash": "a1dc595f0b7be2633beff3281f786e7a9bb40f88f3cbf6bbcac5080149e72ed9",
+      "determinability": "determinate",
+      "gate_passed": true,
+      "exact_match": false,
+      "abstention_correct": true,
+      "composite": 0.6749999999999999,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 0.0,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "without_disability",
+      "withheld_fact": "",
+      "is_eligibility_flip": false,
+      "pair": "pair-0152"
+    },
+    {
       "task_hash": "bae03e91901c2c068663f68c3548cd3e1ba3bf1a970792a8d83d10a5b60867fe",
       "determinability": "determinate",
       "gate_passed": true,
@@ -19111,7 +19963,7 @@
       "pair_role": "without_disability",
       "withheld_fact": "",
       "is_eligibility_flip": false,
-      "pair": "pair-0152"
+      "pair": "pair-0153"
     },
     {
       "task_hash": "8f8ef66d196c505c53ec0b6f8996d4535e40c0329085374bc5d308286f41fd21",
@@ -19131,7 +19983,927 @@
       "pair_role": "without_disability",
       "withheld_fact": "",
       "is_eligibility_flip": false,
-      "pair": "pair-0153"
+      "pair": "pair-0154"
+    },
+    {
+      "task_hash": "1447cabc43b03f427f344eca11958cd62a5bf5c92a86bd694749362d144fc989",
+      "determinability": "determinate",
+      "gate_passed": true,
+      "exact_match": false,
+      "abstention_correct": true,
+      "composite": 0.6749999999999999,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 0.0,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "without_disability",
+      "withheld_fact": "",
+      "is_eligibility_flip": false,
+      "pair": "pair-0155"
+    },
+    {
+      "task_hash": "d42ab2a37c74b43f4c80bb9a3b1194d9adaa8dfaa7bd327413d9d58d7ccca961",
+      "determinability": "determinate",
+      "gate_passed": true,
+      "exact_match": false,
+      "abstention_correct": true,
+      "composite": 0.7833333333333333,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 0.3333333333333333,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "without_disability",
+      "withheld_fact": "",
+      "is_eligibility_flip": false,
+      "pair": "pair-0156"
+    },
+    {
+      "task_hash": "ba7622ff8e1a1e8506751fbd07ca2e800d2757630c071e9b3ce79936ec1ec44d",
+      "determinability": "determinate",
+      "gate_passed": true,
+      "exact_match": true,
+      "abstention_correct": true,
+      "composite": 1.0,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 1.0,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "without_disability",
+      "withheld_fact": "",
+      "is_eligibility_flip": false,
+      "pair": "pair-0157"
+    },
+    {
+      "task_hash": "4c62a04ef30276f8b3992dc97a82604a89baa597c5c44d583a4128740b9d8233",
+      "determinability": "determinate",
+      "gate_passed": true,
+      "exact_match": true,
+      "abstention_correct": true,
+      "composite": 1.0,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 1.0,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "without_disability",
+      "withheld_fact": "",
+      "is_eligibility_flip": false,
+      "pair": "pair-0158"
+    },
+    {
+      "task_hash": "428476392b6aa118d5b3ab2a4bacd35e5170053a27ccbf85a1a6c3c2894c2c61",
+      "determinability": "determinate",
+      "gate_passed": true,
+      "exact_match": false,
+      "abstention_correct": true,
+      "composite": 0.8916666666666666,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 0.6666666666666666,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "without_disability",
+      "withheld_fact": "",
+      "is_eligibility_flip": false,
+      "pair": "pair-0159"
+    },
+    {
+      "task_hash": "fc483d31cda4de2b11ff54a84605d54c5faf52393802a4611c052be9e1e1019e",
+      "determinability": "determinate",
+      "gate_passed": true,
+      "exact_match": false,
+      "abstention_correct": true,
+      "composite": 0.7833333333333333,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 0.3333333333333333,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "without_disability",
+      "withheld_fact": "",
+      "is_eligibility_flip": false,
+      "pair": "pair-0160"
+    },
+    {
+      "task_hash": "76351ce08ce6cae41b0ff67fde0b2f30f34b07935f1579586b74d0b2b228ea38",
+      "determinability": "determinate",
+      "gate_passed": true,
+      "exact_match": false,
+      "abstention_correct": true,
+      "composite": 0.7833333333333333,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 0.3333333333333333,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "without_disability",
+      "withheld_fact": "",
+      "is_eligibility_flip": false,
+      "pair": "pair-0161"
+    },
+    {
+      "task_hash": "1c8ca7ca819ebafaf4af6fb185f87c00a606fc7793b0ac9d088dda9bb7ce2630",
+      "determinability": "determinate",
+      "gate_passed": true,
+      "exact_match": false,
+      "abstention_correct": true,
+      "composite": 0.8916666666666666,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 0.6666666666666666,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "without_disability",
+      "withheld_fact": "",
+      "is_eligibility_flip": false,
+      "pair": "pair-0162"
+    },
+    {
+      "task_hash": "73f2fb991e7483904c0a61064bdecc754902031e34618f7d9f3d2c1b7bf762e6",
+      "determinability": "determinate",
+      "gate_passed": true,
+      "exact_match": false,
+      "abstention_correct": true,
+      "composite": 0.8916666666666666,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 0.6666666666666666,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "without_disability",
+      "withheld_fact": "",
+      "is_eligibility_flip": false,
+      "pair": "pair-0163"
+    },
+    {
+      "task_hash": "4841ad122194147915780ae9c55158797e8874e3997f474ff61e29a44f529e5a",
+      "determinability": "determinate",
+      "gate_passed": false,
+      "exact_match": false,
+      "abstention_correct": false,
+      "composite": 0.0,
+      "rewards": {
+        "abstention": 0.0,
+        "amounts": 0.0,
+        "eligibility": 0.0,
+        "periods": 0.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "without_disability",
+      "withheld_fact": "",
+      "is_eligibility_flip": false,
+      "pair": "pair-0164"
+    },
+    {
+      "task_hash": "fca6c6ab421dda5aac00481518642d5537a4ce79ea3fb5c3f1bb6fa97bc81dc7",
+      "determinability": "determinate",
+      "gate_passed": true,
+      "exact_match": false,
+      "abstention_correct": true,
+      "composite": 0.6766666666666666,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 0.6666666666666666,
+        "eligibility": 0.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "without_disability",
+      "withheld_fact": "",
+      "is_eligibility_flip": false,
+      "pair": "pair-0165"
+    },
+    {
+      "task_hash": "de09c831f6cdb04901d17b2270207178f503f06a4afc25d58289695f85297fcb",
+      "determinability": "determinate",
+      "gate_passed": true,
+      "exact_match": false,
+      "abstention_correct": true,
+      "composite": 0.8916666666666666,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 0.6666666666666666,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "without_disability",
+      "withheld_fact": "",
+      "is_eligibility_flip": false,
+      "pair": "pair-0166"
+    },
+    {
+      "task_hash": "2c60f40f38c7fda4f430950fb44b90815f2a47d49bc01e7dd01650e5d4ffb6c4",
+      "determinability": "determinate",
+      "gate_passed": true,
+      "exact_match": true,
+      "abstention_correct": true,
+      "composite": 1.0,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 1.0,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "without_disability",
+      "withheld_fact": "",
+      "is_eligibility_flip": false,
+      "pair": "pair-0167"
+    },
+    {
+      "task_hash": "840e154fa4a6c7b804729782971af645c86e36f3accb93b2d1468b741c8b89ba",
+      "determinability": "determinate",
+      "gate_passed": true,
+      "exact_match": true,
+      "abstention_correct": true,
+      "composite": 1.0,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 1.0,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "without_disability",
+      "withheld_fact": "",
+      "is_eligibility_flip": false,
+      "pair": "pair-0168"
+    },
+    {
+      "task_hash": "2a26d81784ec81cbf96d18901cf0a55dfe5f1f5bb7af81c188b12f3374f4489e",
+      "determinability": "determinate",
+      "gate_passed": true,
+      "exact_match": false,
+      "abstention_correct": true,
+      "composite": 0.6749999999999999,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 0.0,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "without_disability",
+      "withheld_fact": "",
+      "is_eligibility_flip": false,
+      "pair": "pair-0169"
+    },
+    {
+      "task_hash": "07c85ec592cffbe39e1859ec5cdbb58c8f90e84984870bc6dbdc1eef96f441f6",
+      "determinability": "determinate",
+      "gate_passed": true,
+      "exact_match": false,
+      "abstention_correct": true,
+      "composite": 0.8916666666666666,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 0.6666666666666666,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "without_disability",
+      "withheld_fact": "",
+      "is_eligibility_flip": false,
+      "pair": "pair-0170"
+    },
+    {
+      "task_hash": "7cbff986f8154936568d5ba20937d38ae9d83af680ef128b1ac2dd48b15b2801",
+      "determinability": "determinate",
+      "gate_passed": true,
+      "exact_match": false,
+      "abstention_correct": true,
+      "composite": 0.8916666666666666,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 0.6666666666666666,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "without_disability",
+      "withheld_fact": "",
+      "is_eligibility_flip": false,
+      "pair": "pair-0171"
+    },
+    {
+      "task_hash": "7e81d43647e5705730559e8aa1d1e646ed8224e814a0e2939d995199f3108f01",
+      "determinability": "determinate",
+      "gate_passed": true,
+      "exact_match": true,
+      "abstention_correct": true,
+      "composite": 1.0,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 1.0,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "without_disability",
+      "withheld_fact": "",
+      "is_eligibility_flip": false,
+      "pair": "pair-0172"
+    },
+    {
+      "task_hash": "593be8b690c7348a9560cc3c1f0cba3c326951308b67fe23f501b48e96e06fce",
+      "determinability": "determinate",
+      "gate_passed": true,
+      "exact_match": false,
+      "abstention_correct": true,
+      "composite": 0.6749999999999999,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 0.0,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "without_disability",
+      "withheld_fact": "",
+      "is_eligibility_flip": false,
+      "pair": "pair-0173"
+    },
+    {
+      "task_hash": "2b19e02eebb29e5de94b232026ed83a03072cd3940679a99d5098080be563f96",
+      "determinability": "determinate",
+      "gate_passed": true,
+      "exact_match": false,
+      "abstention_correct": true,
+      "composite": 0.8916666666666666,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 0.6666666666666666,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "without_disability",
+      "withheld_fact": "",
+      "is_eligibility_flip": false,
+      "pair": "pair-0174"
+    },
+    {
+      "task_hash": "206531d43c768829aa13c151d5a7be1086c1ad6709494c6e813d588f019c628d",
+      "determinability": "determinate",
+      "gate_passed": true,
+      "exact_match": false,
+      "abstention_correct": true,
+      "composite": 0.6749999999999999,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 0.0,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "without_disability",
+      "withheld_fact": "",
+      "is_eligibility_flip": false,
+      "pair": "pair-0175"
+    },
+    {
+      "task_hash": "6ee4271bb01a3745db4a34aab70bf9f975165ef71a22bb191a7326f5549a5a3f",
+      "determinability": "determinate",
+      "gate_passed": true,
+      "exact_match": false,
+      "abstention_correct": true,
+      "composite": 0.8916666666666666,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 0.6666666666666666,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "without_disability",
+      "withheld_fact": "",
+      "is_eligibility_flip": false,
+      "pair": "pair-0176"
+    },
+    {
+      "task_hash": "21571ca9e5ad67e2db47b7f878680cb3f2d0297610e9fb91496b28fc87a0521f",
+      "determinability": "determinate",
+      "gate_passed": true,
+      "exact_match": false,
+      "abstention_correct": false,
+      "composite": 0.32666666666666666,
+      "rewards": {
+        "abstention": 0.0,
+        "amounts": 0.6666666666666666,
+        "eligibility": 0.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "without_disability",
+      "withheld_fact": "",
+      "is_eligibility_flip": false,
+      "pair": "pair-0177"
+    },
+    {
+      "task_hash": "cff9347c3f3f8b44b4d5ead2ebd1caa76be13134a256de5ddb8379c999b6e773",
+      "determinability": "determinate",
+      "gate_passed": true,
+      "exact_match": false,
+      "abstention_correct": true,
+      "composite": 0.8916666666666666,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 0.6666666666666666,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "without_disability",
+      "withheld_fact": "",
+      "is_eligibility_flip": false,
+      "pair": "pair-0178"
+    },
+    {
+      "task_hash": "8949c360f8a27e2565e9fd24de89dfa1cd5e5e3c7bb7ec8c4111da3ed7d584b2",
+      "determinability": "determinate",
+      "gate_passed": true,
+      "exact_match": true,
+      "abstention_correct": true,
+      "composite": 1.0,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 1.0,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "without_disability",
+      "withheld_fact": "",
+      "is_eligibility_flip": false,
+      "pair": "pair-0179"
+    },
+    {
+      "task_hash": "d03dfe86508acb483d320266189f022081fd123d86811543b22a7d1c48ec9e59",
+      "determinability": "determinate",
+      "gate_passed": true,
+      "exact_match": false,
+      "abstention_correct": true,
+      "composite": 0.8916666666666666,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 0.6666666666666666,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "without_disability",
+      "withheld_fact": "",
+      "is_eligibility_flip": false,
+      "pair": "pair-0180"
+    },
+    {
+      "task_hash": "c5251fd07791e5a01f1a2d84c6f44a342ec462417214f02f83f8151f2ff7bec9",
+      "determinability": "determinate",
+      "gate_passed": true,
+      "exact_match": true,
+      "abstention_correct": true,
+      "composite": 1.0,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 1.0,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "without_disability",
+      "withheld_fact": "",
+      "is_eligibility_flip": false,
+      "pair": "pair-0181"
+    },
+    {
+      "task_hash": "8f3e1ead24c56410ae39d2eb42108330b3e8a7dd0961b9d71d6d689e5350ebe2",
+      "determinability": "determinate",
+      "gate_passed": true,
+      "exact_match": false,
+      "abstention_correct": true,
+      "composite": 0.8916666666666666,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 0.6666666666666666,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "without_disability",
+      "withheld_fact": "",
+      "is_eligibility_flip": false,
+      "pair": "pair-0182"
+    },
+    {
+      "task_hash": "c62aec25c2024a53c7e85b4881a85be2ee8eb56b25223ab7121807e9eebd2186",
+      "determinability": "determinate",
+      "gate_passed": true,
+      "exact_match": true,
+      "abstention_correct": true,
+      "composite": 1.0,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 1.0,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "without_disability",
+      "withheld_fact": "",
+      "is_eligibility_flip": false,
+      "pair": "pair-0183"
+    },
+    {
+      "task_hash": "6658b207d3b846e1b43a5376dcd1c288f2d72f9b4841ed45a90e80b2648fb7ce",
+      "determinability": "determinate",
+      "gate_passed": true,
+      "exact_match": true,
+      "abstention_correct": true,
+      "composite": 1.0,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 1.0,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "without_disability",
+      "withheld_fact": "",
+      "is_eligibility_flip": false,
+      "pair": "pair-0184"
+    },
+    {
+      "task_hash": "b7da156903a3d455fc517c2499c54a86973c70dcc8e48c89e3ea1347571d60fc",
+      "determinability": "determinate",
+      "gate_passed": true,
+      "exact_match": true,
+      "abstention_correct": true,
+      "composite": 1.0,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 1.0,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "without_disability",
+      "withheld_fact": "",
+      "is_eligibility_flip": false,
+      "pair": "pair-0185"
+    },
+    {
+      "task_hash": "584fab20e498335327f7d187164cda7d6e9277729d40dba546e7886cae07028a",
+      "determinability": "determinate",
+      "gate_passed": true,
+      "exact_match": false,
+      "abstention_correct": true,
+      "composite": 0.8916666666666666,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 0.6666666666666666,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "without_disability",
+      "withheld_fact": "",
+      "is_eligibility_flip": false,
+      "pair": "pair-0186"
+    },
+    {
+      "task_hash": "637c15899e8e59814a3a650fc64c87e39e08869aec2a8ffdbe33cb0e0be546dc",
+      "determinability": "determinate",
+      "gate_passed": true,
+      "exact_match": false,
+      "abstention_correct": true,
+      "composite": 0.7833333333333333,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 0.3333333333333333,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "without_disability",
+      "withheld_fact": "",
+      "is_eligibility_flip": false,
+      "pair": "pair-0187"
+    },
+    {
+      "task_hash": "910df661c6075325be48907497e38daa5c5064babb7582955048d90ec281b319",
+      "determinability": "determinate",
+      "gate_passed": true,
+      "exact_match": true,
+      "abstention_correct": true,
+      "composite": 1.0,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 1.0,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "without_disability",
+      "withheld_fact": "",
+      "is_eligibility_flip": false,
+      "pair": "pair-0188"
+    },
+    {
+      "task_hash": "aac0c57dbc41ca983e1f7ab2872a4cf9a9906d7e73e533646b7ad8a1e55c38ac",
+      "determinability": "determinate",
+      "gate_passed": true,
+      "exact_match": false,
+      "abstention_correct": true,
+      "composite": 0.8916666666666666,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 0.6666666666666666,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "without_disability",
+      "withheld_fact": "",
+      "is_eligibility_flip": false,
+      "pair": "pair-0189"
+    },
+    {
+      "task_hash": "17402ee92f961f83bb44c1a39e854835bcd12182977e6f850110d319e02d3556",
+      "determinability": "determinate",
+      "gate_passed": true,
+      "exact_match": true,
+      "abstention_correct": true,
+      "composite": 1.0,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 1.0,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "without_disability",
+      "withheld_fact": "",
+      "is_eligibility_flip": false,
+      "pair": "pair-0190"
+    },
+    {
+      "task_hash": "8f31438a7d3c97f64ef97cbbbf387581f9d7d02aaf5500c812086ac4827979e1",
+      "determinability": "determinate",
+      "gate_passed": true,
+      "exact_match": false,
+      "abstention_correct": true,
+      "composite": 0.8916666666666666,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 0.6666666666666666,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "without_disability",
+      "withheld_fact": "",
+      "is_eligibility_flip": false,
+      "pair": "pair-0191"
+    },
+    {
+      "task_hash": "bac11bc2830f958066a6cd5ac1c5545f177ab3477b36988acc7dd99bb97a0dcb",
+      "determinability": "determinate",
+      "gate_passed": true,
+      "exact_match": true,
+      "abstention_correct": true,
+      "composite": 1.0,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 1.0,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "without_disability",
+      "withheld_fact": "",
+      "is_eligibility_flip": false,
+      "pair": "pair-0192"
+    },
+    {
+      "task_hash": "0fa402fabfb2efa2b5024ce1aba85dc59a7fd786fcdb582e1d637c25beb1f05e",
+      "determinability": "determinate",
+      "gate_passed": true,
+      "exact_match": false,
+      "abstention_correct": true,
+      "composite": 0.8916666666666666,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 0.6666666666666666,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "without_disability",
+      "withheld_fact": "",
+      "is_eligibility_flip": false,
+      "pair": "pair-0193"
+    },
+    {
+      "task_hash": "aaafc464a8689dcce3e3088b279ffa6da8b426d472a9d7e70e5c12d6c6f7f9ff",
+      "determinability": "determinate",
+      "gate_passed": true,
+      "exact_match": false,
+      "abstention_correct": true,
+      "composite": 0.8916666666666666,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 0.6666666666666666,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "without_disability",
+      "withheld_fact": "",
+      "is_eligibility_flip": false,
+      "pair": "pair-0194"
+    },
+    {
+      "task_hash": "655231c144c532071bb4c0bbbd545d833cb2d8770a0ff6ec45341aa6e97f9cb0",
+      "determinability": "determinate",
+      "gate_passed": true,
+      "exact_match": true,
+      "abstention_correct": true,
+      "composite": 1.0,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 1.0,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "without_disability",
+      "withheld_fact": "",
+      "is_eligibility_flip": false,
+      "pair": "pair-0195"
+    },
+    {
+      "task_hash": "f2850d2f8054bc55f470cdd0189465a23f9e39fd911eb355a2285b9648026223",
+      "determinability": "determinate",
+      "gate_passed": true,
+      "exact_match": true,
+      "abstention_correct": true,
+      "composite": 1.0,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 1.0,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "without_disability",
+      "withheld_fact": "",
+      "is_eligibility_flip": false,
+      "pair": "pair-0196"
+    },
+    {
+      "task_hash": "49af61857e57ad3e3c9437a7a9a34d8c2911779c8bdeeec07c23ce770d0feab5",
+      "determinability": "determinate",
+      "gate_passed": true,
+      "exact_match": true,
+      "abstention_correct": true,
+      "composite": 1.0,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 1.0,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "without_disability",
+      "withheld_fact": "",
+      "is_eligibility_flip": false,
+      "pair": "pair-0197"
+    },
+    {
+      "task_hash": "a9adeff634bbec71a8489a31d4f1db4556052b1c257c80ba0e95649735fadcf9",
+      "determinability": "determinate",
+      "gate_passed": true,
+      "exact_match": false,
+      "abstention_correct": true,
+      "composite": 0.8916666666666666,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 0.6666666666666666,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "without_disability",
+      "withheld_fact": "",
+      "is_eligibility_flip": false,
+      "pair": "pair-0198"
+    },
+    {
+      "task_hash": "e0f642baa4aeffb1b8bb8d3a27f6644ea4fc9c9ce51033945c561884e7bf427b",
+      "determinability": "determinate",
+      "gate_passed": true,
+      "exact_match": true,
+      "abstention_correct": true,
+      "composite": 1.0,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 1.0,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "without_disability",
+      "withheld_fact": "",
+      "is_eligibility_flip": false,
+      "pair": "pair-0199"
+    },
+    {
+      "task_hash": "52cb3768e2274992c32756827ccf83af877a38f12fce4a9c7e44d322a03267ab",
+      "determinability": "determinate",
+      "gate_passed": true,
+      "exact_match": false,
+      "abstention_correct": true,
+      "composite": 0.8916666666666666,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 0.6666666666666666,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "without_disability",
+      "withheld_fact": "",
+      "is_eligibility_flip": false,
+      "pair": "pair-0200"
     },
     {
       "task_hash": "60cf8ed191483d9dd0a1900486b3ab216e1e792dee4cc9b44dfbca9fb3103eba",
@@ -22154,7 +23926,7 @@
       "pair": "pair-0151"
     },
     {
-      "task_hash": "423f73ec97520d5924be316ac4ee624f8e5a2c6fe6548e70420b722f6a4e3abc",
+      "task_hash": "819508f1aaedfc56f9ed68310eae9fd3f7388fd34a247b10f997746f611733eb",
       "determinability": "determinate",
       "gate_passed": true,
       "exact_match": false,
@@ -22174,6 +23946,26 @@
       "pair": "pair-0152"
     },
     {
+      "task_hash": "423f73ec97520d5924be316ac4ee624f8e5a2c6fe6548e70420b722f6a4e3abc",
+      "determinability": "determinate",
+      "gate_passed": true,
+      "exact_match": false,
+      "abstention_correct": true,
+      "composite": 0.7833333333333333,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 0.3333333333333333,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "with_disability",
+      "withheld_fact": "",
+      "is_eligibility_flip": false,
+      "pair": "pair-0153"
+    },
+    {
       "task_hash": "10bf7a67fea24ad2d8154b6217d7d6791234468c50abdc1013c9387dfa9b4748",
       "determinability": "determinate",
       "gate_passed": true,
@@ -22191,7 +23983,927 @@
       "pair_role": "with_disability",
       "withheld_fact": "",
       "is_eligibility_flip": false,
-      "pair": "pair-0153"
+      "pair": "pair-0154"
+    },
+    {
+      "task_hash": "02f37c9b2c7a4f79e4cca0c938f1553337d6c36fcb7ff087a8884a7b461c09dc",
+      "determinability": "determinate",
+      "gate_passed": true,
+      "exact_match": false,
+      "abstention_correct": true,
+      "composite": 0.7833333333333333,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 0.3333333333333333,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "with_disability",
+      "withheld_fact": "",
+      "is_eligibility_flip": false,
+      "pair": "pair-0155"
+    },
+    {
+      "task_hash": "1a1fba69a325cd170ce95074b8eecc1698513d0ba62dd8c0c5bef3cc8dc9433e",
+      "determinability": "determinate",
+      "gate_passed": true,
+      "exact_match": false,
+      "abstention_correct": true,
+      "composite": 0.7833333333333333,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 0.3333333333333333,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "with_disability",
+      "withheld_fact": "",
+      "is_eligibility_flip": false,
+      "pair": "pair-0156"
+    },
+    {
+      "task_hash": "0f914408d13e544ff95134b34b9c5f3f0b0f42b07e80d441395fca7a9e1dc2cb",
+      "determinability": "determinate",
+      "gate_passed": true,
+      "exact_match": false,
+      "abstention_correct": true,
+      "composite": 0.8916666666666666,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 0.6666666666666666,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "with_disability",
+      "withheld_fact": "",
+      "is_eligibility_flip": false,
+      "pair": "pair-0157"
+    },
+    {
+      "task_hash": "cf070cf731527a883356f9e235ef09b91df1a18d622dbead9f3be4e396419c6a",
+      "determinability": "determinate",
+      "gate_passed": true,
+      "exact_match": true,
+      "abstention_correct": true,
+      "composite": 1.0,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 1.0,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "with_disability",
+      "withheld_fact": "",
+      "is_eligibility_flip": false,
+      "pair": "pair-0158"
+    },
+    {
+      "task_hash": "53c7646b14b732ba61745c5cef0c879e6c82d6f6f3251154b0e2fa9c030963c2",
+      "determinability": "determinate",
+      "gate_passed": true,
+      "exact_match": false,
+      "abstention_correct": true,
+      "composite": 0.7833333333333333,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 0.3333333333333333,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "with_disability",
+      "withheld_fact": "",
+      "is_eligibility_flip": false,
+      "pair": "pair-0159"
+    },
+    {
+      "task_hash": "8aa3dbc5e077ce83823b2bba1ccedc2dce6e96ee0081e90de5c95774835f6d1d",
+      "determinability": "determinate",
+      "gate_passed": false,
+      "exact_match": false,
+      "abstention_correct": false,
+      "composite": 0.0,
+      "rewards": {
+        "abstention": 0.0,
+        "amounts": 0.0,
+        "eligibility": 0.0,
+        "periods": 0.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "with_disability",
+      "withheld_fact": "",
+      "is_eligibility_flip": false,
+      "pair": "pair-0160"
+    },
+    {
+      "task_hash": "0ffec087c6e6fd1142e3e3a2142c894af422b13fbaf008cb2e63a37da5e53c6a",
+      "determinability": "determinate",
+      "gate_passed": true,
+      "exact_match": false,
+      "abstention_correct": true,
+      "composite": 0.7833333333333333,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 0.3333333333333333,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "with_disability",
+      "withheld_fact": "",
+      "is_eligibility_flip": false,
+      "pair": "pair-0161"
+    },
+    {
+      "task_hash": "90b59a1d5427fa4a6ecf762021fd1d743dedb065ea4d94b15323549e5f7578c9",
+      "determinability": "determinate",
+      "gate_passed": true,
+      "exact_match": true,
+      "abstention_correct": true,
+      "composite": 1.0,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 1.0,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "with_disability",
+      "withheld_fact": "",
+      "is_eligibility_flip": false,
+      "pair": "pair-0162"
+    },
+    {
+      "task_hash": "990964b86290afe1a9e116921448a378f5a26fdfd0dd69c90bfd20c7c0eac2ba",
+      "determinability": "determinate",
+      "gate_passed": true,
+      "exact_match": false,
+      "abstention_correct": true,
+      "composite": 0.8916666666666666,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 0.6666666666666666,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "with_disability",
+      "withheld_fact": "",
+      "is_eligibility_flip": false,
+      "pair": "pair-0163"
+    },
+    {
+      "task_hash": "98ad25c50b35a4a11f17547977f0e850bc5689c8dd150e912e690ec821884fca",
+      "determinability": "determinate",
+      "gate_passed": true,
+      "exact_match": true,
+      "abstention_correct": true,
+      "composite": 1.0,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 1.0,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "with_disability",
+      "withheld_fact": "",
+      "is_eligibility_flip": false,
+      "pair": "pair-0164"
+    },
+    {
+      "task_hash": "e7c5f712b7a7acff6bc996e61785fa467713603acfaf7db3f832cf2777ae77eb",
+      "determinability": "determinate",
+      "gate_passed": true,
+      "exact_match": false,
+      "abstention_correct": true,
+      "composite": 0.6749999999999999,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 0.0,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "with_disability",
+      "withheld_fact": "",
+      "is_eligibility_flip": false,
+      "pair": "pair-0165"
+    },
+    {
+      "task_hash": "d3c9b184d62a4a263135a7342c52252b2f11e3a225a508cc10098dda101b4d01",
+      "determinability": "determinate",
+      "gate_passed": true,
+      "exact_match": false,
+      "abstention_correct": true,
+      "composite": 0.6766666666666666,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 0.6666666666666666,
+        "eligibility": 0.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "with_disability",
+      "withheld_fact": "",
+      "is_eligibility_flip": false,
+      "pair": "pair-0166"
+    },
+    {
+      "task_hash": "cef3ac24313c212dff50f1bef10cd4c3f60b398feac87470b2f3be4e6ce43a32",
+      "determinability": "determinate",
+      "gate_passed": true,
+      "exact_match": false,
+      "abstention_correct": true,
+      "composite": 0.8916666666666666,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 0.6666666666666666,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "with_disability",
+      "withheld_fact": "",
+      "is_eligibility_flip": false,
+      "pair": "pair-0167"
+    },
+    {
+      "task_hash": "47ee95e57f6bdadfcc56677c1783d2af461c06ccac32e08fc664b9e2edf979f4",
+      "determinability": "determinate",
+      "gate_passed": true,
+      "exact_match": true,
+      "abstention_correct": true,
+      "composite": 1.0,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 1.0,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "with_disability",
+      "withheld_fact": "",
+      "is_eligibility_flip": false,
+      "pair": "pair-0168"
+    },
+    {
+      "task_hash": "a176ffd4a8271aaeb1f730beb6676df95c8d7833dcc7d931cc83858de10f8ea0",
+      "determinability": "determinate",
+      "gate_passed": true,
+      "exact_match": false,
+      "abstention_correct": true,
+      "composite": 0.7833333333333333,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 0.3333333333333333,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "with_disability",
+      "withheld_fact": "",
+      "is_eligibility_flip": false,
+      "pair": "pair-0169"
+    },
+    {
+      "task_hash": "897da605661e379c07159e34c43fb6dd83cf69f4dfaa8a34928b9a2074d5baf5",
+      "determinability": "determinate",
+      "gate_passed": true,
+      "exact_match": false,
+      "abstention_correct": true,
+      "composite": 0.8916666666666666,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 0.6666666666666666,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "with_disability",
+      "withheld_fact": "",
+      "is_eligibility_flip": false,
+      "pair": "pair-0170"
+    },
+    {
+      "task_hash": "8c5dea025d5a04bfbedf1f7e89b4668665169bf0d6c064c4210c6a3f2fa9dda3",
+      "determinability": "determinate",
+      "gate_passed": true,
+      "exact_match": false,
+      "abstention_correct": true,
+      "composite": 0.8916666666666666,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 0.6666666666666666,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "with_disability",
+      "withheld_fact": "",
+      "is_eligibility_flip": false,
+      "pair": "pair-0171"
+    },
+    {
+      "task_hash": "ecfcd009bd0a88be071410a6759012c5b71639781e734e5c23f87a2f56001877",
+      "determinability": "determinate",
+      "gate_passed": true,
+      "exact_match": false,
+      "abstention_correct": true,
+      "composite": 0.8916666666666666,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 0.6666666666666666,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "with_disability",
+      "withheld_fact": "",
+      "is_eligibility_flip": false,
+      "pair": "pair-0172"
+    },
+    {
+      "task_hash": "a295d90460f8bb092a72d1fadaec4f10a5b23e676b6cddd470146ff14f994d9d",
+      "determinability": "determinate",
+      "gate_passed": true,
+      "exact_match": false,
+      "abstention_correct": true,
+      "composite": 0.7833333333333333,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 0.3333333333333333,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "with_disability",
+      "withheld_fact": "",
+      "is_eligibility_flip": false,
+      "pair": "pair-0173"
+    },
+    {
+      "task_hash": "3ba9386762cd3f864e6532885d5d30448fe24ced3adf94e6923112d8a085ffec",
+      "determinability": "determinate",
+      "gate_passed": true,
+      "exact_match": true,
+      "abstention_correct": true,
+      "composite": 1.0,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 1.0,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "with_disability",
+      "withheld_fact": "",
+      "is_eligibility_flip": false,
+      "pair": "pair-0174"
+    },
+    {
+      "task_hash": "703ebbe6f7db538934586e3b1836cd4cee1ffea580d88cecb65c9ae63ecd171b",
+      "determinability": "determinate",
+      "gate_passed": true,
+      "exact_match": false,
+      "abstention_correct": true,
+      "composite": 0.8916666666666666,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 0.6666666666666666,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "with_disability",
+      "withheld_fact": "",
+      "is_eligibility_flip": false,
+      "pair": "pair-0175"
+    },
+    {
+      "task_hash": "48ff40ee3fa04df6516966daf2e72d608fe4cd98c64510a767269e12d8aa1928",
+      "determinability": "determinate",
+      "gate_passed": true,
+      "exact_match": false,
+      "abstention_correct": true,
+      "composite": 0.7833333333333333,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 0.3333333333333333,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "with_disability",
+      "withheld_fact": "",
+      "is_eligibility_flip": false,
+      "pair": "pair-0176"
+    },
+    {
+      "task_hash": "013910e2070f566670e6937aabb66220fac5e6be914529439d20b27749511a6c",
+      "determinability": "determinate",
+      "gate_passed": true,
+      "exact_match": false,
+      "abstention_correct": true,
+      "composite": 0.8916666666666666,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 0.6666666666666666,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "with_disability",
+      "withheld_fact": "",
+      "is_eligibility_flip": false,
+      "pair": "pair-0177"
+    },
+    {
+      "task_hash": "38b681780ecd1f62b9bee2c643dfe7cafc6387475c3cc858fbde54702f051acc",
+      "determinability": "determinate",
+      "gate_passed": true,
+      "exact_match": false,
+      "abstention_correct": true,
+      "composite": 0.8916666666666666,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 0.6666666666666666,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "with_disability",
+      "withheld_fact": "",
+      "is_eligibility_flip": false,
+      "pair": "pair-0178"
+    },
+    {
+      "task_hash": "dff86be681232beb12bbba247fb038ec3ea38ba514a2cb5b6d646b418797b85f",
+      "determinability": "determinate",
+      "gate_passed": true,
+      "exact_match": true,
+      "abstention_correct": true,
+      "composite": 1.0,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 1.0,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "with_disability",
+      "withheld_fact": "",
+      "is_eligibility_flip": false,
+      "pair": "pair-0179"
+    },
+    {
+      "task_hash": "79f041a3901fad1e16bbfb6ecc796eca17cebf7d17fc5b00acf03cea38dfc022",
+      "determinability": "determinate",
+      "gate_passed": true,
+      "exact_match": false,
+      "abstention_correct": true,
+      "composite": 0.7833333333333333,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 0.3333333333333333,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "with_disability",
+      "withheld_fact": "",
+      "is_eligibility_flip": false,
+      "pair": "pair-0180"
+    },
+    {
+      "task_hash": "084d7ed721bb21d35fccb9477cb86c38746ae6876d75ddb0d64e5bb267822f9e",
+      "determinability": "determinate",
+      "gate_passed": true,
+      "exact_match": true,
+      "abstention_correct": true,
+      "composite": 1.0,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 1.0,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "with_disability",
+      "withheld_fact": "",
+      "is_eligibility_flip": false,
+      "pair": "pair-0181"
+    },
+    {
+      "task_hash": "d65714d4fe4bace45b68b1f17e361e89db095ddb9ad21cf4c0a9eeb8e9ce6136",
+      "determinability": "determinate",
+      "gate_passed": true,
+      "exact_match": true,
+      "abstention_correct": true,
+      "composite": 1.0,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 1.0,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "with_disability",
+      "withheld_fact": "",
+      "is_eligibility_flip": false,
+      "pair": "pair-0182"
+    },
+    {
+      "task_hash": "71cbda869fed94fb672915285720d3baa4d8eb931a1ca64ab0d3bbb361162166",
+      "determinability": "determinate",
+      "gate_passed": true,
+      "exact_match": true,
+      "abstention_correct": true,
+      "composite": 1.0,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 1.0,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "with_disability",
+      "withheld_fact": "",
+      "is_eligibility_flip": false,
+      "pair": "pair-0183"
+    },
+    {
+      "task_hash": "b8fb44aa995dcb622106c64bb6992c36a64f75b874c555f4b6a1f05620c5085d",
+      "determinability": "determinate",
+      "gate_passed": true,
+      "exact_match": false,
+      "abstention_correct": true,
+      "composite": 0.8916666666666666,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 0.6666666666666666,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "with_disability",
+      "withheld_fact": "",
+      "is_eligibility_flip": false,
+      "pair": "pair-0184"
+    },
+    {
+      "task_hash": "57de58db047dfd9d17001214dbac9c4c08a1e1e6edb44f3d035755522054f8a8",
+      "determinability": "determinate",
+      "gate_passed": true,
+      "exact_match": false,
+      "abstention_correct": true,
+      "composite": 0.8916666666666666,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 0.6666666666666666,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "with_disability",
+      "withheld_fact": "",
+      "is_eligibility_flip": false,
+      "pair": "pair-0185"
+    },
+    {
+      "task_hash": "34b6c8899e39770b34234bc2f47291e430e3e2258936b17a114acc2ee9fbb119",
+      "determinability": "determinate",
+      "gate_passed": true,
+      "exact_match": true,
+      "abstention_correct": true,
+      "composite": 1.0,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 1.0,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "with_disability",
+      "withheld_fact": "",
+      "is_eligibility_flip": false,
+      "pair": "pair-0186"
+    },
+    {
+      "task_hash": "ebc655d5e851e126edd21694fb4e18aa5baa5b1058cdb507952913fbadafee43",
+      "determinability": "determinate",
+      "gate_passed": true,
+      "exact_match": false,
+      "abstention_correct": true,
+      "composite": 0.8916666666666666,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 0.6666666666666666,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "with_disability",
+      "withheld_fact": "",
+      "is_eligibility_flip": false,
+      "pair": "pair-0187"
+    },
+    {
+      "task_hash": "11f7748439213052131bef1571eb6ec3cbb70657238c198a9b7b808a4e2eb0f8",
+      "determinability": "determinate",
+      "gate_passed": true,
+      "exact_match": true,
+      "abstention_correct": true,
+      "composite": 1.0,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 1.0,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "with_disability",
+      "withheld_fact": "",
+      "is_eligibility_flip": false,
+      "pair": "pair-0188"
+    },
+    {
+      "task_hash": "9dc6155cd53a2ec8de0d8fc7da1985d58e038a1eba7775e96ff4477df23d469a",
+      "determinability": "determinate",
+      "gate_passed": true,
+      "exact_match": false,
+      "abstention_correct": true,
+      "composite": 0.8916666666666666,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 0.6666666666666666,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "with_disability",
+      "withheld_fact": "",
+      "is_eligibility_flip": false,
+      "pair": "pair-0189"
+    },
+    {
+      "task_hash": "7d3d086dd38c833e5c32d6c7cf750f62f1ce434103f77253bd58c99adbda68c5",
+      "determinability": "determinate",
+      "gate_passed": true,
+      "exact_match": false,
+      "abstention_correct": true,
+      "composite": 0.8916666666666666,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 0.6666666666666666,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "with_disability",
+      "withheld_fact": "",
+      "is_eligibility_flip": false,
+      "pair": "pair-0190"
+    },
+    {
+      "task_hash": "9d4788605c01263ecfe88636e0d849b283b12a0ce96efb461d1e14aa3217a115",
+      "determinability": "determinate",
+      "gate_passed": true,
+      "exact_match": false,
+      "abstention_correct": true,
+      "composite": 0.8916666666666666,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 0.6666666666666666,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "with_disability",
+      "withheld_fact": "",
+      "is_eligibility_flip": false,
+      "pair": "pair-0191"
+    },
+    {
+      "task_hash": "e97b71a1e824bd61b768f7957111ce64c4b6c0c4231f6db7123e087db6f6be80",
+      "determinability": "determinate",
+      "gate_passed": true,
+      "exact_match": false,
+      "abstention_correct": true,
+      "composite": 0.6766666666666666,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 0.6666666666666666,
+        "eligibility": 0.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "with_disability",
+      "withheld_fact": "",
+      "is_eligibility_flip": false,
+      "pair": "pair-0192"
+    },
+    {
+      "task_hash": "c8f656d28680bef0924899bef65b43d51ef10098d4687f7c25c21eabc9f202ae",
+      "determinability": "determinate",
+      "gate_passed": true,
+      "exact_match": false,
+      "abstention_correct": true,
+      "composite": 0.8916666666666666,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 0.6666666666666666,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "with_disability",
+      "withheld_fact": "",
+      "is_eligibility_flip": false,
+      "pair": "pair-0193"
+    },
+    {
+      "task_hash": "8a9878d1a5d223fc1f75cf18c1c923d58c08e4a5b84b619dcfc9b15856f6dfe7",
+      "determinability": "determinate",
+      "gate_passed": true,
+      "exact_match": false,
+      "abstention_correct": true,
+      "composite": 0.8916666666666666,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 0.6666666666666666,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "with_disability",
+      "withheld_fact": "",
+      "is_eligibility_flip": false,
+      "pair": "pair-0194"
+    },
+    {
+      "task_hash": "f295549d7d21a4db1eaa2482d4af05b976cbff9a2e932e21db1ceba4d5c5cff8",
+      "determinability": "determinate",
+      "gate_passed": true,
+      "exact_match": true,
+      "abstention_correct": true,
+      "composite": 1.0,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 1.0,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "with_disability",
+      "withheld_fact": "",
+      "is_eligibility_flip": false,
+      "pair": "pair-0195"
+    },
+    {
+      "task_hash": "61f275d3a13fca5b50fe223d040c8fd56fc21acccb0f45d5c9c2aa62c654e8d6",
+      "determinability": "determinate",
+      "gate_passed": true,
+      "exact_match": false,
+      "abstention_correct": true,
+      "composite": 0.8916666666666666,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 0.6666666666666666,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "with_disability",
+      "withheld_fact": "",
+      "is_eligibility_flip": false,
+      "pair": "pair-0196"
+    },
+    {
+      "task_hash": "ed312890c7ee6af4b24292bc397b13606c3513c5833bc51e3d0b1a71477885e6",
+      "determinability": "determinate",
+      "gate_passed": true,
+      "exact_match": false,
+      "abstention_correct": true,
+      "composite": 0.8916666666666666,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 0.6666666666666666,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "with_disability",
+      "withheld_fact": "",
+      "is_eligibility_flip": false,
+      "pair": "pair-0197"
+    },
+    {
+      "task_hash": "da9e290de932101a5dea56f57a37bbf23dc8bc8053e6c291663e7abe3bbaede6",
+      "determinability": "determinate",
+      "gate_passed": true,
+      "exact_match": false,
+      "abstention_correct": true,
+      "composite": 0.8916666666666666,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 0.6666666666666666,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "with_disability",
+      "withheld_fact": "",
+      "is_eligibility_flip": false,
+      "pair": "pair-0198"
+    },
+    {
+      "task_hash": "134427599f4e66ec6605e49a514daadbef34a3e253d13fecdde4bef8ac5b80d2",
+      "determinability": "determinate",
+      "gate_passed": true,
+      "exact_match": true,
+      "abstention_correct": true,
+      "composite": 1.0,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 1.0,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "with_disability",
+      "withheld_fact": "",
+      "is_eligibility_flip": false,
+      "pair": "pair-0199"
+    },
+    {
+      "task_hash": "403b7a1d26aaed0a741bfe2e937d5183a1939afb9303ea17bb1ae26719921190",
+      "determinability": "determinate",
+      "gate_passed": true,
+      "exact_match": false,
+      "abstention_correct": true,
+      "composite": 0.8916666666666666,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 0.6666666666666666,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "with_disability",
+      "withheld_fact": "",
+      "is_eligibility_flip": false,
+      "pair": "pair-0200"
     }
   ]
 }
