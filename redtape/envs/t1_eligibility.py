@@ -31,16 +31,60 @@ from redtape.scoring.core import (
     score_exact_match,
     score_periods,
 )
+from redtape.schemas import (
+    AnnualAmount,
+    CannotDetermine,
+    MedicaidAnswer,
+    SnapAnswer,
+    T1Answer,
+)
 from redtape.scoring.parsing import ParseFailure, parse_answer
-from redtape.schemas import Determinability, T1Answer
+from redtape.schemas import Determinability
+
+def _answer_shape() -> str:
+    """The exact answer shape, rendered from `T1Answer` itself.
+
+    Hand-writing the schema into the prompt is how the prompt and the parser drift apart.
+    The first live run scored 0.000 on every headline because the prompt said only "a
+    single JSON object" and named no fields: the model produced a well-reasoned answer
+    using `monthly_benefit`, `annual_amount` and `period` where the schema wanted
+    `benefit`, `amount` and `period_label`, and all 10 responses were rejected as
+    `schema_invalid`. That measured field-name telepathy, not determinability.
+
+    Nothing caught it because every baseline and scripted agent constructs `T1Answer` in
+    Python and never goes through the prompt at all - so the one path a real model takes
+    was the one path nothing exercised.
+
+    Generating this from the model means a schema change updates the prompt automatically.
+    It also changes `Task.hash` and every response-cache key, which is correct: a different
+    prompt is a different task and must not reuse cached answers.
+    """
+    example = T1Answer(
+        snap=SnapAnswer(period_label="2025-11", eligible=True, benefit=298.0),
+        medicaid=MedicaidAnswer(period_label="2025", person_eligible={"p1": True}),
+        eitc=AnnualAmount(period_label="2025", amount=0.0),
+        ctc=AnnualAmount(period_label="2025", amount=4400.0, gross_entitlement=4400.0),
+        cannot_determine=(
+            CannotDetermine(program="snap", missing_fact="p1.employment_income"),
+        ),
+    )
+    return example.model_dump_json(indent=2)
+
 
 SYSTEM_PROMPT = (
     "You are a benefits eligibility analyst. Given a household case file, determine "
     "SNAP, EITC and Child Tax Credit outcomes.\n\n"
-    "Answer with a single JSON object and nothing else. Every amount states the period "
-    "it covers: SNAP is a MONTHLY benefit for the month named in the case file; EITC "
-    "and CTC are ANNUAL amounts for the tax year. Report what the household actually "
-    "RECEIVES, not what it is nominally entitled to.\n\n"
+    "Answer with a single JSON object and nothing else - no prose, no markdown fence. "
+    "Use EXACTLY these field names; any other shape is rejected unread:\n\n"
+    + _answer_shape()
+    + "\n\n"
+    "Field notes. `period_label` is the period the figure covers: \"YYYY-MM\" for SNAP, "
+    "\"YYYY\" for EITC and CTC. `benefit` is SNAP for that ONE MONTH, never annualized. "
+    "`amount` is what the household actually RECEIVES; put any larger nominal entitlement "
+    "in `gross_entitlement` (a zero-income family with two children is entitled to $4,400 "
+    "of CTC and receives $0). `medicaid.person_eligible` maps each person id to a boolean "
+    "and is recorded but NOT scored. Omit `cannot_determine` entirely, or give it as an "
+    "empty list, when nothing is missing.\n\n"
     "If a fact required to determine a program's outcome is missing from the case file, "
     "list that program in `cannot_determine` with the missing fact, instead of guessing. "
     "If a fact is missing but the outcome does not depend on it, answer normally - a "

@@ -52,3 +52,9 @@ results/*.json
 # LAST on purpose. It must override the .public.json re-inclusion above: a held-out
 # public file is still a held-out artifact and does not belong in the repository.
 results/*heldout*
+
+# Model responses are partitioned by split (eval/cache.py::partition). The dev subtree
+# is committed - it comes from the PUBLIC seed and is paid for, so losing it costs money.
+# The held-out subtree NEVER is: each cached reply restates the household it was given, so
+# committing it would publish held-out case files in all but name.
+cache/responses/heldout/

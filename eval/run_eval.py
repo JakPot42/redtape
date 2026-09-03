@@ -31,6 +31,13 @@ from pathlib import Path
 
 from eval.baselines import BASELINES, PAIR_DIAGNOSTICS
 from eval.metrics import TaskRecord, assert_publishable, build_results, redact
+from eval.cache import (
+    cache_key,
+    cost_usd,
+    get as cache_get,
+    partition,
+    put as cache_put,
+)
 from eval.tools import UNKNOWN, calculate, tool_schema
 from redtape.config import load_dotenv
 
@@ -362,6 +369,47 @@ def scripted_tool_agent(condition: str):
 
 
 # ------------------------------------------------------------------ the live client
+class _Ledger:
+    """Running token and cost total for a live run.
+
+    Cached responses are counted separately from billed ones. Reporting a single blended
+    figure would make a resumed run look cheaper than it was and a fully-cached re-score
+    look free, and neither is the number anyone actually wants: the question is usually
+    "what did this run cost me" AND "what would it cost from cold".
+    """
+
+    def __init__(self):
+        self.reset()
+
+    def reset(self):
+        self.billed = {"n": 0, "input_tokens": 0, "output_tokens": 0, "usd": 0.0}
+        self.cached = {"n": 0, "input_tokens": 0, "output_tokens": 0, "usd": 0.0}
+
+    def record(self, model: str, usage: dict, *, cached: bool):
+        bucket = self.cached if cached else self.billed
+        bucket["n"] += 1
+        bucket["input_tokens"] += usage.get("input_tokens", 0)
+        bucket["output_tokens"] += usage.get("output_tokens", 0)
+        bucket["usd"] += cost_usd(model, usage)
+
+    def summary(self) -> dict:
+        return {
+            "billed": dict(self.billed),
+            "cached": dict(self.cached),
+            "usd_actually_spent": round(self.billed["usd"], 4),
+            "usd_if_uncached": round(self.billed["usd"] + self.cached["usd"], 4),
+        }
+
+    def line(self) -> str:
+        b, c = self.billed, self.cached
+        return (f"billed {b['n']:>4} req  {b['input_tokens']:>8,} in  "
+                f"{b['output_tokens']:>9,} out  ${b['usd']:.4f}"
+                f"   |  cache hits {c['n']:>4}  (${c['usd']:.4f} avoided)")
+
+
+LEDGER = _Ledger()
+
+
 def live_agent(condition: str, model: str = MODEL, max_tool_turns: int = 6):
     """A real Claude client. The API key comes from the environment - never from disk.
 
@@ -377,29 +425,53 @@ def live_agent(condition: str, model: str = MODEL, max_tool_turns: int = 6):
     tools = ([tool_schema(allow_unknown=allow_unknown)]
              if condition != "tool_less" else [])
 
+    # Sampling parameters live here so they are hashed into the cache key. Changing any of
+    # them must miss the cache rather than silently reuse responses generated under a
+    # different configuration.
+    PARAMS = {"max_tokens": 8_000, "thinking": {"type": "adaptive"},
+              "output_config": {"effort": "high"}}
+
     def agent(task) -> str:
+        key = cache_key(model=model, system=SYSTEM_PROMPT, prompt=task.data.prompt,
+                        tools=tools, params=PARAMS)
+        split = partition(task.data.seed)
+        hit = cache_get(key, split)
+        if hit is not None:
+            LEDGER.record(model, hit["usage"], cached=True)
+            return hit["reply"]
+
         messages = [{"role": "user", "content": task.data.prompt}]
+        usage_total = {"input_tokens": 0, "output_tokens": 0}
+
+        def _finish(reply: str) -> str:
+            cache_put(key, {"reply": reply, "usage": usage_total, "model": model,
+                            "condition": condition, "task_hash": task.hash}, split)
+            LEDGER.record(model, usage_total, cached=False)
+            return reply
+
         for _ in range(max_tool_turns):
             kwargs = dict(
                 model=model,
-                max_tokens=8_000,
                 system=SYSTEM_PROMPT,
-                thinking={"type": "adaptive"},
-                output_config={"effort": "high"},
                 messages=messages,
+                **PARAMS,
             )
             if tools:
                 kwargs["tools"] = tools
             response = client.messages.create(**kwargs)
+            usage_total["input_tokens"] += response.usage.input_tokens
+            usage_total["output_tokens"] += response.usage.output_tokens
 
             if response.stop_reason == "refusal":
                 detail = getattr(response, "stop_details", None)
-                return json.dumps({"refusal": getattr(detail, "category", "unknown")})
+                return _finish(json.dumps(
+                    {"refusal": getattr(detail, "category", "unknown")}))
 
             messages.append({"role": "assistant", "content": response.content})
             calls = [b for b in response.content if b.type == "tool_use"]
             if not calls:
-                return "\n".join(b.text for b in response.content if b.type == "text")
+                return _finish(
+                    "\n".join(b.text for b in response.content if b.type == "text"))
 
             results = []
             for block in calls:
@@ -408,14 +480,58 @@ def live_agent(condition: str, model: str = MODEL, max_tool_turns: int = 6):
                                 "content": json.dumps(out)})
             messages.append({"role": "user", "content": results})
 
-        return json.dumps({"error": "tool loop did not terminate"})
+        return _finish(json.dumps({"error": "tool loop did not terminate"}))
 
     return agent
 
 
 # ------------------------------------------------------------------ entry points
+def prewarm(tasks, agent, *, workers: int = 8, log_every: int = 25) -> None:
+    """Fetch every response concurrently into the cache, then return.
+
+    Scoring stays SEQUENTIAL afterwards and reads only cache hits, so ordering, the ledger
+    and the results file are identical to a serial run - concurrency touches the network
+    and nothing else. That matters: a parallel scoring loop would interleave `trace.info`
+    writes and reorder `per_task`, which would change published numbers for a reason that
+    has nothing to do with the model.
+
+    Failures are swallowed here on purpose. An exception during pre-warm leaves that task
+    simply uncached, and the sequential pass that follows retries it and raises properly
+    with the task in hand. Losing the whole run at task 900 because one request 500'd would
+    throw away everything already paid for.
+    """
+    import concurrent.futures as cf
+    import threading
+
+    done = threading.Lock()
+    state = {"n": 0, "errors": 0}
+    total = len(tasks)
+
+    def one(task):
+        try:
+            agent(task)
+        except Exception:
+            with done:
+                state["errors"] += 1
+        finally:
+            with done:
+                state["n"] += 1
+                n = state["n"]
+            if log_every and (n % log_every == 0 or n == total):
+                print(f"  prewarm [{n:>5}/{total}] {LEDGER.line()}"
+                      f"{'  errors ' + str(state['errors']) if state['errors'] else ''}",
+                      flush=True)
+
+    with cf.ThreadPoolExecutor(max_workers=workers) as pool:
+        list(pool.map(one, tasks))
+
+    if state["errors"]:
+        print(f"  prewarm finished with {state['errors']} error(s); "
+              f"the scoring pass will retry those", flush=True)
+
+
 def run(tasks, agent, *, model: str, split: str, condition: str, out: Path, seed=None,
-        extra=None):
+        extra=None, progress_every: int = 0):
     # The seed is REQUIRED downstream by assert_publishable, and no call site was passing
     # it. Deriving it from the tasks themselves means it cannot be forgotten again, and
     # disagreement is a real problem worth stopping for: a results file covering two seeds
@@ -429,7 +545,15 @@ def run(tasks, agent, *, model: str, split: str, condition: str, out: Path, seed
             )
         seed = seeds.pop()
 
-    records = [score_one(t, agent(t)) for t in tasks]
+    LEDGER.reset()
+    records = []
+    for i, t in enumerate(tasks, 1):
+        records.append(score_one(t, agent(t)))
+        if progress_every and (i % progress_every == 0 or i == len(tasks)):
+            print(f"  [{i:>5}/{len(tasks)}] {LEDGER.line()}", flush=True)
+    extra = dict(extra or {})
+    if LEDGER.billed["n"] or LEDGER.cached["n"]:
+        extra["usage"] = LEDGER.summary()
     results = build_results(records, model=model, split=split, condition=condition,
                             seed=seed, extra=extra)
     write(results, out, seed=seed)
@@ -446,6 +570,11 @@ def main():
     ap.add_argument("--limit", type=int, default=None)
     ap.add_argument("--sample", type=int, default=None)
     ap.add_argument("--model", default=MODEL)
+    ap.add_argument("--progress-every", type=int, default=25,
+                    help="print a running cost line every N tasks")
+    ap.add_argument("--workers", type=int, default=1,
+                    help="concurrent API requests during cache pre-warm; scoring is "
+                         "always sequential")
     args = ap.parse_args()
 
     split_name = Path(args.split).stem
@@ -496,11 +625,19 @@ def main():
                   "Export one in this shell before running `live`. This script never "
                   "creates, requests or writes a key.", file=sys.stderr)
             return 2
-        tasks = tasks[: (args.limit or 1)]
+        if args.limit:
+            tasks = tasks[: args.limit]
         print(f"\nLIVE: {args.model}, {len(tasks)} task(s), tool_less")
-        run(tasks, live_agent("tool_less", args.model), model=args.model,
+        agent = live_agent("tool_less", args.model)
+        if args.workers > 1:
+            LEDGER.reset()
+            prewarm(tasks, agent, workers=args.workers,
+                    log_every=args.progress_every)
+        run(tasks, agent, model=args.model,
             split=split_name, condition="tool_less",
-            out=results_dir / f"{split_name}.live.{args.model}.tool_less.json")
+            out=results_dir / f"{split_name}.live.{args.model}.tool_less.json",
+            progress_every=args.progress_every)
+        print("\n  " + LEDGER.line())
     return 0
 
 
