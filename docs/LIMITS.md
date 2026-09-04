@@ -1000,7 +1000,45 @@ had to stop comparing `None < 0`, which raised a `TypeError` that the scorer gua
 into a `scorer_error` — meaning a single correct abstention would have made an entire run
 unpublishable.
 
-### Why it survived
+### A different failure mode: the signal was present and read wrong
+
+Every failure catalogued elsewhere in this file is an **absent** guard — a check that did not
+exist, a path nothing traversed, a fixture that could not express the defect. This one is
+not, and it is worth naming separately.
+
+**The diagnostic was in every report from the first live run onward.** `schema_invalid: 10`
+on the first 10-task probe. `47` on the full 1,200-task run, printed in the headline table,
+committed to the results files, and quoted in the README as a caveat: *"47 of 1,200 responses
+(3.9%) failed schema validation and are scored as incorrect, not excluded. Some are casing."*
+
+The number was correct. The **interpretation** was wrong, and it was wrong in the same
+direction for two days by both the author and the reviewer. When a 10-task probe showed one
+residual failure, it was called *"a genuine model slip, not a harness bug"* — a reading that
+sounded careful, cited real evidence, and was false. `schema_invalid` was treated throughout
+as a **format-compliance cost borne by the model**, when it was a **correctness cost imposed
+by us**. Nobody opened one of the rejected replies until the fixture work for §25 required
+it. Every one of them was a correct abstention.
+
+Three properties made it durable:
+
+- **It was quantified, so it looked examined.** A number in a table reads as a thing someone
+  looked at. "47 schema_invalid" was carried forward, re-quoted, and never re-derived.
+- **The explanation offered was partially true.** Some replies *did* use `"EITC"` against a
+  lowercase enum. A plausible partial cause is more effective at closing an investigation
+  than no cause at all.
+- **It pointed at the model, not at us.** A metric that attributes a fault outward invites
+  much less scrutiny than one that attributes a fault inward. The rejected replies were
+  filed as evidence of model sloppiness, which is exactly the shape of finding this project
+  was set up to produce — so it fit the expected story and was not questioned.
+
+**The rule this adds** to "every green signal must be checked for what it is not measuring":
+a *non-zero* diagnostic is a signal too, and a plausible explanation for it is not the same
+as a verified one. When a failure count is attributed to the system under test rather than to
+the harness, that attribution is a claim requiring evidence — and the evidence is cheap:
+**open one of the failures and read it.** Two days and a corrupted headline separated us from
+a single `cat` of a rejected reply.
+
+### Why it survived in the code
 
 The same reason as §25, and found by fixing §25. Every test, baseline and scripted agent
 constructed a `T1Answer` **in Python**, and Python code does not write `null` into a required

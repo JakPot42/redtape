@@ -21,21 +21,32 @@ when it cannot answer** — which is where real filings fail.
 The obvious objection is that "knows when it cannot answer" is just arithmetic competence
 wearing a different hat. The result below is the answer to that objection.
 
-## Result: the model computes well, and misses missing facts unevenly
+## Result: it notices a missing category, not a missing quantity
 
-**Claude Opus 5, 1,200-task dev split, no tools.** It computes benefits far better than any
-trivial strategy — **0.514 exact-match against a 0.205 best baseline** — and its abstention
-behaviour splits sharply by *what kind* of fact is missing.
+**Claude Opus 5, 1,200-task dev split, no tools.**
 
-Where a withheld fact flips SNAP eligibility outright, it abstains correctly **40% of the
-time**. Where a withheld fact moves an amount past tolerance without changing eligibility,
-it abstains correctly **5% of the time**. Where a fact is missing but does not decide the
-outcome — so answering is correct — it answers **95%** of the time. Across the whole split it
-volunteers `cannot_determine` in **6.3%** of responses.
+> **It recognises a missing fact when the fact's absence would change a *category*, and
+> largely misses one whose absence would change a *quantity*.**
+>
+> | the withheld fact would change… | correct abstention rate |
+> |---|---:|
+> | SNAP eligibility — a category | **0.396** (38 / 96) |
+> | a benefit amount — a quantity | **0.050** (9 / 180) |
+>
+> Both classes are cases where a required fact is absent and abstention is the correct
+> answer. They differ in one respect: whether the missing fact moves a yes/no or a number.
+> **An eight-fold gap.**
 
-So the failure is not uniform indifference to missing data. **It recognises a missing fact
-when the fact would change a categorical answer, and largely misses one that would change a
-number.**
+That is the result. Two things frame it.
+
+It is not incapacity at the task: the model computes benefits far better than any trivial
+strategy, **0.514 exact-match against a 0.205 best baseline**.
+
+And it is not blanket caution: where a fact is missing but does *not* decide the outcome — so
+answering is correct — it answers **95%** of the time (0.951). It is not abstaining
+indiscriminately and getting lucky; it is discriminating, on the wrong axis.
+
+Across the whole split it volunteers `cannot_determine` in **6.3%** of responses.
 
 ### Three headline metrics
 
@@ -90,10 +101,16 @@ Age (0.213) is second-lowest and behaves similarly, setting elderly status and d
 Income, the fact most often *stated* as an explicit line item in a case file, is noticed most
 (0.709).
 
-One reading is that the model tracks absent *line items* better than absent *premises* —
-income has an obvious slot in a case file, immigration status is background. The data is
-consistent with that and does not establish it; separating the two would need a split that
-varies the same fact between line-item and premise presentation, which this one does not.
+This is the category/quantity split seen fact by fact, and it suggests a mechanism for it.
+A case file has an obvious slot for income; immigration status and age are background
+premises a reader has to notice are *absent* rather than find blank. The facts the model
+flags best are the ones with a slot; the ones it misses are the ones that must be inferred to
+be missing.
+
+The data is consistent with that and does not establish it. Separating "premise vs line item"
+from "category vs quantity" needs a split that varies the same fact between the two
+presentations — which this one does not do, because every fact appears in exactly one form.
+It is the next experiment, not a conclusion.
 
 ### The obvious objection, tested before publication
 
