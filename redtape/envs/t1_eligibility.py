@@ -123,6 +123,8 @@ class T1Data(TaskData):
 class T1Config(TasksetConfig):
     task: T1TaskConfig = T1TaskConfig()
     split_path: str = "data/dev/t1.jsonl"
+    """Path to the split. Relative paths resolve against the working directory first (so a
+    repo checkout works unchanged), then against the copy shipped inside the package."""
 
 
 class T1Task(Task[T1Data, State, T1TaskConfig]):
@@ -321,14 +323,43 @@ class T1Task(Task[T1Data, State, T1TaskConfig]):
         )
 
 
+def _resolve_split(split_path):
+    """Find the split whether we are in a checkout or an installed wheel.
+
+    The default is a repo-relative path, which is right for development and wrong for an
+    installed package - a stranger who `pip install`s this has no `data/dev/` in their
+    working directory. Rather than force an absolute path on every caller, resolve in the
+    order that makes both work, and fail with the paths actually tried rather than a bare
+    FileNotFoundError.
+    """
+    from pathlib import Path
+
+    given = Path(split_path)
+    tried = [given]
+    if given.is_file():
+        return given
+
+    # Shipped alongside the package: see [tool.hatch.build.targets.wheel.force-include].
+    packaged = Path(__file__).resolve().parent.parent / "data" / Path(split_path).name
+    tried.append(packaged)
+    if packaged.is_file():
+        return packaged
+
+    raise FileNotFoundError(
+        "could not find the split. Tried:\n  "
+        + "\n  ".join(str(t) for t in tried)
+        + "\n\nIf you installed this as a package, leave `split_path` at its default and "
+          "the packaged dev split will be used. To build a split yourself you need the "
+          "generation extra: pip install 'redtape[generate]', then "
+          "python scripts/build_split.py --split dev"
+    )
+
+
 class T1Taskset(Taskset[T1Task, T1Config]):
     task_type = T1Task
 
     def load(self) -> Iterator[T1Task]:
-        from pathlib import Path
-
-        path = Path(self.config.split_path)
-        with path.open(encoding="utf-8") as fh:
+        with _resolve_split(self.config.split_path).open(encoding="utf-8") as fh:
             for line in fh:
                 line = line.strip()
                 if not line:

@@ -1,46 +1,57 @@
 [project]
 name = "redtape"
-version = "0.0.1"
-description = "Verifiable training-and-evaluation environments for US public-benefits work"
+version = "0.1.0"
+description = "Verifiable abstention: does the agent know when a required fact is missing? Deterministic ground truth from PolicyEngine, no LLM judge."
 readme = "README.md"
 license = { text = "Apache-2.0" }
-requires-python = "==3.13.*"
+requires-python = ">=3.13,<3.14"
+tags = ["single-turn", "v1", "eval", "abstention", "calibration", "public-benefits"]
 
-# Exact pins, never >=. See CLAUDE.md: policyengine-us ships 3-4 releases/day and
-# rule changes between them silently invalidate answer keys.
+# Evaluation is ENGINE-FREE. Answer keys are baked into the split at generation time and
+# never recomputed at rollout (CLAUDE.md, "Answer keys are baked at generation time"), so
+# running this environment needs no microsimulation engine and installs in seconds.
+# policyengine-us is required only to GENERATE a new split - see the `generate` extra.
 dependencies = [
-    "verifiers==0.3.1",
-    "policyengine-us==1.821.4",
-    # Pinned explicitly, not left transitive. Clearing the uv cache floated this from
-    # 3.31.0 to 3.31.1 with nothing to stop it; "pin every dependency" has to mean the
-    # closure, not just the names we happened to write down. See CLAUDE.md.
-    "policyengine-core==3.31.1",
-    "pydantic==2.12.3",
-    "pyyaml==6.0.3",
+    "verifiers>=0.3.1",
+    "pydantic>=2.12",
 ]
 
 [project.optional-dependencies]
+# Regenerating a split, or re-deriving ground truth. Exact pins, deliberately:
+# policyengine-us ships three to four releases a day and rule changes between them
+# silently invalidate answer keys, so a split is only meaningful against a stated engine
+# version. See docs/LIMITS.md 5 for the golden-master test that enforces this.
+generate = [
+    "policyengine-us==1.821.4",
+    "policyengine-core==3.31.1",
+    "pyyaml>=6.0",
+]
 dev = [
-    "pytest==8.4.2",
-    "ruff==0.9.0",
+    "pytest>=8.4",
+    "ruff>=0.9",
 ]
 
-[build-system]
-requires = ["setuptools>=80"]
-build-backend = "setuptools.build_meta"
+[project.urls]
+Homepage = "https://github.com/JakPot42/redtape"
+Limitations = "https://github.com/JakPot42/redtape/blob/main/docs/LIMITS.md"
 
-[tool.setuptools.packages.find]
-include = ["redtape*"]
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["redtape"]
+
+# The dev split ships with the wheel: it is the environment's data, it is generated from
+# the PUBLIC seed (20260828) and is reproducible by anyone, and without it the taskset has
+# nothing to load. The held-out split is NOT here and never is - it is gitignored, built
+# from a private seed, and excluded from every artifact.
+[tool.hatch.build.targets.wheel.force-include]
+"data/dev/t1.jsonl" = "redtape/data/t1.jsonl"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-q"
-# `eval/` is a top-level directory, not an installed package (packages.find takes
-# `redtape*` only), so importing it depends on the repo root being on sys.path. Running
-# `python -m pytest` injects the cwd and hides that; running `pytest` does not. Local runs
-# passed and the first CI run failed with ModuleNotFoundError purely on that difference.
-# Setting it here makes both invocations identical rather than leaving the suite dependent
-# on how it happened to be launched.
 pythonpath = ["."]
 
 [tool.ruff]
