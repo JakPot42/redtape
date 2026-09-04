@@ -14,7 +14,7 @@ from __future__ import annotations
 from enum import Enum
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 # Facts that may be withheld to create a T1b case. Names match the PolicyEngine
 # input variable exactly, so provenance is unambiguous.
@@ -175,8 +175,15 @@ class Household(Strict):
 class SnapAnswer(Strict):
     period: Literal["month"] = "month"
     period_label: str = Field(description='the month scored, "YYYY-MM"')
-    eligible: bool
-    benefit: float = Field(description="US dollars for that MONTH, never annualized")
+    eligible: bool | None = Field(
+        default=None,
+        description="null ONLY when snap is listed in cannot_determine",
+    )
+    benefit: float | None = Field(
+        default=None,
+        description="US dollars for that MONTH, never annualized. null ONLY when snap "
+                    "is listed in cannot_determine",
+    )
 
 
 class MedicaidAnswer(Strict):
@@ -203,8 +210,10 @@ class MedicaidAnswer(Strict):
 class AnnualAmount(Strict):
     period: Literal["year"] = "year"
     period_label: str
-    amount: float = Field(
-        description="the amount the household RECEIVES, not a gross entitlement"
+    amount: float | None = Field(
+        default=None,
+        description="the amount the household RECEIVES, not a gross entitlement. null "
+                    "ONLY when this program is listed in cannot_determine",
     )
     gross_entitlement: float | None = Field(
         default=None,
@@ -232,11 +241,48 @@ SCORED_PROGRAMS = ("snap", "eitc", "ctc")
 
 
 class T1Answer(Strict):
+    """The scored answer.
+
+    A scored program's value may be `null` **only** when that program appears in
+    `cannot_determine`. That is not a loosening of the schema, it is the schema finally
+    agreeing with the task: the prompt tells the model to abstain "instead of guessing", and
+    the previous version then required a number anyway. A model that abstained correctly -
+    naming the program and the missing fact - had to invent a figure it had just said it
+    could not determine, or be rejected as malformed.
+
+    It was rejected. On the first 1,200-task run every one of the 47 `schema_invalid`
+    responses was rejected for exactly this, and 34 of them were abstentions that would
+    otherwise have scored CORRECT. The benchmark was penalising the behaviour it exists to
+    reward. See docs/LIMITS.md 27.
+
+    A null WITHOUT a matching abstention is still rejected, so this cannot be used to skip
+    an answer silently.
+    """
+
     snap: SnapAnswer
     medicaid: MedicaidAnswer
     eitc: AnnualAmount
     ctc: AnnualAmount
     cannot_determine: tuple[CannotDetermine, ...] = ()
+
+    @model_validator(mode="after")
+    def _null_requires_abstention(self):
+        """A missing value must be accompanied by an explicit abstention for that program."""
+        abstained = {c.program for c in self.cannot_determine}
+        missing = []
+        if (self.snap.benefit is None or self.snap.eligible is None) \
+                and "snap" not in abstained:
+            missing.append("snap")
+        if self.eitc.amount is None and "eitc" not in abstained:
+            missing.append("eitc")
+        if self.ctc.amount is None and "ctc" not in abstained:
+            missing.append("ctc")
+        if missing:
+            raise ValueError(
+                f"null value for {missing} without listing it in cannot_determine. A "
+                f"program may be left null only when the answer explicitly abstains on it."
+            )
+        return self
 
 
 class Provenance(Strict):

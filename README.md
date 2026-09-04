@@ -21,20 +21,21 @@ when it cannot answer** — which is where real filings fail.
 The obvious objection is that "knows when it cannot answer" is just arithmetic competence
 wearing a different hat. The result below is the answer to that objection.
 
-## Result: the model computes well and does not know when to stop
+## Result: the model computes well, and misses missing facts unevenly
 
 **Claude Opus 5, 1,200-task dev split, no tools.** It computes benefits far better than any
-trivial strategy — **0.510 exact-match against a 0.205 best baseline** — and it essentially
-never abstains.
+trivial strategy — **0.514 exact-match against a 0.205 best baseline** — and its abstention
+behaviour splits sharply by *what kind* of fact is missing.
 
-Where a withheld fact genuinely decides the outcome, so the correct answer is "I cannot
-determine this", it is right **6 times in 1,000**. Where a fact is missing but does *not*
-decide the outcome, so the correct answer is to answer anyway, it is right **95 times in
-100**. Across the whole split it emits `cannot_determine` in **5.6%** of responses, against
-**23%** of cases where doing so is correct.
+Where a withheld fact flips SNAP eligibility outright, it abstains correctly **40% of the
+time**. Where a withheld fact moves an amount past tolerance without changing eligibility,
+it abstains correctly **5% of the time**. Where a fact is missing but does not decide the
+outcome — so answering is correct — it answers **95%** of the time. Across the whole split it
+volunteers `cannot_determine` in **6.3%** of responses.
 
-That is not a calibration gradient. It is a model that answers, and collects the cases where
-answering happens to be right.
+So the failure is not uniform indifference to missing data. **It recognises a missing fact
+when the fact would change a categorical answer, and largely misses one that would change a
+number.**
 
 ### Three headline metrics
 
@@ -43,7 +44,7 @@ that retuning a weight cannot move a published number.
 
 | | exact-match<br>(determinate, n=780) | abstention<br>(T1b, n=420) | pair-consistency<br>(200 pairs) |
 |---|---:|---:|---:|
-| **Claude Opus 5** | **0.510** | **0.357** | **0.570** |
+| **Claude Opus 5** | **0.514** | **0.438** | **0.570** |
 | baseline: always_abstain | 0.000 | 0.131 | 0.000 |
 | baseline: never_abstain | 0.205 | 0.336 | 0.495 |
 | baseline: always_eligible | 0.036 | 0.343 | 0.500 |
@@ -51,60 +52,56 @@ that retuning a weight cannot move a published number.
 | baseline: rules_only | 0.205 | 0.326 | 0.495 |
 | *ceiling: answers and abstains correctly* | *1.000* | *1.000* | *1.000* |
 
-Gate pass rate 0.942; `scorer_error` 0, so the run is publishable under the rule that any
-run with a non-zero scorer-error count is not. The ceiling row is a diagnostic agent that
-answers from the key **and** abstains on exactly the deciding programs — it exists because a
-metric nobody can score 1.000 on is broken, and until it was written nothing established
-that the abstention metric was reachable at all.
+Gate pass rate 0.981; **0 malformed-JSON, 0 schema-invalid, 0 scorer errors**. The ceiling
+row is a diagnostic agent that answers from the key **and** abstains on exactly the deciding
+programs — it exists because a metric nobody can score 1.000 on is broken, and until it was
+written nothing established that the abstention metric was reachable at all.
 
-**Read the abstention column against the baselines.** 0.357 sits 0.021 above never-abstain's
-0.336 — within noise on 420 tasks. On this metric a frontier model is not distinguishable
-from a strategy that never abstains.
+Abstention at 0.438 is 0.102 above the never-abstain baseline: better than the degenerate
+strategy, and less than a third of the way from it to the ceiling.
 
-### Why the aggregate looks better than the behaviour
+### The aggregate hides the split
 
 | class | correct | n | accuracy | correct behaviour |
 |---|---:|---:|---:|---|
-| indeterminate | 1 | 180 | **0.006** | abstain, naming the deciding program |
-| incomplete-determinate | 137 | 144 | **0.951** | answer anyway — the missing fact does not decide |
-| eligibility-flip | 12 | 96 | **0.125** | abstain — the fact flips SNAP eligibility itself |
+| indeterminate | 9 | 180 | **0.050** | abstain — the fact moves an amount past tolerance |
+| eligibility-flip | 38 | 96 | **0.396** | abstain — the fact flips SNAP eligibility |
+| incomplete-determinate | 137 | 144 | **0.951** | answer anyway — the fact does not decide |
 
-The 0.357 aggregate is almost entirely the middle row. Split the classes and the behaviour
-is unambiguous: **0.951 where answering is right, 0.006 where abstaining is right.**
-
-The incomplete-determinate class is the reason the benchmark cannot be won by always
-abstaining. This is the mirror image — never abstaining does not win either, but it loses
-much less than it should.
+An eight-fold gap between the two classes where abstention is required. Both are cases where
+a required fact is absent; they differ only in whether its absence changes a *category* or a
+*quantity*. The incomplete-determinate class is what stops the benchmark being won by always
+abstaining — and 0.951 there confirms the model is not simply cautious.
 
 ### Which missing facts go unnoticed
 
 | withheld fact | correct | n | accuracy |
 |---|---:|---:|---:|
+| `p1.employment_income` | 39 | 55 | 0.709 |
 | `p1.is_higher_ed_student` | 80 | 147 | 0.544 |
-| `housing_cost` | 25 | 50 | 0.500 |
+| `housing_cost` | 26 | 50 | 0.520 |
 | `dependent_care_cost` | 18 | 47 | 0.383 |
-| `p1.employment_income` | 13 | 55 | 0.236 |
+| `p1.age` | 13 | 61 | 0.213 |
 | `p1.immigration_status` | 8 | 60 | **0.133** |
-| `p1.age` | 6 | 61 | **0.098** |
 
-**Age and immigration status — the two facts a caseworker would call most obviously decisive
-— are the two the model is worst at noticing are missing.**
+**Immigration status is noticed least often of all, at 0.133 — and it is the fact with the
+starkest consequence**, determining outright whether a person is eligible for federal SNAP.
+Age (0.213) is second-lowest and behaves similarly, setting elderly status and dependency.
+Income, the fact most often *stated* as an explicit line item in a case file, is noticed most
+(0.709).
 
-The two facts it misses most, age and immigration status, both determine eligibility
-outright rather than adjusting an amount, and both are premises rather than line items. The
-facts it does flag are the ones a case file states explicitly. This suggests the model
-notices an **absent field** more readily than an **absent premise** — a hypothesis the data
-is consistent with rather than establishes. Distinguishing the two would need a split
-designed for it: same fact, varied between line-item and premise presentation, which this
-split does not do.
+One reading is that the model tracks absent *line items* better than absent *premises* —
+income has an obvious slot in a case file, immigration status is background. The data is
+consistent with that and does not establish it; separating the two would need a split that
+varies the same fact between line-item and premise presentation, which this one does not.
 
 ### The obvious objection, tested before publication
 
 The prompt names `cannot_determine` in three places, so this is not a measure of whether the
 model knows the mechanism exists. But the prompt's closing clause was one-sided where the
 scoring is symmetric: it warned that "a needless abstention is scored as wrong as a wrong
-number" and never stated the converse penalty. Publishing 0.006 with that clause in the
-prompt invites the charge that the result was written into the instructions.
+number" and never stated the converse. Publishing an abstention figure with that clause in
+the prompt invites the charge that the result was written into the instructions.
 
 So we A/B'd it. 60 tasks weighted toward the classes where abstention is correct; arm B
 **balanced** the clause rather than deleting it (deleting would test silence-vs-deterrent, a
@@ -113,41 +110,36 @@ different question).
 | | arm A (shipped) | arm B (balanced) | Fisher exact |
 |---|---|---|---|
 | replies containing any `cannot_determine` | **12 / 60** | **12 / 60** | p = 1.000 |
-| abstention accuracy, all T1b | 10 / 54 = 0.185 | 12 / 54 = 0.222 | p = 0.812 |
-| indeterminate | 0 / 24 | 0 / 24 | — |
+| abstention accuracy, all T1b | 19 / 54 = 0.352 | 18 / 54 = 0.333 | p = 1.000 |
 
-The raw abstention rate is **identical, not similar**. The model abstained on a slightly
-different *set* of tasks, not a larger number of them. Instruction asymmetry is ruled out as
-the explanation.
+The raw abstention rate is **identical, not similar**, and balancing the clause moved
+accuracy slightly *down*. Instruction asymmetry is ruled out as the explanation.
 
 ### What this does and does not claim
 
-The claim is narrow and it is the one the data supports: **a frontier model fails to
-recognise that a required fact is missing, even when told plainly and symmetrically what
-failing to flag it costs.**
-
-It is not a claim about all models, all domains, or all prompts. Specifically:
+The claim: **a frontier model recognises a missing fact far more reliably when its absence
+would change a categorical outcome than when it would change a quantity, and volunteers
+abstention rarely in absolute terms.** Narrower than "models cannot tell when they lack
+information", and it is what the data supports.
 
 - **One model, one state, one prompt pair.** Claude Opus 5, California only, tax year 2025.
 - **The A/B excludes a large effect, not a modest one.** At a 12/60 base rate, 60 tasks per
-  arm can only reliably detect roughly a doubling. A real 12 → 18 shift would have been
-  missed. "No detectable effect at this power" is not "no effect", and a differently worded
-  instruction or a few-shot abstention example could well move it.
-- **47 of 1,200 responses (3.9%) failed schema validation** and are scored as incorrect, not
-  excluded. Some are casing (`"EITC"` against a lowercase enum). That is a real format-
-  compliance cost and is reported rather than cleaned up.
-- **Abstention labels are approximate.** They come from a perturbation sweep that can prove a
-  fact is deciding but cannot prove one is not — a finite-sample under-approximation, not an
-  oracle. See `docs/LIMITS.md` §4.
-- **Medicaid is computed but not scored**, because no external validation was obtainable and
-  a cell backed only by the engine agreeing with itself is the circularity this project
-  exists to avoid.
+  arm reliably detects roughly a doubling. A real 12 → 18 shift would have been missed.
+- **These numbers are a correction.** An earlier version of this section reported abstention
+  0.357 and an indeterminate rate of 0.006, because the schema demanded a number for a
+  program the model had just declared undeterminable — so 47 correct abstentions were
+  rejected as malformed and scored as failures. The benchmark was penalising the behaviour it
+  exists to reward. Fixed, re-scored from cache, and recorded in `docs/LIMITS.md` §27.
+- **Abstention labels are approximate.** A perturbation sweep can prove a fact is deciding
+  but not that one is not (`docs/LIMITS.md` §4). Mislabelling would push the measured rate
+  *up*, not down, so the direction survives; the size is unmeasured.
+- **Medicaid is computed but not scored** — no external validation was obtainable, and a cell
+  backed only by the engine agreeing with itself is the circularity this project exists to
+  avoid.
 
-**Read [`docs/LIMITS.md`](docs/LIMITS.md) before citing any number here.** It is 26 sections,
-written as the work happened rather than retrofitted, and it states what is *not* validated
-at least as carefully as what is — including two sections retracting our own earlier errors.
-The one most relevant to this result is §26, which records the prompt confound above and the
-three things the A/B does not establish.
+**Read [`docs/LIMITS.md`](docs/LIMITS.md) before citing any number here.** 27 sections,
+written as the work happened rather than retrofitted, stating what is *not* validated at
+least as carefully as what is — including three sections retracting our own errors.
 
 **Reproducing it:** every model response is cached in `cache/responses/dev/` and committed,
 so the scored artifact can be re-derived without spending anything. The full run cost $59.66.

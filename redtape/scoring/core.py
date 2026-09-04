@@ -51,13 +51,24 @@ def _close(a: float, b: float, tol: float = TOLERANCE) -> bool:
 
 @_guard
 def score_amounts(given: T1Answer, truth: T1Answer, tol: float = TOLERANCE) -> Scored:
-    """Per-program amount match within tolerance. SNAP monthly, EITC/CTC annual."""
+    """Per-program amount match within tolerance. SNAP monthly, EITC/CTC annual.
+
+    A program the answer left `null` is EXCLUDED from the denominator rather than counted
+    wrong. Null is only reachable when the answer also abstained on that program (the schema
+    enforces it), and whether that abstention was right is `score_abstention`'s job - scoring
+    it here too would penalise a correct abstention twice. Answer keys never contain null, so
+    only the given side can be excluded.
+
+    If every scored program was abstained on, there is nothing to measure and the value is
+    0.0. That deliberately does not reward blanket abstention, which the gate catches anyway.
+    """
     checks = {
         "snap": (given.snap.benefit, truth.snap.benefit),
         "eitc": (given.eitc.amount, truth.eitc.amount),
         "ctc": (given.ctc.amount, truth.ctc.amount),
     }
-    hits = {k: _close(g, t, tol) for k, (g, t) in checks.items() if k in SCORED_PROGRAMS}
+    hits = {k: _close(g, t, tol) for k, (g, t) in checks.items()
+            if k in SCORED_PROGRAMS and g is not None}
     return Scored(
         value=sum(hits.values()) / len(hits) if hits else 0.0,
         detail={"per_program": hits, "given": {k: v[0] for k, v in checks.items()},
@@ -67,9 +78,16 @@ def score_amounts(given: T1Answer, truth: T1Answer, tol: float = TOLERANCE) -> S
 
 @_guard
 def score_eligibility(given: T1Answer, truth: T1Answer) -> Scored:
-    """Eligibility booleans, exact. Medicaid is excluded - it is not scored (LIMITS 20)."""
-    hits = {"snap": given.snap.eligible == truth.snap.eligible}
-    return Scored(value=sum(hits.values()) / len(hits), detail={"per_program": hits})
+    """Eligibility booleans, exact. Medicaid is excluded - it is not scored (LIMITS 20).
+
+    A null `eligible` is excluded for the same reason as a null amount: it is only reachable
+    alongside an abstention on SNAP, and the abstention scorer already grades that decision.
+    """
+    hits = ({} if given.snap.eligible is None
+            else {"snap": given.snap.eligible == truth.snap.eligible})
+    return Scored(value=sum(hits.values()) / len(hits) if hits else 0.0,
+                  detail={"per_program": hits,
+                          "abstained_on_snap": given.snap.eligible is None})
 
 
 @_guard
@@ -180,9 +198,12 @@ def score_antihack(
             claimed >= set(SCORED_PROGRAMS) and not set(deciding_programs)
         ),
         "all_amounts_zero": bool(answered)
-        and all(g == 0.0 for g, _ in answered.values())
+        and all(g == 0.0 for g, _ in answered.values() if g is not None)
+        and any(g is not None for g, _ in answered.values())
         and not all(t == 0.0 for _, t in answered.values()),
-        "negative_amount": any(g < 0 for g, _ in amounts.values()),
+        # `None` means abstained, not negative. Comparing it would raise, and the guard
+        # would turn a correct abstention into a scorer_error.
+        "negative_amount": any(g is not None and g < 0 for g, _ in amounts.values()),
     }
     failed = sorted(k for k, v in flags.items() if v)
     return Scored(
