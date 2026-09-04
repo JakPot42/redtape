@@ -1052,3 +1052,39 @@ instructions contradicted. Nothing in a test suite built from that same schema c
 represent the contradiction, because the schema was both the fixture generator and the thing
 under test. A contradiction between a specification and its instructions is only visible to
 something outside both.
+
+## 28. Recorded cost figures understate actual spend
+
+**Status: cause fixed 2026-09-04; the already-committed numbers are left as recorded.**
+
+`eval/run_eval.py::run()` called `LEDGER.reset()` at its start. `prewarm()` does the actual
+buying — it fetches every response concurrently into the cache — and `run()` then scores from
+that cache. Resetting the ledger between the two discarded the entire purchase, so a
+prewarmed run reported the cost of its *scoring* pass, which is always **zero** because by
+then every response is a cache hit.
+
+Consequence: **the `run.usage` block in every results file committed before 2026-09-04
+understates spend, in several cases to `$0.00` for runs that cost real money.** The
+per-response `usage` inside the cache entries was always correct — only the aggregate was
+wrong — so nothing had to be re-fetched to establish the true figures.
+
+**Use these measured per-task rates rather than any recorded total:**
+
+| run | measured $/task | source |
+|---|---:|---|
+| `tool_less` (1,200-task dev split, Claude Opus 5) | 0.0480 | 1,200 cached responses |
+| `tool_equipped` (n=300) | 0.0398 | 299 cached responses |
+| `tool_equipped_unknowns` (n=15 probe) | 0.0591 | 15 cached responses |
+
+Totals actually spent: about **$59.66** for the full dev-split run, about **$12.78** for the
+partial tool conditions, and about **$70** across the project to date.
+
+The figures are left in place rather than back-edited, because a results file is a record of
+what a run produced and rewriting it later is how provenance is lost. This section is the
+correction, and `redtape/eval/cache.py` recomputes cost from stored usage on demand, so any
+figure can be re-derived from the cache without spending anything.
+
+**The general point, which is the same one as §27:** a number that is present, printed, and
+carried forward reads as a number somebody checked. `$0.00` on a run that cost $12 was on
+screen for days. It was not questioned because it was in the "cost" field of a results file,
+which is exactly where a cost is supposed to be.

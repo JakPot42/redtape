@@ -2,10 +2,12 @@
 
 Verifiable training-and-evaluation environments for US public-benefits work.
 
-**Status: first frontier-model result in hand.** Two 1,200-task splits built, Claude Opus 5
-evaluated end to end on the dev split, five baselines and three tool conditions run, three
-headline metrics confirmed both discriminating and achievable. The held-out split has never
-been evaluated against and stays that way.
+**Status: first frontier-model result complete; one follow-up experiment incomplete.** Two 1,200-task splits built, Claude Opus 5
+evaluated end to end on the dev split, five baselines run, three headline metrics confirmed both
+discriminating and achievable, and the tool ablation complete for the scripted upper
+bound but only two of three conditions for the model itself. The held-out split has never
+been evaluated against and stays that way. One tool-condition experiment is two-thirds
+run and is labelled as such where it appears.
 **Nothing here is peer-reviewed**, and the validated surface is narrower than
 the test count suggests — read [`docs/LIMITS.md`](docs/LIMITS.md) before citing any number
 in this repo. It is written as the work happens rather than retrofitted, and it states what
@@ -161,7 +163,7 @@ least as carefully as what is — including three sections retracting our own er
 **Reproducing it:** every model response is cached in `cache/responses/dev/` and committed,
 so the scored artifact can be re-derived without spending anything. The full run cost $59.66.
 
-## The metric measures judgment, not arithmetic
+## The metric measures judgment, not arithmetic (scripted upper bound)
 
 Three conditions over the same tasks. `tool_equipped` gives the agent a calculator that
 takes a structured household and returns the benefit. `tool_equipped_unknowns` gives it the
@@ -191,6 +193,57 @@ so this is an upper bound on what the *tool* offers a perfect extractor, not a m
 of any model's behaviour; the model result is the section above. And pair rows are excluded
 from the sample, because they are all determinate and partially sampling them would make
 `pair_consistency` report a sampling artifact.
+
+## Giving the model the tool: a calculator improves its abstention, unexpectedly
+
+The section above measures what the tool offers a *perfect extractor*. This one asks the
+question that matters for the finding: hand the tool to the model, and does anything change?
+
+**This experiment is INCOMPLETE.** Two of three conditions ran before the API budget was
+exhausted. The third — the one that would settle whether the model can act on an explicit
+determinability signal — has not run, and the row below says so rather than being omitted.
+
+| condition | exact-match | abstention |
+|---|---:|---:|
+| `tool_less` | 0.553 (n=150) | 0.453 (n=150) |
+| `tool_equipped` | **0.927** (n=150) | **0.678** (n=149) |
+| `tool_equipped_unknowns` | — **NOT RUN** — | — **NOT RUN** — |
+
+*(A 15-task probe of the unrun condition gave 0.750 exact-match and 1.000 abstention on
+n=8 / n=7. That is 7 tasks. It is recorded for transparency and is not a result.)*
+
+### Two findings, one of them unexpected
+
+**A calculator nearly closes the arithmetic gap.** Exact-match goes 0.553 → 0.927, against a
+ceiling of 1.000. Whatever the model gets wrong on determinate cases is almost entirely
+computation, not comprehension of the case file — it knows what to compute and mis-computes
+it.
+
+**A calculator also improves abstention, 0.453 → 0.678.** This one was not predicted, and it
+is the more interesting of the two.
+
+It did not happen for the scripted extractor. Under the identical condition the scripted
+agent's abstention was flat — 0.327 → 0.333, a change of 0.006 on the same 300-task sample.
+So this is not a property of the tool. **Something about a model calling the tool makes it
+likelier to notice that it cannot answer.**
+
+The plausible mechanism, offered as a hypothesis: invoking the calculator requires naming
+every required field explicitly. A fact that is absent has to be confronted at the point of
+constructing the call, rather than glossed while writing prose. That would make the tool an
+*attention* aid rather than an arithmetic one — and it is the same line-item-versus-premise
+story the per-fact table suggests, reached from a different direction.
+
+It is a hypothesis. The experiment that would test it is the unrun third condition, plus a
+variant that requires the model to enumerate the fields it used without giving it a
+calculator at all — separating "had to name the fields" from "had a tool".
+
+### What is not claimed here
+
+- **Two conditions, not three.** The headline comparison this section was designed for —
+  explicit `"unknown"` marking versus none — has not been run.
+- `tool_equipped` abstention is n=149 rather than 150: one task's response was never
+  fetched, and dropping it is preferable to scoring an absent reply as a failure.
+- One model, one sample, one prompt. Same scope limits as the main result.
 
 ## Pair-consistency: both degenerate strategies fail, and they fail differently
 

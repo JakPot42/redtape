@@ -59,6 +59,57 @@ Note the spelling is `Taskset`, not `TaskSet`.
 
 ---
 
+## Paid runs: a hard cap, and never in the same turn as the estimate **[decided]**
+
+This project is funded out of a student's pocket. A run that overshoots is not an
+inconvenience, it is money that does not exist. Phase 3 was approved at roughly $43 and cost
+about $70 across three sessions, because each individual step looked small and none of them
+was bounded.
+
+Two rules. They are not guidance.
+
+### 1. No paid run starts without an explicit budget cap, enforced as a hard stop
+
+The cap is passed on the command line and checked **after every API call**, aborting the run
+the moment cumulative spend crosses it.
+
+**An estimate is not a control.** Estimates were wrong in both directions and by large
+factors on this project: $0.034/task projected from a 10-task probe against $0.048 actual;
+"$150 for a full ablation" that was actually $0 because the conditions use scripted agents;
+"$43 for three live conditions" that measured to $29. Tool-loop tasks are the worst case,
+because one task may make one API call or six and nothing in the request predicts which.
+
+A cap is the only mechanism that binds. A run that stops at the cap has spent exactly what
+was authorised; a run that merely started from a good estimate has spent whatever it turned
+out to cost.
+
+Partial results are acceptable — the response cache makes a capped run resumable, and
+`--cached-only` scores whatever was fetched. An overspend is not recoverable.
+
+### 2. Never launch a paid run in the same turn that estimates it
+
+Print the estimate, print the cap, then **stop and wait** for explicit confirmation of a
+specific dollar figure. "This will cost about $30, running it now" is the pattern that
+produced the overspend: it reads as a courtesy notice while removing the only opportunity to
+say no.
+
+Confirmation is per-run and per-figure. Approval of one run is not approval of the next, and
+approval of $30 is not approval of $45.
+
+Print running cost every 25 tasks so an overshoot is visible while it is happening rather
+than in the post-mortem.
+
+### Recorded because the accounting was also wrong
+
+`run()` called `LEDGER.reset()` at its start, discarding whatever `prewarm` had already
+spent — so every prewarmed run reported the cost of its *scoring* pass, which is always zero
+because by then every response is a cache hit. **The `usage` blocks in results files
+committed before 2026-09-04 understate actual spend, some of them to $0.00.** They are left
+as recorded rather than back-edited; anyone reproducing should use the measured per-task
+rates in `docs/LIMITS.md` §28 instead of the recorded totals.
+
+---
+
 ## Every green signal must be checked for what it is NOT measuring **[decided]**
 
 This is the standing principle, and it outranks any individual check below. It has now
