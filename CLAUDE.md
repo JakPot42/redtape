@@ -629,9 +629,9 @@ was published and no number is retracted. The window closed before it cost anyth
 The seed established on 2026-09-01 is an 18-digit CSPRNG value (`secrets`), stored in
 `.env` at repo root, mode `0600`. Its fingerprint is
 
-    sha256(str(seed))[:16] = b80dea37628d57fe   # in use, but EXPOSED 2026-09-02
-                                                 # rotate before publishing anything
-                              ab72ee672111f7fe   # VOID, rotated out 2026-09-02
+    sha256(str(seed))[:16] = 9a608a27bead4c03   # CURRENT, from 2026-09-03
+                              b80dea37628d57fe   # VOID, exposed in full 2026-09-02
+                              ab72ee672111f7fe   # VOID, partially exposed 2026-09-01
 
 Quote the **fingerprint** to identify which seed a run used. Never quote the seed.
 
@@ -686,9 +686,14 @@ not a prefix this time, the whole value.
 **Rotation is deferred, not skipped.** This is a deliberate scheduling decision, not a
 judgement that the exposure does not matter. It carries a hard gate:
 
-> **The seed MUST be rotated before any held-out number is published or shared, and the
+> **~~The seed MUST be rotated before any held-out number is published or shared, and the
 > held-out split MUST be regenerated from the new seed. Until both are done, the current
-> held-out split is VOID FOR PUBLICATION.**
+> held-out split is VOID FOR PUBLICATION.~~**
+>
+> **SATISFIED 2026-09-03.** The seed was rotated to `9a608a27bead4c03` and the held-out
+> split rebuilt from it, with zero task-hash overlap against dev. See "Rotated again
+> 2026-09-03" below. The gate is retained rather than deleted because it is the record of
+> why the 2026-09-02 split was never published.
 
 Rotating the seed alone is not sufficient. The split is a *function of* the seed, so the
 existing `data/heldout/t1.jsonl` remains reproducible by anyone holding the exposed value.
@@ -723,6 +728,40 @@ make `seed_fingerprint()` the only thing any tool, log, or human ever has cause 
 **Also exposed in the same paste: `ANTHROPIC_API_KEY`.** That one is already dead — it was
 the July 7 rotated-out key and now returns 401 — so the practical damage is nil, but it
 should be treated as burned and never reinstated.
+
+### Rotated again 2026-09-03; the publication gate is now SATISFIED **[decided]**
+
+**Current fingerprint: `9a608a27bead4c03`.** Both earlier seeds are void.
+
+| date | fingerprint | status | how it was exposed |
+|---|---|---|---|
+| 2026-09-01 | `ab72ee672111f7fe` | VOID | leading 5 of 18 digits, via a truncated `household_id` printed as diagnostic output |
+| 2026-09-02 | `b80dea37628d57fe` | VOID | the entire seed, when the full `.env` was pasted into a chat log |
+| 2026-09-03 | **`9a608a27bead4c03`** | **current** | not exposed |
+
+The held-out split was rebuilt from the new seed the same day: 1,200 tasks, class mix exact
+(15.0 / 12.0 / 8.0), 200 pairs at 100 differing / 100 same, every row carrying a
+`task_hash`, **zero hash overlap with dev**, manifest recording `seed: None` and the
+fingerprint only, and neither the split nor `.env` visible to git.
+
+**The VOID FOR PUBLICATION gate is therefore lifted.** Held-out numbers may now be
+published, subject to the standing redaction requirement — publishing goes through
+`redact()` and the `.public.json` it writes, never by quoting a raw results file.
+
+**How this rotation was performed, and how the next one must be.** The seed was generated
+in place by `secrets`, written straight to `.env`, and never printed: the script emits only
+`sha256(str(seed))[:16]`, and the generated value is dropped without passing through any
+log, terminal or variable that outlives the write. The builder prints
+`seed=<heldout, fp 9a608a27bead4c03>` rather than a value.
+
+That is the durable form of the lesson from the first two exposures, and it is worth stating
+as a rule rather than a habit: **both leaks happened in conversation, and every automated
+guard worked correctly on both occasions**, because `redact()`, `assert_publishable` and
+`.gitignore` all protect *artifacts* and both leaks were in *transcript*. Printing discipline
+alone was necessary and insufficient — the first exposure came from a deliberate diagnostic
+print, the second from a human paste. The fix that generalises is to remove the reason to
+look at the value at all. A secret a person routinely reads while debugging will eventually
+be pasted by that person.
 
 ### The three consequences, all now closed
 
