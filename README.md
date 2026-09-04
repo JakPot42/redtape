@@ -159,26 +159,29 @@ takes a structured household and returns the benefit. `tool_equipped_unknowns` g
 same calculator, except a fact may be passed as `"unknown"` — instead of defaulting it, the
 tool sweeps that fact and reports which programs its value decides.
 
-| condition | exact-match (n=34) | abstention (n=26) |
-|---|---|---|
-| `tool_less` | 0.176 | 0.385 |
-| `tool_equipped` | **0.618** | 0.346 |
-| `tool_equipped_unknowns` | 0.618 | **0.846** |
+300 tasks, weighted toward T1b so neither cell is thin: 150 determinate and 150 T1b
+(60 indeterminate, 50 incomplete-determinate, 40 eligibility-flip).
 
-**The calculator moves exact-match by +0.44 and leaves abstention where it was. Marking
-withheld facts moves abstention by +0.50 and leaves exact-match exactly where it was.**
+| condition | exact-match (n=150) | abstention (n=150) |
+|---|---:|---:|
+| `tool_less` | 0.247 | 0.327 |
+| `tool_equipped` | **0.740** | 0.333 |
+| `tool_equipped_unknowns` | 0.740 | **0.733** |
 
-The two axes separate cleanly. Arithmetic help does not buy abstention accuracy, and
-determinability help does not buy arithmetic accuracy. That is direct evidence the
-abstention metric measures something the amount-scoring benchmarks do not, which is the
-whole premise of the project — and it is the single finding that could have shown the
-premise was empty. It didn't.
+**The calculator moves exact-match by +0.493 and abstention by +0.006. Marking withheld
+facts moves abstention by +0.400 and exact-match by exactly zero.**
 
-Caveats, because the number is small: this is a 60-task stratified sample, so n=34 and
-n=26, and one task is worth 2.9 and 3.8 points respectively. The 0.385 → 0.346 dip on
-`tool_equipped` is one task and should be read as flat, not as a decline. The agent is a
-scripted stand-in, not a language model — it reads the case file and calls the tool, which
-is what makes it an upper bound on the *tool* rather than a measurement of any model.
+The two axes separate cleanly, and each "no effect" arm really is flat rather than merely
+small. Arithmetic help does not buy abstention accuracy; determinability help does not buy
+arithmetic accuracy. That is direct evidence the abstention metric measures something the
+amount-scoring benchmarks do not, which is the whole premise of the project — and the single
+result that could have shown the premise was empty. It didn't.
+
+Two things this is not. **No model is called** — all three conditions use scripted agents,
+so this is an upper bound on what the *tool* offers a perfect extractor, not a measurement
+of any model's behaviour; the model result is the section above. And pair rows are excluded
+from the sample, because they are all determinate and partially sampling them would make
+`pair_consistency` report a sampling artifact.
 
 ## Pair-consistency: both degenerate strategies fail, and they fail differently
 
