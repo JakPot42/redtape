@@ -590,7 +590,11 @@ def run(tasks, agent, *, model: str, split: str, condition: str, out: Path, seed
             )
         seed = seeds.pop()
 
-    LEDGER.reset()
+    # Deliberately NOT reset here. `prewarm` does the actual buying, and resetting at the
+    # top of run() discarded its totals - so a prewarmed run reported the cost of its
+    # scoring pass, which is always zero because every response is a cache hit by then.
+    # The results file's `usage` block was understating spend for exactly that reason.
+    # Callers reset before the work they want measured.
     records = []
     for i, t in enumerate(tasks, 1):
         records.append(score_one(t, agent(t)))
@@ -679,8 +683,8 @@ def main():
             tasks = cached_subset(tasks, args.model)
         print(f"\nLIVE: {args.model}, {len(tasks)} task(s), tool_less")
         agent = live_agent("tool_less", args.model)
+        LEDGER.reset()
         if args.workers > 1:
-            LEDGER.reset()
             prewarm(tasks, agent, workers=args.workers,
                     log_every=args.progress_every)
         run(tasks, agent, model=args.model,
