@@ -1088,3 +1088,77 @@ figure can be re-derived from the cache without spending anything.
 carried forward reads as a number somebody checked. `$0.00` on a run that cost $12 was on
 screen for days. It was not questioned because it was in the "cost" field of a results file,
 which is exactly where a cost is supposed to be.
+
+## 29. The seed detector was tightened rather than annotated, and given a positive control
+
+This is the first time in this project that §27's lesson was applied **before** the mistake
+rather than after it, so it is worth separating from the sections that record failures.
+
+Auditing the built wheel before publication, the secret scan fired on three 18-digit
+literals — the shape of a held-out seed. All three turned out to be digit runs sitting
+*inside* 64-character hex `task_hash` values. A SHA-256 has about 47 windows of 18
+characters, each with roughly a (10/16)^18 chance of being all digits, so across 1,200 task
+hashes a handful of them is not a surprise — it is the expected outcome.
+
+There were two ways to close it:
+
+1. Annotate the three as known false positives and move on.
+2. Change the detector so it does not consider digit runs inside a hex digest at all.
+
+We took the second. The reason is precisely §27: **a detector that is wrong most of the
+times it fires is one people learn to wave through.** The `schema_invalid` count in §27 was
+not hidden — it was printed in every report for two days — and it was dismissed because it
+had a plausible-sounding explanation attached. An annotated exception list is a plausible
+explanation stapled to a warning, which is the same failure with better manners.
+
+The part that matters more than the tightening is the **positive control**. The audit now
+asserts that the *public* dev seed IS present in the packaged data, and fails if it is not.
+Without it, every way the audit could break silently — wrong artifact, empty file list, a
+regex that matches nothing, a path that no longer exists — produces the same output as a
+genuinely clean artifact: no findings. A scan that cannot distinguish "found nothing" from
+"looked nowhere" is not evidence. **A silent audit now reads as untrustworthy rather than
+clean**, which is the property the check was missing.
+
+The general form, and it applies to any check in this repo: a test that can only fail is
+half a test. It needs something it is required to find.
+
+## 30. The wheel audit was auditing the wrong artifact for the publication question
+
+Found while preparing the Environments Hub submission, and only because the packaging
+artifact was inspected instead of assumed.
+
+`scripts/audit_wheel.py` scans the built wheel, and it was clean: 22 entries, no secret
+paths, no credentials, no held-out identifiers, positive control fired. That result was
+true, and it was being used to answer a question it does not answer.
+
+**`prime env push` does not upload the wheel.** It uploads a *source tree*, selected by
+`prime_cli.commands.env._collect_archive_files` and filtered by a third-party
+`gitignore_parser` reading of the root `.gitignore` — not by git itself, and not by the
+`[tool.hatch.build]` configuration that decides what goes in the wheel. Two artifacts, two
+different selection mechanisms, and the audit only covered one of them.
+
+Running the CLI's own collector against the repo before pushing — importing the real
+function rather than reimplementing its rules, so the answer cannot drift from what the CLI
+actually does — the upload set was **1,685 files**, of which **1,584 were
+`cache/responses/dev/**`.
+
+Two findings, and they are different in kind:
+
+- **Not a leak.** `.env` is excluded twice over (the root level ships only `README.md`,
+  `pyproject.toml` and top-level `*.py`; and hidden files are skipped anywhere in the tree),
+  `data/heldout/` is excluded by `.gitignore`, and the held-out response cache does not
+  exist on disk at all. The hard requirement held.
+- **But 1,584 files of cached model responses would have been published as the environment's
+  source.** Not secret — that partition derives from the public dev seed and is committed
+  deliberately, because it is paid for and losing it costs money (see the `.gitignore`
+  comment). Publishing it is simply wrong for the artifact: it is our evaluation record, not
+  the environment.
+
+The CLI was behaving correctly and mirroring a deliberate repository decision. The fault was
+in assuming a green result on artifact A transferred to artifact B. This is the same shape as
+CLAUDE.md's standing principle — *every green signal must be checked for what it is NOT
+measuring* — with a specific corollary worth keeping: **an audit is scoped to an artifact,
+and publishing a different artifact voids it.**
+
+The submission is therefore pushed from a staging tree containing only what an environment
+should contain, and `scripts/preflight_push.py` audits *that*, using the CLI's own collector.

@@ -1,7 +1,7 @@
 [project]
 name = "redtape"
 version = "0.1.0"
-description = "Verifiable abstention: does the agent know when a required fact is missing? Deterministic ground truth from PolicyEngine, no LLM judge."
+description = "Does the agent know when a required fact is missing? Verifiable abstention scored against PolicyEngine, no LLM judge."
 readme = "README.md"
 license = { text = "Apache-2.0" }
 requires-python = ">=3.13,<3.14"
