@@ -22,7 +22,7 @@ build a *new* split from a different seed or tax year.
 The runtime dependencies are `verifiers` and `pydantic`. That is the whole list.
 
 ```bash
-prime env install <owner>/redtape@latest
+prime env install jakpotvin/redtape@latest
 ```
 
 ```python

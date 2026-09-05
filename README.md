@@ -2,6 +2,28 @@
 
 Verifiable training-and-evaluation environments for US public-benefits work.
 
+**Published on the Prime Intellect Environments Hub:
+[`jakpotvin/redtape`](https://app.primeintellect.ai/dashboard/environments/jakpotvin/redtape)**
+
+```bash
+prime env install jakpotvin/redtape@latest
+```
+
+```python
+from redtape import T1Taskset
+from redtape.envs.t1_eligibility import T1Config
+
+taskset = T1Taskset(T1Config())   # 1,200 tasks ship with the package
+```
+
+It installs in seconds and needs no API key to load tasks or score an answer. **Evaluation
+never touches PolicyEngine** — answer keys are computed once at generation time and baked
+into the split, so nothing on the scoring path imports the engine. `policyengine-us` is an
+optional `[generate]` extra, needed only to build a *new* split; the runtime dependencies
+are `verifiers` and `pydantic`, and that is the whole list. (The five baselines are the one
+exception: they read the federal poverty line from the engine, so running them from a
+checkout needs `pip install -e ".[dev,generate]"`.)
+
 **Status: first frontier-model result complete; one follow-up experiment incomplete.** Two 1,200-task splits built, Claude Opus 5
 evaluated end to end on the dev split, five baselines run, three headline metrics confirmed both
 discriminating and achievable, and the tool ablation complete for the scripted upper
@@ -319,9 +341,11 @@ Requires **WSL2 / Linux** and **Python 3.13** — `verifiers.v1` cannot import o
 all (unguarded `import fcntl`), and the determinism claims depend on the pinned interpreter.
 
 ```bash
-uv sync --extra dev
+# --extra generate is required: policyengine-us is an OPTIONAL extra as of the Hub
+# packaging, and without it the oracle tests and the five baselines cannot run.
+uv sync --extra dev --extra generate
 
-# 242 tests. Run as a module or bare `pytest`; both work, and CI runs the bare form.
+# 255 tests. Run as a module or bare `pytest`; both work, and CI runs the bare form.
 ./.venv/bin/python -m pytest
 
 ./.venv/bin/python scripts/smoke.py                     # one household, with provenance
