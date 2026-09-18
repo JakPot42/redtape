@@ -113,7 +113,7 @@ rates in `docs/LIMITS.md` §28 instead of the recorded totals.
 ## Every green signal must be checked for what it is NOT measuring **[decided]**
 
 This is the standing principle, and it outranks any individual check below. It has now
-been learned seven times on this project, each time from a different direction, and each
+been learned eight times on this project, each time from a different direction, and each
 time the failure looked exactly like success right up until someone asked what the signal
 actually covered.
 
@@ -126,6 +126,7 @@ actually covered.
 | 5 | CI reports "green" | `-q` in `addopts` cancelled `-v` in the workflow, hiding **5 skipped tests** on `test_env.py`, the module covering the real `verifiers.v1` env and scoring path |
 | 6 | 242 tests pass on the scoring path | every baseline built `T1Answer` directly in Python, so the **prompt → schema → parse** path a real model traverses was never executed once (LIMITS §25) |
 | 7 | 300 tests pass on the generator | not one called `render()`, so re-widening the status set left 12% of households raising `KeyError`, and not one read `data/dev/t1.jsonl`, so the committed corpus silently went stale (LIMITS §31) |
+| 8 | CLAUDE.md required every paid run to take a hard cap "checked after every API call" | **nothing implemented it.** `run_eval.py` had no cap of any kind for two weeks, while the rule was cited as the reason overspend could not recur (LIMITS §32) |
 
 **The general form.** A passing check reports on the region it covers and says nothing
 whatsoever about the region it does not — but it is *read* as a statement about the whole.
@@ -185,9 +186,58 @@ shape is untested, and that is usually the interface that breaks. Corollary for
 **published** artifacts: if no test opens the file we would ship, the file is untested no
 matter how well its generator is covered.
 
+### A documented control needs a test that fails when it is absent **[decided]**
+
+**Any control asserted in CLAUDE.md or `docs/LIMITS.md` needs a test that fails when the
+control is absent.** A control nothing verifies is not a control; it is a claim.
+
+This is the named sub-rule for instance 8, and it has a precedent of exactly the same shape.
+LIMITS §5 said the determinism check was "re-checked in CI" when there was no CI and no test.
+CLAUDE.md said every paid run was capped when nothing capped anything. Both times, the
+control was written down in the place people read to find out what protects them.
+
+**That is why this is worse than having no control.** An absent control that nobody claims
+leaves the risk visible, so someone checks. An absent control that the rules file asserts
+**stops the checking**: the documentation answers the question before anyone asks the code.
+The Phase 3 overspend was the reason for the cap rule, and the cap rule then became the reason
+nobody looked for a cap.
+
+Obligations:
+
+- **Writing down a control and adding its test are one change.** If the test cannot be
+  written yet, write the control as *intended*, not as *in force*: "must be implemented
+  before the next paid run", not "is checked after every call".
+- **The test must fail when the control is removed**, and that failure must be observed once.
+  The rule about verified teeth applies in full. The first concurrency test for the cap passed
+  with in-flight reservations ignored, so it was decoration until it was replaced.
+- **A citation is part of the claim.** A control cited as `tests/test_x.py` when the test
+  lives elsewhere or nowhere cannot be checked by the reader it is meant to reassure.
+  **Enforced by `tests/test_citations.py`**: every test, script and module path named in
+  CLAUDE.md, LIMITS, README and the CI workflow must exist (teeth verified by adding a bogus
+  citation).
+- **Process rules are exempt; mechanisms are not.** "Never launch a paid run in the same turn
+  that estimates it" governs a human and cannot be tested. "The cap aborts the run" describes
+  code and must be.
+
+**Audit, 2026-09-18.** Both files were searched for claims stated as active guarantees, and
+every cited test and file was checked for existence (a script, not by eye). Results, with
+dispositions in LIMITS §33:
+
+| claim | where | verified by | status |
+|---|---|---|---|
+| budget cap checked on every call | CLAUDE.md, Paid runs | nothing, until today | **was absent**, fixed (LIMITS §32) |
+| "pin every dependency exactly (`==`, never `>=`)" | CLAUDE.md, Platform | nothing; `pyproject.toml` has `verifiers>=0.3.1`, `pydantic>=2.12`, `pyyaml>=6.0` | **false as written.** `uv.lock` pins CI, but a Hub install resolves `verifiers` freely |
+| "cross-platform determinism is verified … re-run after any dependency bump" | CLAUDE.md, Platform | nothing, and contradicted later in the same file (abandoned; Windows cannot import `verifiers.v1`) | **stale guarantee** |
+| "the oracle is never called during a rollout" / evaluation is engine-free | CLAUDE.md, Two hard rules; `pyproject.toml` | nothing. CI installs the `generate` extra, so an accidental `policyengine_us` import on the eval path would still pass | **untested** |
+| "all `verifiers` contact stays inside `redtape/envs/`" | CLAUDE.md, verifiers | true today by grep; no test | **untested** |
+| held-out cache and results never committed | `.gitignore` comments, CLAUDE.md | the `.gitignore` lines only; no test asserts `git check-ignore` on representative held-out paths | **untested**, the highest-consequence item here |
+| period semantics locked by `tests/test_period_semantics.py` | LIMITS §1 | the file **never existed** in any commit. The lock itself does exist, as `test_monthly_stock_variable_annual_query_returns_december` in `test_phase1.py` | **wrong citation**, control present |
+| "CI green means 202 of 207" / `t1_smoke.jsonl` is gitignored and never exists in CI | CLAUDE.md, Determinism; `tests.yml` comment | `t1_smoke.jsonl` is now committed | **stale**, in the conservative direction |
+| `redtape/eval/cache.py` recomputes cost | LIMITS §28 | the path is `eval/cache.py` | wrong citation |
+
 **This principle is the thesis of the benchmark, applied to ourselves.** Redtape exists
 because PolicyEngine answers every question plausibly and never says "I cannot determine" —
-a system that is silently confident where it should abstain. Seven times now our own tooling
+a system that is silently confident where it should abstain. Eight times now our own tooling
 has done the same thing to us. We do not get to ship a benchmark about undetectable
 confident wrongness while running on undetectable confident greenness.
 

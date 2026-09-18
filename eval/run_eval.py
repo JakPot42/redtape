@@ -38,6 +38,8 @@ from eval.cache import (
     partition,
     put as cache_put,
 )
+from eval.budget import Budget, BudgetExhausted, NoBudget
+from eval.providers import credential_env, get_model, make_provider
 from eval.tools import UNKNOWN, calculate, tool_schema
 from redtape.config import load_dotenv
 
@@ -376,21 +378,47 @@ class _Ledger:
     figure would make a resumed run look cheaper than it was and a fully-cached re-score
     look free, and neither is the number anyone actually wants: the question is usually
     "what did this run cost me" AND "what would it cost from cold".
+
+    Also tallies how each response ENDED (`stops`) and which upstream served it
+    (`served_by`). A response that hit the token limit is not the same event as a response
+    that answered badly, and a results file that cannot tell them apart would report a
+    harness budget as a model failure.
     """
 
     def __init__(self):
+        import threading
+        self._lock = threading.Lock()
         self.reset()
 
     def reset(self):
         self.billed = {"n": 0, "input_tokens": 0, "output_tokens": 0, "usd": 0.0}
         self.cached = {"n": 0, "input_tokens": 0, "output_tokens": 0, "usd": 0.0}
+        self.stops: dict[str, int] = {}
+        self.served_by: dict[str, int] = {}
+        # Set False after a pre-warm pass. Pre-warm has already counted every response once
+        # (billed or hit); the scoring pass then reads each one AGAIN from the cache, and
+        # counting that second read doubled every hit. Committed evidence:
+        # results/t1_live300.live.tool_less.json records 600 cache hits for 300 tasks.
+        # Billed requests in the scoring pass (retries) are still counted.
+        self.count_hits = True
 
-    def record(self, model: str, usage: dict, *, cached: bool):
-        bucket = self.cached if cached else self.billed
-        bucket["n"] += 1
-        bucket["input_tokens"] += usage.get("input_tokens", 0)
-        bucket["output_tokens"] += usage.get("output_tokens", 0)
-        bucket["usd"] += cost_usd(model, usage)
+    def record(self, model: str, usage: dict, *, cached: bool, stop: str | None = None,
+               served_by: str | None = None, reported_usd: float | None = None):
+        if cached and not self.count_hits:
+            return
+        # The larger of our computation and the provider's own figure, so an error in our
+        # price table can only make the ledger (and the cap) more conservative.
+        usd = max(cost_usd(model, usage), reported_usd or 0.0)
+        with self._lock:
+            bucket = self.cached if cached else self.billed
+            bucket["n"] += 1
+            bucket["input_tokens"] += usage.get("input_tokens", 0)
+            bucket["output_tokens"] += usage.get("output_tokens", 0)
+            bucket["usd"] += usd
+            s = stop or "unrecorded"
+            self.stops[s] = self.stops.get(s, 0) + 1
+            if served_by:
+                self.served_by[served_by] = self.served_by.get(served_by, 0) + 1
 
     def summary(self) -> dict:
         return {
@@ -398,6 +426,8 @@ class _Ledger:
             "cached": dict(self.cached),
             "usd_actually_spent": round(self.billed["usd"], 4),
             "usd_if_uncached": round(self.billed["usd"] + self.cached["usd"], 4),
+            "stop_reasons": dict(self.stops),
+            "served_by": dict(self.served_by),
         }
 
     def line(self) -> str:
@@ -410,82 +440,109 @@ class _Ledger:
 LEDGER = _Ledger()
 
 
-def live_agent(condition: str, model: str = MODEL, max_tool_turns: int = 6,
-               system_prompt: str | None = None):
-    """A real Claude client. The API key comes from the environment - never from disk.
+def request_identity(condition: str, model: str = MODEL, system_prompt: str | None = None):
+    """(cfg, system, tools) - everything that goes into a cache key except the task prompt.
 
-    Uses the SDK's default credential resolution (`ANTHROPIC_API_KEY`, then an
-    `ant auth login` profile). This process neither reads nor writes a key file.
+    ONE function, used by both `live_agent` and `cached_subset`. They used to build the
+    params dict independently, as two literal copies; a change to one would have made the
+    cached-only scorer look for keys the live agent never wrote, and report a fully paid run
+    as "0 cached".
     """
-    import anthropic
-
     from redtape.envs.t1_eligibility import SYSTEM_PROMPT as _DEFAULT_PROMPT
 
-    # An override exists so a prompt variant can be A/B'd against the shipped prompt on the
-    # same tasks. It is hashed into the cache key like everything else, so the two arms
-    # cannot collide and arm A costs nothing when its responses are already cached.
-    SYSTEM_PROMPT = system_prompt if system_prompt is not None else _DEFAULT_PROMPT
-
-    client = anthropic.Anthropic()
+    cfg = get_model(model)
+    system = system_prompt if system_prompt is not None else _DEFAULT_PROMPT
     allow_unknown = condition == "tool_equipped_unknowns"
     tools = ([tool_schema(allow_unknown=allow_unknown)]
              if condition != "tool_less" else [])
+    return cfg, system, tools
 
-    # Sampling parameters live here so they are hashed into the cache key. Changing any of
-    # them must miss the cache rather than silently reuse responses generated under a
-    # different configuration.
-    PARAMS = {"max_tokens": 8_000, "thinking": {"type": "adaptive"},
-              "output_config": {"effort": "high"}}
+
+def task_cache_key(task, cfg, system, tools) -> str:
+    return cache_key(model=cfg.cache_model, system=system, prompt=task.data.prompt,
+                     tools=tools, params=cfg.params)
+
+
+def live_agent(condition: str, model: str = MODEL, max_tool_turns: int = 6,
+               system_prompt: str | None = None, budget: Budget | None = None):
+    """A real model client, for any registered model. Credentials come from the environment.
+
+    The provider is built LAZILY, on the first cache miss. Re-scoring a fully cached run
+    therefore needs no credential and constructs no client - which is what makes it safe to
+    re-score paid runs freely.
+
+    Every billed request goes through `budget`: its worst case is reserved before sending,
+    and a request that could cross the cap is never sent (`eval/budget.py`). With no budget,
+    a cache hit is served and a cache miss raises `NoBudget` - there is no uncapped path.
+    """
+    # An override exists so a prompt variant can be A/B'd against the shipped prompt on the
+    # same tasks. It is hashed into the cache key like everything else, so the two arms
+    # cannot collide and arm A costs nothing when its responses are already cached.
+    cfg, SYSTEM_PROMPT, tools = request_identity(condition, model, system_prompt)
+    allow_unknown = condition == "tool_equipped_unknowns"
+    state = {"provider": None}
+
+    def provider():
+        if state["provider"] is None:
+            state["provider"] = make_provider(cfg)
+        return state["provider"]
 
     def agent(task) -> str:
-        key = cache_key(model=model, system=SYSTEM_PROMPT, prompt=task.data.prompt,
-                        tools=tools, params=PARAMS)
+        key = task_cache_key(task, cfg, SYSTEM_PROMPT, tools)
         split = partition(task.data.seed)
         hit = cache_get(key, split)
         if hit is not None:
-            LEDGER.record(model, hit["usage"], cached=True)
+            LEDGER.record(cfg.key, hit["usage"], cached=True, stop=hit.get("stop"),
+                          served_by=hit.get("served_by"),
+                          reported_usd=hit.get("reported_cost_usd"))
             return hit["reply"]
 
-        messages = [{"role": "user", "content": task.data.prompt}]
-        usage_total = {"input_tokens": 0, "output_tokens": 0}
+        if budget is None:
+            raise NoBudget(f"cache miss for {cfg.key} with no --max-usd; refusing to bill")
+
+        p = provider()
+        messages = [p.user_message(task.data.prompt)]
+        usage_total = {"input_tokens": 0, "output_tokens": 0, "reasoning_tokens": 0}
+        meta = {"stop": None, "raw_stop": None, "served_by": None, "reported_cost_usd": None}
 
         def _finish(reply: str) -> str:
-            cache_put(key, {"reply": reply, "usage": usage_total, "model": model,
-                            "condition": condition, "task_hash": task.hash}, split)
-            LEDGER.record(model, usage_total, cached=False)
+            cache_put(key, {"reply": reply, "usage": usage_total, "model": cfg.cache_model,
+                            "condition": condition, "task_hash": task.hash, **meta}, split)
+            LEDGER.record(cfg.key, usage_total, cached=False, stop=meta["stop"],
+                          served_by=meta["served_by"],
+                          reported_usd=meta["reported_cost_usd"])
             return reply
 
         for _ in range(max_tool_turns):
-            kwargs = dict(
-                model=model,
-                system=SYSTEM_PROMPT,
-                messages=messages,
-                **PARAMS,
-            )
-            if tools:
-                kwargs["tools"] = tools
-            response = client.messages.create(**kwargs)
-            usage_total["input_tokens"] += response.usage.input_tokens
-            usage_total["output_tokens"] += response.usage.output_tokens
+            request_text = SYSTEM_PROMPT + json.dumps(messages, default=str)
+            reserved = budget.reserve(request_text)     # raises BudgetExhausted; nothing sent
+            try:
+                turn = p.complete(SYSTEM_PROMPT, messages, tools)
+            except BaseException:
+                budget.charge_failed(reserved)
+                raise
+            actual = max(cost_usd(cfg.key, turn.usage), turn.reported_cost_usd or 0.0)
+            budget.settle(reserved, actual)
 
-            if response.stop_reason == "refusal":
-                detail = getattr(response, "stop_details", None)
-                return _finish(json.dumps(
-                    {"refusal": getattr(detail, "category", "unknown")}))
+            for k in usage_total:
+                usage_total[k] += turn.usage.get(k, 0) or 0
+            if turn.reported_cost_usd is not None:
+                meta["reported_cost_usd"] = (meta["reported_cost_usd"] or 0.0) + turn.reported_cost_usd
+            meta.update(stop=turn.stop, raw_stop=turn.raw_stop,
+                        served_by=turn.served_by or meta["served_by"])
 
-            messages.append({"role": "assistant", "content": response.content})
-            calls = [b for b in response.content if b.type == "tool_use"]
-            if not calls:
-                return _finish(
-                    "\n".join(b.text for b in response.content if b.type == "text"))
+            if turn.stop == "refusal":
+                return _finish(json.dumps({"refusal": turn.refusal or "unknown"}))
 
-            results = []
-            for block in calls:
-                out = calculate(block.input, allow_unknown=allow_unknown)
-                results.append({"type": "tool_result", "tool_use_id": block.id,
-                                "content": json.dumps(out)})
-            messages.append({"role": "user", "content": results})
+            if not turn.tool_calls:
+                return _finish(turn.text)
 
+            messages.append(turn.assistant_message)
+            messages.append(p.tool_results_message(
+                [(c.id, calculate(c.input, allow_unknown=allow_unknown))
+                 for c in turn.tool_calls]))
+
+        meta["stop"] = "tool_loop_exhausted"
         return _finish(json.dumps({"error": "tool loop did not terminate"}))
 
     return agent
@@ -502,18 +559,11 @@ def cached_subset(tasks, model: str, condition: str = "tool_less"):
     the metric honest about what it measured; the reduced `n_pairs` is what tells the
     reader the run was partial.
     """
-    from redtape.envs.t1_eligibility import SYSTEM_PROMPT
-
-    allow_unknown = condition == "tool_equipped_unknowns"
-    tools = ([tool_schema(allow_unknown=allow_unknown)]
-             if condition != "tool_less" else [])
-    params = {"max_tokens": 8_000, "thinking": {"type": "adaptive"},
-              "output_config": {"effort": "high"}}
+    cfg, system, tools = request_identity(condition, model)
 
     def cached(t):
-        k = cache_key(model=model, system=SYSTEM_PROMPT, prompt=t.data.prompt,
-                      tools=tools, params=params)
-        return cache_get(k, partition(t.data.seed)) is not None
+        return cache_get(task_cache_key(t, cfg, system, tools),
+                         partition(t.data.seed)) is not None
 
     kept = [t for t in tasks if cached(t)]
 
@@ -529,6 +579,7 @@ def cached_subset(tasks, model: str, condition: str = "tool_less"):
     print(f"  cached-only: scoring {len(kept)}/{len(tasks)} tasks "
           f"({dropped} not cached, incl. {len(broken)} incomplete pairs dropped)")
     return kept
+
 
 
 def prewarm(tasks, agent, *, workers: int = 8, log_every: int = 25) -> None:
@@ -555,9 +606,18 @@ def prewarm(tasks, agent, *, workers: int = 8, log_every: int = 25) -> None:
     def one(task):
         try:
             agent(task)
-        except Exception:
+        except BudgetExhausted:
+            # Not an error, and NOT swallowed into the error count: the cap refused to send
+            # this request. Later tasks still run, but only cache hits can succeed - every
+            # miss is refused before anything is sent.
+            with done:
+                state["refused"] = state.get("refused", 0) + 1
+        except Exception as exc:
             with done:
                 state["errors"] += 1
+                if state["errors"] <= 3:
+                    print(f"  prewarm error: {type(exc).__name__}: {str(exc)[:300]}",
+                          flush=True)
         finally:
             with done:
                 state["n"] += 1
@@ -573,6 +633,12 @@ def prewarm(tasks, agent, *, workers: int = 8, log_every: int = 25) -> None:
     if state["errors"]:
         print(f"  prewarm finished with {state['errors']} error(s); "
               f"the scoring pass will retry those", flush=True)
+    # Every task's response has now been counted once, billed or hit. The scoring pass that
+    # follows re-reads each from the cache; counting those reads doubled every hit.
+    LEDGER.count_hits = False
+    if state.get("refused"):
+        print(f"  !! BUDGET CAP REACHED: {state['refused']} request(s) refused before "
+              f"sending", flush=True)
 
 
 def run(tasks, agent, *, model: str, split: str, condition: str, out: Path, seed=None,
@@ -627,6 +693,9 @@ def main():
     ap.add_argument("--workers", type=int, default=1,
                     help="concurrent API requests during cache pre-warm; scoring is "
                          "always sequential")
+    ap.add_argument("--max-usd", type=float, default=None,
+                    help="HARD spending cap for a live run. Required whenever any request "
+                         "would be billed; no default. Enforced before every request.")
     args = ap.parse_args()
 
     split_name = Path(args.split).stem
@@ -669,29 +738,74 @@ def main():
                 out=results_dir / f"{split_name}.scripted.{condition}.json")
 
     elif args.mode == "live":
-        # Auto-load .env so a key placed there is found. This NEVER creates, requests
-        # or writes a key - it only reads an environment the human has already set up.
-        load_dotenv()
-        if not (os.environ.get("ANTHROPIC_API_KEY") or os.environ.get("ANTHROPIC_AUTH_TOKEN")):
-            print("no ANTHROPIC_API_KEY / ANTHROPIC_AUTH_TOKEN in the environment.\n"
-                  "Export one in this shell before running `live`. This script never "
-                  "creates, requests or writes a key.", file=sys.stderr)
-            return 2
+        cfg = get_model(args.model)
         if args.limit:
             tasks = tasks[: args.limit]
         if args.cached_only:
             tasks = cached_subset(tasks, args.model)
-        print(f"\nLIVE: {args.model}, {len(tasks)} task(s), tool_less")
-        agent = live_agent("tool_less", args.model)
+
+        # How many requests this run would actually bill, BEFORE anything else. A fully
+        # cached run needs neither a credential nor a cap; anything else needs both.
+        _, system, tools = request_identity("tool_less", args.model)
+        misses = [t for t in tasks
+                  if cache_get(task_cache_key(t, cfg, system, tools),
+                               partition(t.data.seed)) is None]
+        print(f"\nLIVE: {cfg.key} via {cfg.provider} ({cfg.api_model}), "
+              f"{len(tasks)} task(s), tool_less, {len(misses)} uncached")
+
+        budget = None
+        if misses:
+            probe = Budget(1e9, price_in=cfg.price_in, price_out=cfg.price_out,
+                           max_output_tokens=cfg.max_output_tokens)
+            worst = sum(probe.worst_case(system + t.data.prompt) for t in misses)
+            print(f"  worst case if every uncached request used all "
+                  f"{cfg.max_output_tokens:,} output tokens: ${worst:.2f}")
+            if args.max_usd is None:
+                print("  refusing to run: a paid run needs an explicit --max-usd cap "
+                      "(CLAUDE.md, 'Paid runs'). There is no default.", file=sys.stderr)
+                return 2
+            # Auto-load .env so a key placed there is found. This NEVER creates, requests
+            # or writes a key - it only reads an environment the human has already set up.
+            load_dotenv()
+            env = credential_env(cfg)
+            if not any(os.environ.get(k) for k in env):
+                print(f"no {' / '.join(env)} in the environment. Export one before "
+                      f"running `live`. This script never creates, requests or writes a "
+                      f"key.", file=sys.stderr)
+                return 2
+            budget = Budget(args.max_usd, price_in=cfg.price_in, price_out=cfg.price_out,
+                            max_output_tokens=cfg.max_output_tokens)
+            print(f"  HARD CAP ${budget.cap:.2f}, enforced before every request")
+
+        agent = live_agent("tool_less", args.model, budget=budget)
         LEDGER.reset()
-        if args.workers > 1:
-            prewarm(tasks, agent, workers=args.workers,
-                    log_every=args.progress_every)
-        run(tasks, agent, model=args.model,
-            split=split_name, condition="tool_less",
-            out=results_dir / f"{split_name}.live.{args.model}.tool_less.json",
-            progress_every=args.progress_every)
+        # Always pre-warm, even with one worker: it is where the cap can stop the run
+        # cleanly, leaving whatever was bought in the cache.
+        prewarm(tasks, agent, workers=max(1, args.workers), log_every=args.progress_every)
+        if budget is not None and budget.exhausted:
+            print(f"  STOPPED AT CAP ({budget.line()}); scoring only what was fetched")
+            tasks = cached_subset(tasks, args.model)
+
+        extra = {"provider": {"key": cfg.key, "provider": cfg.provider,
+                              "api_model": cfg.api_model, "params": cfg.params}}
+        if budget is not None:
+            extra["budget"] = {"cap_usd": budget.cap, "spent_usd": round(budget.spent, 4),
+                               "refused_requests": budget.refused}
+        try:
+            run(tasks, agent, model=cfg.key,
+                split=split_name, condition="tool_less",
+                out=results_dir / f"{split_name}.live.{cfg.key}.tool_less.json",
+                progress_every=args.progress_every, extra=extra)
+        except BudgetExhausted:
+            print(f"  STOPPED AT CAP during scoring retries ({budget.line()}); "
+                  f"scoring only what was fetched")
+            run(cached_subset(tasks, args.model), agent, model=cfg.key,
+                split=split_name, condition="tool_less",
+                out=results_dir / f"{split_name}.live.{cfg.key}.tool_less.json",
+                progress_every=args.progress_every, extra=extra)
         print("\n  " + LEDGER.line())
+        if budget is not None:
+            print(f"  {budget.line()}")
     return 0
 
 

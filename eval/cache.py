@@ -125,12 +125,18 @@ PRICING = {
 def cost_usd(model: str, usage: dict) -> float:
     """Cost of one response. Thinking tokens are billed as output and are included in
     `output_tokens` by the API, so no separate term is needed."""
-    if model not in PRICING:
-        raise KeyError(
-            f"no pricing for {model!r}. Add it to eval/cache.py::PRICING rather than "
-            f"letting the run report a cost of zero."
-        )
-    p = PRICING[model]
+    if model in PRICING:
+        p = PRICING[model]
+    else:
+        # Non-Anthropic models carry their price in the registry beside their routing, so
+        # adding a model is one entry, not two that can disagree.
+        from eval.providers import MODELS
+        if model not in MODELS:
+            raise KeyError(
+                f"no pricing for {model!r}. Add it to eval/providers.py::MODELS rather "
+                f"than letting the run report a cost of zero."
+            )
+        p = {"input": MODELS[model].price_in, "output": MODELS[model].price_out}
     inp = usage.get("input_tokens", 0)
     out = usage.get("output_tokens", 0)
     # Cache reads are billed at ~0.1x and writes at ~1.25x. Both are zero for this workload

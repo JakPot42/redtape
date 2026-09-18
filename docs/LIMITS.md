@@ -48,7 +48,9 @@ that looks entirely plausible.
 
 **Design rule adopted:** *never query a monthly variable at an annual period.* SNAP is
 always queried at an explicit month and always scored monthly. The oracle enforces this;
-`tests/test_period_semantics.py` locks the behaviour so a version bump that changes it
+`tests/test_phase1.py::test_monthly_stock_variable_annual_query_returns_december` locks the
+behaviour (this line previously cited `tests/test_period_semantics.py`, a file that never
+existed; see §33) so a version bump that changes it
 fails the suite instead of quietly changing answer keys.
 
 Relevant `quantity_type` values as of the pinned version:
@@ -1169,7 +1171,7 @@ partial tool conditions, and about **$70** across the project to date.
 
 The figures are left in place rather than back-edited, because a results file is a record of
 what a run produced and rewriting it later is how provenance is lost. This section is the
-correction, and `redtape/eval/cache.py` recomputes cost from stored usage on demand, so any
+correction, and `eval/cache.py` recomputes cost from stored usage on demand, so any
 figure can be re-derived from the cache without spending anything.
 
 **The general point, which is the same one as §27:** a number that is present, printed, and
@@ -1339,7 +1341,133 @@ would make a stated status indistinguishable from a withheld one, reproducing §
 pathology for the third time. Crashing is the correct behaviour; the guard is a test, not a
 default.
 
-**Standing principle, instance nine:** *every green signal must be checked for what it is
+**Standing principle, instance seven** (CLAUDE.md table, row 7; this line originally said
+"nine", a miscount corrected 2026-09-18): *every green signal must be checked for what it is
 NOT measuring.* Here one change produced two undetected defects — a stale artifact and a
 crashing renderer — and the suite reported 300 passed for both, because the tests exercised
 the generator's outputs but never the published corpus and never the rendering path.
+
+
+## 32. The budget cap existed only as prose (instance 8); cache hits were double-counted
+
+**Status: both fixed 2026-09-18 (`eval/budget.py`, `eval/run_eval.py::_Ledger`). Committed
+results files are left as recorded.**
+
+**The cap.** CLAUDE.md has required since 2026-09-04 that every paid run take a cap "checked
+after every API call". Nothing implemented it: `run_eval.py` had no cap of any kind. It is the
+same failure as the determinism "CI" of §5, a documented control that did not exist.
+`eval/budget.py` now reserves each request's worst case *before* sending (every input byte
+counted as a token, plus `max_tokens` at the output price) and refuses any request that could
+carry spent + in-flight past the cap. So the total is ≤ the cap under any concurrency,
+provided the provider honours `max_tokens`. A request that raises is charged its full
+reservation, not refunded. `--max-usd` is required whenever any request would bill, and there
+is no default. A fully cached re-score needs neither a cap nor a credential.
+
+A test that looked like it covered this did not. The threaded test passed with in-flight
+reservations **ignored**, because each thread settled immediately and they never overlapped.
+`test_in_flight_reservations_count_against_the_cap` holds two reservations open
+deterministically and goes red under that mutation. All four mutations (Opus params drift,
+double-count restored, cap removed, in-flight ignored) were run and observed failing.
+
+**The double count.** `prewarm()` counted every response once, and the sequential scoring pass
+re-read each one from the cache and counted it again. `results/t1_live300.live.tool_less.json`
+records **600 cache hits for 300 tasks** (`usd_if_uncached` $29.03 against ~$14.40 actual). The
+1,200-task Opus file is unaffected: it was scored without prewarm and records 1,200 hits,
+$59.18. Fixed by counting hits only once `prewarm` has run. The CLI test
+`test_cached_rescore_counts_each_hit_once_through_the_cli` asserts it.
+
+**Provider abstraction.** `eval/providers.py` puts the model behind a registry key. Opus's
+cache identity is byte-identical to the pre-refactor harness, proven two ways: all 1,200
+committed Opus responses still hit (`test_opus_cache_keys_unchanged_for_every_committed_dev_task`),
+and `python -m eval.run_eval live --model claude-opus-5` with **no credential and no cap**
+re-scores to 0.514 / 0.438 / 0.570, exactly the committed headlines.
+
+## 33. Audit: controls asserted in CLAUDE.md and LIMITS that nothing verifies
+
+**Status: audited 2026-09-18 after §32 (instance 8). Two citation errors fixed in place;
+the rest are OPEN, awaiting a decision. The audit table is in CLAUDE.md under "A documented
+control needs a test that fails when it is absent".**
+
+The method: search both files for claims phrased as active guarantees ("enforces", "always",
+"never", "fails the build", "in CI", "locks"). Check each against the code. Then run a script
+over every test file, test function and source path named in CLAUDE.md, LIMITS.md, README.md
+and the CI workflow, and confirm each exists. The script found three dangling references that
+reading had passed over many times.
+
+Dispositions:
+
+1. **Dependency pinning.** CLAUDE.md says "pin every dependency exactly (`==`, never `>=`)".
+   `pyproject.toml` declares `verifiers>=0.3.1`, `pydantic>=2.12` and `pyyaml>=6.0`, relaxed
+   when the package became engine-free for the Hub. `uv.lock` pins CI, so CI results are
+   reproducible. A Hub install does not use the lock, though, so it resolves whatever
+   `verifiers` is current, and v1's API is the churn CLAUDE.md fences into `redtape/envs/`.
+   **Decision needed:** pin exactly, or rewrite the rule as "exact in the lock, bounded in
+   the package", with a test asserting the bound.
+2. **Cross-platform determinism.** The Platform section still says the check "is verified …
+   re-run after any dependency bump". The Determinism section of the same file abandons it.
+   Nothing can test it (`verifiers.v1` cannot import on Windows). **Proposed:** delete the
+   first statement.
+3. **Engine-free evaluation / oracle never called at rollout.** No test. CI installs the
+   `generate` extra, so an accidental `policyengine_us` import on the load → prompt → parse →
+   score path would pass CI and fail for a Hub user. **Proposed test:** block `policyengine*`
+   imports in a subprocess, then load and score dev tasks.
+4. **`verifiers` isolation.** True today (`grep` finds no import outside `redtape/envs/`);
+   no test. **Proposed:** an AST scan test.
+5. **Held-out cache and results never committed.** Protected only by `.gitignore` lines.
+   No test runs `git check-ignore` on `cache/responses/heldout/…`, `data/heldout/…` or
+   `results/…heldout….public.json`. **Highest-consequence gap in the audit**, and the
+   cheapest to close.
+6. **Period lock citation (§1)**: pointed at `tests/test_period_semantics.py`, which never
+   existed in any commit. The control is real, under another name. Citation fixed in place.
+   Recorded because a reader checking the citation would have concluded the control was
+   missing. That is the reverse error, and nearly the one made during this audit.
+7. **"CI green means 202 of 207"** (CLAUDE.md) and the workflow comment saying
+   `t1_smoke.jsonl` "never exists here": `t1_smoke.jsonl` is now committed. These are stale,
+   in the conservative direction. Re-check against the next CI run's skip count before
+   rewriting.
+8. **§28 cited `redtape/eval/cache.py`**; the module is `eval/cache.py`. Fixed in place.
+9. **§31 called itself "instance nine"** of the standing principle. It is row 7 of the
+   CLAUDE.md table. Fixed in place.
+
+## 34. The first PREDICTED failure: reasoning tokens can exhaust `max_tokens` before any JSON
+
+**Status: anticipated and instrumented 2026-09-18, BEFORE the first non-Anthropic run. Not
+yet observed, and it may never be. This entry records that the method caught it first.**
+
+Every previous defect in this file was discovered after it had produced a wrong number. This
+one was predicted from the structure of the harness before a single GPT request was sent.
+
+**The mechanism.** OpenAI reasoning models draw reasoning tokens and visible output from the
+**same** `max_tokens` budget. At "high" effort, the reasoning can consume the whole budget,
+and the response then ends with `finish_reason: "length"` and no JSON at all. OpenRouter's
+documentation says so directly ("Reasoning tokens count against `max_tokens`"). Scored
+naively, that response parses as `no_json_found`: a *model failure*, counted against the
+model's exact-match and abstention scores. What actually happened is that the harness gave the
+model too small a budget.
+
+**Why it is the same defect as §25/§27.** The schema bug that nearly published 0.006 had
+exactly this shape. The harness imposed a constraint the model could not see or satisfy (field
+names it was never told; a number demanded after abstaining), and the scorer converted the
+harness's failure into the model's score. A token budget spent on reasoning is one more
+constraint of that kind, and a comparison between two labs would have read it as a capability gap.
+
+**What was done before the first run:**
+- `eval/providers.py` normalises every provider's stop reason and keeps the raw value.
+  `length` is a distinct outcome, never folded into an empty answer.
+- Every cache entry records `stop`, `raw_stop`, `served_by` and the provider-reported cost.
+  The results file's `usage` block tallies `stop_reasons`.
+- `scripts/model_report.py` prints stop reasons and parse failures **before** any accuracy,
+  so a run in which truncations dominate is visibly degenerate on the first screen.
+- `test_token_limit_is_recorded_as_length_not_as_an_empty_answer` feeds a raw
+  `finish_reason: "length"` response through the real OpenAI SDK.
+
+**What was deliberately NOT done:** raising `max_tokens` pre-emptively. The Opus run used
+8,000, and changing it for one model would make the comparison unequal. The probe measures
+whether truncation happens. If it does, the budget is a decision to take on evidence, and any
+change applies to both models.
+
+**Why it is recorded separately.** The standing principle has only ever been applied after
+the fact: a green signal fails, then we ask what it was not measuring. Here the question was
+asked of a signal that did not exist yet. Before the first run it was asked in this form:
+"what would still score as a model failure if the harness were the thing broken?". The
+answer was on the page of provider documentation already being read for other reasons.
