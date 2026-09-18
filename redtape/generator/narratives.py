@@ -21,10 +21,36 @@ _MONTHS = {
     "09": "September", "10": "October", "11": "November", "12": "December",
 }
 
+# Must cover every value in SAFE_IMMIGRATION_STATUSES. The lookup in _person_sentence is
+# a strict dict access on purpose: a missing status must crash the build rather than render
+# a person with no status clause. An absent clause means "withheld" everywhere else in this
+# renderer, so a silent fallback would make a STATED status indistinguishable from a
+# withheld one - the exact pathology recorded in docs/LIMITS.md 25.
+#
+# The five HR 1-affected statuses were added 2026-09-16 when the corpus was re-widened
+# (docs/LIMITS.md 16 and 31). They were missing on the first attempt and 12% of generated
+# households raised KeyError with no test catching it;
+# `test_every_safe_status_has_narrative_prose` exists so that cannot recur.
+#
+# Phrasing states the status only. It must never hint at an eligibility conclusion.
 _STATUS_PHRASE = {
     "CITIZEN": ["a U.S. citizen", "a citizen"],
     "LEGAL_PERMANENT_RESIDENT": ["a lawful permanent resident", "a green card holder"],
     "CUBAN_HAITIAN_ENTRANT": ["a Cuban/Haitian entrant", "granted Cuban/Haitian entrant status"],
+    "REFUGEE": ["a refugee", "was admitted as a refugee"],
+    "ASYLEE": ["an asylee", "was granted asylum"],
+    "DEPORTATION_WITHHELD": [
+        "has had deportation withheld",
+        "was granted withholding of removal",
+    ],
+    "CONDITIONAL_ENTRANT": [
+        "a conditional entrant",
+        "was admitted as a conditional entrant",
+    ],
+    "PAROLED_ONE_YEAR": [
+        "was paroled into the United States for at least one year",
+        "a parolee admitted for at least one year",
+    ],
     "UNDOCUMENTED": ["undocumented", "without lawful immigration status"],
     "DACA": ["a DACA recipient", "covered by DACA"],
     "TPS": ["a Temporary Protected Status holder", "covered by TPS"],

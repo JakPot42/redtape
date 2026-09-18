@@ -113,7 +113,7 @@ rates in `docs/LIMITS.md` §28 instead of the recorded totals.
 ## Every green signal must be checked for what it is NOT measuring **[decided]**
 
 This is the standing principle, and it outranks any individual check below. It has now
-been learned five times on this project, each time from a different direction, and each
+been learned seven times on this project, each time from a different direction, and each
 time the failure looked exactly like success right up until someone asked what the signal
 actually covered.
 
@@ -124,6 +124,8 @@ actually covered.
 | 3 | a held-out split builds without error | it built from the **public** seed, so it had public provenance and was worthless |
 | 4 | 183 tests pass locally | they passed because `python -m pytest` injects the cwd into `sys.path`. `eval/` was never importable; bare `pytest` — what CI runs — could not import it at all |
 | 5 | CI reports "green" | `-q` in `addopts` cancelled `-v` in the workflow, hiding **5 skipped tests** on `test_env.py`, the module covering the real `verifiers.v1` env and scoring path |
+| 6 | 242 tests pass on the scoring path | every baseline built `T1Answer` directly in Python, so the **prompt → schema → parse** path a real model traverses was never executed once (LIMITS §25) |
+| 7 | 300 tests pass on the generator | not one called `render()`, so re-widening the status set left 12% of households raising `KeyError`, and not one read `data/dev/t1.jsonl`, so the committed corpus silently went stale (LIMITS §31) |
 
 **The general form.** A passing check reports on the region it covers and says nothing
 whatsoever about the region it does not — but it is *read* as a statement about the whole.
@@ -153,9 +155,39 @@ Practical obligations, all of which have caught something here:
 - **Distrust a check whose expected value came from the thing under test.** The engine
   agreeing with itself is not validation; see "Only externally validated cells are scored".
 
+### Test through the real entry point **[decided]**
+
+**A test whose input is constructed on the far side of the interface under test is not
+testing that interface.**
+
+This is the named sub-rule for instances 4, 6 and 7 above. They are one pattern, not three
+incidents:
+
+| the interface | how the test bypassed it | what was actually broken |
+|---|---|---|
+| importing `eval/` | the suite ran with cwd on `sys.path` and nothing imported it bare | `eval/` was not importable at all under CI's invocation |
+| prompt → schema → parse | every baseline constructed `T1Answer` directly in Python | the schema demanded a number from a model that had just abstained |
+| household → `render()` → narrative | generator tests asserted on `Household` objects and never rendered | 12% of households raised `KeyError`; the split build would have crashed |
+
+In every case the bypass was invisible to reading — the tests looked thorough, and were,
+about the region they covered — and the defect was obvious on the **first real execution**.
+The input arrived already past the thing that was broken, so no number of assertions on that
+input could ever have reached it.
+
+**The fix each time was to exercise the real entry point, not to add more assertions around
+it.** Import the package the way CI imports it. Send a prompt through the parser instead of
+hand-building the parsed object. Call `render()` on what the generator actually emits. More
+assertions on a bypassed interface just raise confidence in a signal that cannot fail.
+
+So when writing a test, ask **where does my input come from?** If the answer is "I built it
+in the shape the code under test would have produced", the interface that produces that
+shape is untested, and that is usually the interface that breaks. Corollary for
+**published** artifacts: if no test opens the file we would ship, the file is untested no
+matter how well its generator is covered.
+
 **This principle is the thesis of the benchmark, applied to ourselves.** Redtape exists
 because PolicyEngine answers every question plausibly and never says "I cannot determine" —
-a system that is silently confident where it should abstain. Five times now our own tooling
+a system that is silently confident where it should abstain. Seven times now our own tooling
 has done the same thing to us. We do not get to ship a benchmark about undetectable
 confident wrongness while running on undetectable confident greenness.
 

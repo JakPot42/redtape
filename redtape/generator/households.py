@@ -14,7 +14,7 @@ from __future__ import annotations
 
 import random
 
-from redtape.schemas import Household, ImmigrationStatus, Person
+from redtape.schemas import CORPUS_TAX_YEAR, Household, ImmigrationStatus, Person
 
 # Coarse but defensible: enough spread to straddle the SNAP income limits and the
 # excess shelter deduction cap.
@@ -34,15 +34,19 @@ _HOUSING_BUCKETS = (
     ((18_000, 36_000), 0.35),
     ((36_000, 60_000), 0.10),
 )
-# Restricted to SAFE_IMMIGRATION_STATUSES. REFUGEE and ASYLEE were previously generated
-# and have been REMOVED: the engine still models them as SNAP-eligible after HR 1 removed
-# that eligibility, so any household carrying them has a known-wrong answer key
-# (docs/LIMITS.md 16). Weights are renormalised over the remaining statuses.
+# Restricted to SAFE_IMMIGRATION_STATUSES, which for the CA/2025 corpus scope is every
+# engine status (docs/LIMITS.md 16). REFUGEE and ASYLEE were removed in error - we read a
+# correctly modelled California delay (CDSS ACL 25-92, effective 2026-04-01) as a federal
+# omission - and are restored here at their original weights. CUBAN_HAITIAN_ENTRANT, added
+# while the corpus was restricted, is retained: it is the category HR 1 keeps eligible, so
+# it is worth exercising. CITIZEN and LPR absorb the difference.
 _STATUS_WEIGHTS = (
-    (ImmigrationStatus.CITIZEN, 0.80),
-    (ImmigrationStatus.LEGAL_PERMANENT_RESIDENT, 0.12),
+    (ImmigrationStatus.CITIZEN, 0.78),
+    (ImmigrationStatus.LEGAL_PERMANENT_RESIDENT, 0.10),
     (ImmigrationStatus.CUBAN_HAITIAN_ENTRANT, 0.02),
-    (ImmigrationStatus.UNDOCUMENTED, 0.06),
+    (ImmigrationStatus.REFUGEE, 0.03),
+    (ImmigrationStatus.ASYLEE, 0.02),
+    (ImmigrationStatus.UNDOCUMENTED, 0.05),
 )
 
 # Dependent care costs, annual. Zero for most households; a real cost where a working
@@ -55,7 +59,7 @@ _CARE_BUCKETS = (
     ((4_800, 12_000), 0.05),
 )
 
-TAX_YEAR = 2025
+TAX_YEAR = CORPUS_TAX_YEAR
 
 
 def _weighted(rng: random.Random, weighted):

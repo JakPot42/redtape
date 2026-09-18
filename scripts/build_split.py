@@ -39,6 +39,7 @@ from importlib.metadata import version
 from pathlib import Path
 
 from redtape.config import DEV, SPLIT_KINDS, resolve_seed, seed_fingerprint
+from redtape.generator.fingerprint import generator_fingerprint
 from redtape.generator.households import generate, withhold
 from redtape.generator.narratives import render
 from redtape.oracle.determinability import probe
@@ -443,6 +444,10 @@ def main():
         "generation": stats,
         "policyengine_us": version("policyengine-us"),
         "python": platform.python_version(),
+        # Fingerprint of the GENERATOR CONFIGURATION, so a later change to the generator
+        # makes this split's staleness visible instead of silent. Contains no seed
+        # material. tests/test_corpus_drift.py compares it against the live generator.
+        "generator_fingerprint": generator_fingerprint(),
         "task_hashes": [r["task_hash"] for r in rows],
     }
     manifest_path = path.with_suffix(".manifest.json")

@@ -2,6 +2,42 @@
 
 **Status: FILED 2026-09-02** as
 [PolicyEngine/policyengine-us#9374](https://github.com/PolicyEngine/policyengine-us/issues/9374).
+**Maintainer reply received 2026-09-15 — the immigrant-eligibility half is RETRACTED.**
+
+> **What changed on 2026-09-15.** Max Ghenis (PolicyEngine) replied on #9374. The SUA
+> divergence — the substance of this report and its title — **stands**, and the issue is
+> being retitled to it. The second, secondary claim in this document does not:
+>
+> - **"A second, related divergence" (below) is WRONG and withdrawn.** HR 1's immigrant
+>   eligibility restrictions *are* implemented in 1.821.4, federally from 2025-07-01, with
+>   California delaying to 2026-04-01 per CDSS ACL 25-92 and applied by
+>   `ca_snap_immigration_status_eligible`. We verified every part of this ourselves before
+>   accepting it. Our probe hardcoded `state_name: CA` and swept only months of 2025 —
+>   California in 2025 is exactly the cell where a correctly modelled state delay looks
+>   identical to a federal omission.
+> - **The structural claim this report leaned on is therefore weaker than stated.** We
+>   argued HR 1's SNAP provisions were implemented for ABAWD but for "neither the SUA nor
+>   immigrant eligibility". Only the SUA is actually missing. ABAWD *and* immigrant
+>   eligibility are both implemented, which makes the SUA the single outlier rather than
+>   one of a pair — and makes the gated-parameter pattern
+>   (`is_snap_abawd_hr1_in_effect`) the established convention to follow, not an
+>   inconsistency to point at.
+> - **"2. The LPR five-year bar is unmodelled" overstates its cause.** The bar is not
+>   applied to SNAP, but `years_since_us_entry` does exist as an input (default 5, a
+>   PolicyEngine modelling choice); `is_snap_immigration_status_eligible` does not read it.
+>   "No date-of-entry input" is false.
+> - **"1. COFA status is not representable" stands** but is not our finding — it was
+>   already tracked as
+>   [#8296](https://github.com/PolicyEngine/policyengine-us/issues/8296).
+> - **One sourcing correction to the SUA half.** CDSS ACL 25-68 keys the SUAS limitation
+>   to completion of automation, at initial certification and next recertification, with a
+>   120-day hold-harmless from 2025-07-04 — it does not name a date. The 2025-10-31 date
+>   this report uses came from ACIN I-46-25 and needs that citation carried explicitly, or
+>   the parameter needs restructuring around the hold-harmless instead. Open question to
+>   the maintainer.
+>
+> Corrected account and the failure mode: `docs/LIMITS.md` §16. Re-derived with
+> `scripts/probe_immigration_state_scope.py`. The text below is left as filed.
 
 Filed as ONE issue rather than two. The offer to split the SUA and immigrant-eligibility
 divergences is kept in the text below and left to the maintainers, but they were submitted

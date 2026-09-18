@@ -385,15 +385,20 @@ ranges and a proposed fix, and **filed upstream as
 to months before 2025-07-04, and no T1b case is generated that turns on SUA entitlement in
 the affected window. `docs/LIMITS.md` §11.
 
-**HR 1's immigrant-eligibility restrictions are not modelled either, and that one changes
-eligibility rather than amounts.** Refugees, asylees, people with deportation withheld,
-conditional entrants and one-year parolees are still modelled as fully eligible, identical
-to citizens, with no change at the statutory boundary. This one had already touched
-generated answer keys. **Consequence adopted:** the corpus is *restricted*, not annotated —
-generation and the determinability sweep are limited to statuses where engine and published
-rules agree, and previously-generated refugee and asylee households were removed. A test
-asserts the current known-wrong engine behaviour so that an upstream fix notifies us to
-re-widen. `docs/LIMITS.md` §16.
+**We also reported HR 1's immigrant-eligibility restrictions as unmodelled. That half was
+wrong, and it is retracted.** The restrictions *are* implemented: federally from
+2025-07-01, with California delaying to 2026-04-01 per CDSS ACL 25-92, applied by
+`ca_snap_immigration_status_eligible`. Our probe hardcoded `state_name: CA` and swept only
+months of 2025 — the one state and the one year in which a correctly modelled state delay
+is indistinguishable from a federal omission. The same probe pointed at any non-delaying
+state would have shown the change at 2025-07 immediately. **Consequence adopted:** the
+corpus restriction is removed and refugee and asylee households are generated again; the
+corpus scope (`CORPUS_STATE`, `CORPUS_TAX_YEAR`) is now declared in code, and a test fails
+if either moves while the gate still depends on California's delay. The one real gap that
+survives is that COFA status has no enum value — already tracked upstream as
+[#8296](https://github.com/PolicyEngine/policyengine-us/issues/8296), so not our finding.
+`docs/LIMITS.md` §16 records the failure mode: a correct measurement generalised past the
+scope it was taken at.
 
 Neither is a criticism of PolicyEngine, and the report says so at length. The engine is
 accurate, current and well-sourced nearly everywhere we looked — HR 1's ABAWD provisions

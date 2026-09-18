@@ -526,56 +526,144 @@ sizes **1-3 only** (FNS FY2026 COLA memo). The engine holds 223 / 261 / 299 for 
 against itself proves nothing. FFY2026 FORMULA validation is limited to sizes 1-3 for the
 same reason.
 
-## 16. HR 1 immigrant eligibility restrictions are NOT modelled — corpus restricted
+## 16. RETRACTED — HR 1 immigrant eligibility *is* modelled; we measured one state and generalised
 
-**Status: divergence confirmed. Affects ELIGIBILITY, not just amounts, and touched answer
-keys already generated.** Probe: `scripts/probe_immigration.py`.
+**Status: our error, corrected 2026-09-15. There is no engine gap here.** The corpus
+restriction this section used to justify has been removed. Probe:
+`scripts/probe_immigration_state_scope.py`. The superseded probe,
+`scripts/probe_immigration.py`, is kept with a banner because the mis-scoped measurement
+is the artifact this failure mode is recorded against.
 
-**Published rule** (CBPP, "A Quick Guide to SNAP Eligibility and Benefits", updated
-2025-10-03, endnote 6, citing PL 119-21, enacted 2025-07-04): SNAP eligibility is
-restricted to U.S. citizens; lawful permanent residents (after a five-year wait where
-applicable); people granted Cuban or Haitian entrant status; and people living in the U.S.
-under a Compact of Free Association.
+### What this section used to claim
 
-**What the engine does.** Nothing changes at the 2025-07-04 boundary. SNAP benefit for a
-2-person California household, $1,200/mo earned, by status and month:
+That `policyengine-us==1.821.4` did not implement PL 119-21's immigrant restrictions at
+all; that five statuses HR 1 made ineligible (`REFUGEE`, `ASYLEE`,
+`DEPORTATION_WITHHELD`, `CONDITIONAL_ENTRANT`, `PAROLED_ONE_YEAR`) were still modelled as
+fully eligible; and that `REFUGEE` and `ASYLEE` therefore had to be removed from corpus
+generation. It was filed to PolicyEngine as part of issue #9374.
 
-| status | Jan | May | Jun | **Jul** | Aug | Oct | Dec |
-|---|---|---|---|---|---|---|---|
-| CITIZEN | 522 | 522 | 522 | 522 | 522 | 543 | 543 |
-| LEGAL_PERMANENT_RESIDENT | 522 | 522 | 522 | 522 | 522 | 543 | 543 |
-| **REFUGEE** | 522 | 522 | 522 | **522** | 522 | 543 | 543 |
-| **ASYLEE** | 522 | 522 | 522 | **522** | 522 | 543 | 543 |
-| **DEPORTATION_WITHHELD** | 522 | 522 | 522 | **522** | 522 | 543 | 543 |
-| **CONDITIONAL_ENTRANT** | 522 | 522 | 522 | **522** | 522 | 543 | 543 |
-| **PAROLED_ONE_YEAR** | 522 | 522 | 522 | **522** | 522 | 543 | 543 |
-| CUBAN_HAITIAN_ENTRANT | 522 | 522 | 522 | 522 | 522 | 543 | 543 |
-| UNDOCUMENTED / DACA / TPS | 292 | 292 | 292 | 292 | 292 | 298 | 298 |
+### What is actually true
 
-The only movement anywhere is the FFY2026 COLA in October. Five statuses that HR 1 made
-ineligible are still modelled as fully eligible, identical to a citizen.
-`ca_snap_immigration_status_eligible` also reports `True` for all of them, so this is not
-a CFAP substitution — it is federal SNAP eligibility.
+Max Ghenis pointed this out on #9374 and we verified every part of it against the pinned
+wheel before changing anything. The restriction is encoded in **two layers**:
 
-**COFA is not representable at all.** The engine's `immigration_status` enum has 11 values
-and none of them is a Compact of Free Association status, so one of the four categories
-that *remain* eligible cannot be expressed.
+| file | date layer | statuses |
+|---|---|---|
+| `parameters/gov/usda/snap/eligibility/eligible_immigration_statuses.yaml` | `2025-07-01` (comment: "Real effective date July 4th") | CITIZEN, LEGAL_PERMANENT_RESIDENT, CUBAN_HAITIAN_ENTRANT |
+| `parameters/gov/states/ca/cdss/snap/eligibility/eligible_immigration_statuses.yaml` | `2026-04-01` | CITIZEN, LEGAL_PERMANENT_RESIDENT, CUBAN_HAITIAN_ENTRANT |
 
-**Action taken — the corpus is restricted, not merely annotated.**
-`SAFE_IMMIGRATION_STATUSES` (in `redtape/schemas.py`) now limits generation and the
-determinability sweep to statuses where the engine and the published rules agree:
+The federal file cites P.L. 119-21 §10108 and the FNS OBBB alien-eligibility page. The
+California file cites **CDSS All County Letter 25-92**, which delays implementation to
+2026-04-01. They are applied by `ca_snap_immigration_status_eligible`
+(`defined_for = StateCode.CA`, reference ACL 25-92), which
+`is_snap_immigration_status_eligible` combines as:
 
-- eligible under both: `CITIZEN`, `LEGAL_PERMANENT_RESIDENT`, `CUBAN_HAITIAN_ENTRANT`
-- ineligible under both: `UNDOCUMENTED`, `DACA`, `TPS`
+```python
+return federal_eligible | ca_eligible
+```
 
-`REFUGEE` and `ASYLEE` were previously generated (3% and 2% of adults) and have been
-**removed**. `tests/test_immigration_scope.py` fails if any generated household or sweep
-value falls outside the safe set, and separately asserts the current known-wrong engine
-behaviour so that an upstream fix notifies us to re-widen.
+So `is_snap_immigration_status_eligible` by state, status and month — measured, not
+inferred:
 
-**Caveat within the safe set.** The five-year bar for LPRs is not modelled — the engine
-has no date-of-entry input — so `LEGAL_PERMANENT_RESIDENT` is only correct for the
-long-resident case. Narratives must not imply recent arrival.
+| status | CA 2025-06 | CA 2025-07 | CA 2026-03 | CA 2026-04 | TX 2025-06 | TX 2025-07 |
+|---|---|---|---|---|---|---|
+| CITIZEN / LPR / CUBAN_HAITIAN_ENTRANT | True | True | True | True | True | True |
+| **REFUGEE** | True | **True** | True | **False** | True | **False** |
+| **ASYLEE** | True | **True** | True | **False** | True | **False** |
+| **DEPORTATION_WITHHELD** | True | **True** | True | **False** | True | **False** |
+| **CONDITIONAL_ENTRANT** | True | **True** | True | **False** | True | **False** |
+| **PAROLED_ONE_YEAR** | True | **True** | True | **False** | True | **False** |
+| UNDOCUMENTED / DACA / TPS | False | False | False | False | False | False |
+
+And the SNAP dollars, same household as the old table ($1,200/mo earned, 2-person):
+a California `REFUGEE` goes 522 → 522 → 543 → **298** across those four months; a Texas
+`REFUGEE` goes 522 → **292**. The old table's "nothing changes in July" was correct —
+about California, and *only* about California.
+
+### The failure mode: a correct measurement at the wrong scope
+
+This is a **new** entry class for this file. It is not an absent guard (§27, §25) and not
+a misread diagnostic (§27's second half). Every number in the old §16 table was right.
+The probe was deterministic, reproducible and honest. What was wrong was the **scope it
+was generalised to**.
+
+`scripts/probe_immigration.py` hardcoded `state_name: CA` in its situation dict and swept
+only months of 2025. Both choices were reasonable in isolation — the corpus is
+California-only and 2025-only, so probing that scope is *exactly* right for validating
+answer keys. The error was reporting the result as a **federal** omission when the
+measurement could not distinguish "the engine does not implement this rule" from "the
+engine implements this rule and this state has an override". Those two hypotheses are
+observationally identical in California in 2025, and we never ran the one cell that
+separates them.
+
+**The same probe pointed at any non-delaying state would have shown the change at
+2025-07 immediately.** One extra value in one dict.
+
+**Generalised lesson — a one-cell probe cannot support a claim about the whole model.**
+When probing a federal rule in a federalised program, vary the jurisdiction, or state the
+finding at the scope actually measured ("California sees no change in July 2025", not
+"the engine does not implement §10108"). Before filing any divergence upstream, check
+whether a state-level override parameter exists for the thing you think is missing —
+`parameters/gov/states/<st>/` mirrors the federal tree and is where a delay will live.
+This generalises past immigration: §14 already records that states implement HR 1
+differently, and we did not apply our own finding.
+
+### Action taken — the restriction is removed, and the scope is now pinned
+
+`SAFE_IMMIGRATION_STATUSES` (`redtape/schemas.py`) is **re-widened to all 11 engine
+statuses**, because for the corpus scope every one of them carries a correct answer key.
+`REFUGEE` (0.03) and `ASYLEE` (0.02) are restored to `_STATUS_WEIGHTS` at their original
+pre-restriction weights; `CUBAN_HAITIAN_ENTRANT` (0.02), added while the corpus was
+restricted, is retained. The determinability sweep widens with the set.
+
+`UNSAFE_IMMIGRATION_STATUSES` is kept as a **deliberately empty mechanism**, not deleted,
+so the disjoint/complete test still forces any new engine status to be classified.
+
+**The committed splits were NOT regenerated.** They predate this re-widening and therefore
+under-sample the immigration fact space; their labels remain correct. See §31 for the
+measurement, the decision and the drift guard that now exists — and for the renderer defect
+this change introduced.
+
+The safe set is now **scope-conditional and says so in code**. `CORPUS_STATE = "CA"` and
+`CORPUS_TAX_YEAR = 2025` are declared in `redtape/schemas.py`, and
+`tests/test_immigration_scope.py::test_safe_set_is_justified_only_for_the_declared_scope`
+fails if either moves while the HR 1-removed statuses are still in the safe set. That is
+the guard the original failure lacked: the gate can no longer be silently generalised
+past the cell it was derived from.
+
+`tests/test_immigration_scope.py` now pins the **actual** behaviour — all five HR
+1-removed statuses × four boundary months × both a delaying and a non-delaying state,
+plus every month of 2025 in California, plus the retained and never-eligible statuses —
+so any upstream change to either date layer fails a test rather than silently altering
+answer keys. It also asserts the California eligibility we rely on is federal SNAP and
+not a `ca_cfap` substitution.
+
+### One more claim in the old §16 that was also wrong
+
+- **"The engine has no date-of-entry input."** It has one: `years_since_us_entry`,
+  `default_value = 5`, which its own comment documents as a PolicyEngine modelling choice
+  rather than a statutory value. The five-year LPR bar is still not applied to SNAP, but
+  for a different reason — `is_snap_immigration_status_eligible` never reads it (only
+  WA RCA/TANF and Medicaid do). The practical caveat is unchanged: LPR answer keys are
+  correct only for the long-resident case and narratives must not imply recent arrival.
+  A test pins the non-dependency.
+
+### What survives as a real gap: COFA
+
+**COFA is still not representable.** The engine's `immigration_status` enum has 11 values
+and none is a Compact of Free Association status, so one of the categories HR 1 leaves
+*eligible* cannot be expressed as an input. The federal `2025-07-01` layer carries it as a
+YAML comment only:
+
+```yaml
+    - CUBAN_HAITIAN_ENTRANT
+    # Compacts of Free Association (COFA) citizens
+```
+
+This was **already known upstream** and is tracked as
+**PolicyEngine/policyengine-us#8296**. It is not a redtape discovery and must not be
+presented as one. It does not affect the corpus: the generator cannot emit a status that
+has no enum value, so no answer key depends on it.
 
 ## 17. The gross-income-test exemption produces no eligibility flips in California
 
@@ -1162,3 +1250,96 @@ and publishing a different artifact voids it.**
 
 The submission is therefore pushed from a staging tree containing only what an environment
 should contain, and `scripts/preflight_push.py` audits *that*, using the CLI's own collector.
+
+## 31. The committed splits are stale relative to the generator, deliberately — and nothing detected it
+
+**Status: known scope limit, accepted 2026-09-16. Labels remain correct.** The important
+half of this entry is not the staleness; it is that **300 tests passed while the corpus and
+the generator disagreed, because not one test read `data/dev/t1.jsonl`.**
+
+### What happened
+
+Re-widening `SAFE_IMMIGRATION_STATUSES` and restoring `REFUGEE`/`ASYLEE` to
+`_STATUS_WEIGHTS` (§16) changed what the generator produces. The committed dev and held-out
+splits were built under the narrowed configuration, so they instantly stopped being
+reproducible from their own recorded `(seed, index)` provenance — the reproducibility
+property CLAUDE.md states as a project invariant. The whole suite stayed green.
+
+### Exactly how far the drift goes — measured, not assumed
+
+`_weighted()` consumes exactly one `rng.random()` call regardless of how many weights it
+holds, so re-weighting does not shift the RNG stream; it only changes which status a given
+draw maps to. Verified by generating 1,200 households under the old and new weights and
+diffing the objects field by field:
+
+| difference | count |
+|---|---|
+| household shape (person count) | **0** |
+| housing cost / dependent care / benefit month | **0** |
+| person-level age, income, disability, student status | **0** |
+| person-level `immigration_status` | **300 of 3,107 people (9.7%)** |
+
+So the drift is confined **exactly** to `immigration_status`. Every other field is identical
+across all 1,200 households. Status counts, old → new: `CITIZEN` 2468→2396,
+`LEGAL_PERMANENT_RESIDENT` 401→340, `CUBAN_HAITIAN_ENTRANT` 53→71, `UNDOCUMENTED` 185→143,
+`REFUGEE` 0→89, `ASYLEE` 0→68.
+
+A first attempt at this measurement compared regenerated households against the committed
+**narratives** and reported that the RNG stream had shifted — 60 of 120 cases apparently
+diverging on age or housing. That was wrong: T1b cases *withhold* facts, so a withheld age
+or housing cost is simply absent from the prose and read as a mismatch. **Compare the
+objects, not the rendering.** The prediction was right; the first check of it was not.
+
+### The decision: do not regenerate
+
+Rebuilding costs ~92 minutes per split (the dev manifest records 5,534s) and would
+invalidate every committed result file, including paid live Opus 5 runs. Against that, the
+committed splits are **not wrong** — every task in them is correctly labelled, because
+California genuinely kept refugees and asylees eligible through 2026-03 (ACL 25-92), which
+is precisely the scope the corpus occupies. They are *narrower* than the current generator
+would produce: they under-sample the immigration fact space, containing zero refugee and
+zero asylee households where the generator would now yield roughly 3% and 2% of persons.
+
+**So the limitation is under-coverage, not mislabelling**, and it is accepted rather than
+fixed. Regenerate only when there is an independent reason to — an engine bump, a schema
+change, or a finding that needs the wider sampling.
+
+### The gap that mattered more, now closed
+
+`redtape/generator/fingerprint.py` computes `generator_fingerprint()`, a sha256 over every
+constant that determines corpus content (age ranges, all four bucket tables, status
+weights, the safe-status set, `CORPUS_STATE`, `CORPUS_TAX_YEAR`). `build_split.py` writes it
+into every manifest. `tests/test_corpus_drift.py` pins the live value
+(`5af23f90feb737e1`), records the configuration the committed splits were built under
+(`ae3b3a8d7a85b5e6`) as a documented staleness, and fails the build on any *undocumented*
+divergence. It carries a **positive control** — a test that perturbs `_STATUS_WEIGHTS` and
+asserts the fingerprint moves — because a fingerprint nothing can change would leave every
+other test in the file passing forever (the lesson from §29). The fingerprint contains no
+seed material, unlike `seed_fingerprint()`.
+
+Also added: tests that read the committed split and assert its provenance fields, that its
+staleness has the documented *shape* (no refugee/asylee, but `UNDOCUMENTED` and LPR still
+present — a narrowing, not an emptying), and that its narratives and answer keys remain
+mutually consistent.
+
+### A second defect the re-widening introduced, found only by writing those tests
+
+`narratives._STATUS_PHRASE` held prose for the original six statuses only. The lookup is a
+strict `dict[...]` access, so the five restored statuses raised **`KeyError` on 12% of
+generated households** — the split build would have crashed. All 300 tests passed anyway,
+because the generator tests never called `render()`.
+
+Fixed by adding prose for all five, and guarded by
+`test_every_safe_status_has_narrative_prose` (keys ⊇ `SAFE_IMMIGRATION_STATUSES`),
+`test_generated_households_actually_render` and
+`test_refugee_and_asylee_appear_in_rendered_narratives`. **The lookup was deliberately left
+strict.** A permissive `.get()` fallback would render a person with no status clause, and an
+absent clause means *withheld* everywhere else in that renderer — so the silent fallback
+would make a stated status indistinguishable from a withheld one, reproducing §25's
+pathology for the third time. Crashing is the correct behaviour; the guard is a test, not a
+default.
+
+**Standing principle, instance nine:** *every green signal must be checked for what it is
+NOT measuring.* Here one change produced two undetected defects — a stale artifact and a
+crashing renderer — and the suite reported 300 passed for both, because the tests exercised
+the generator's outputs but never the published corpus and never the rendering path.

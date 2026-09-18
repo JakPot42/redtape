@@ -1,4 +1,17 @@
-"""HR 1 immigrant eligibility probe.
+"""HR 1 immigrant eligibility probe. SUPERSEDED - its conclusion was wrong.
+
+    ###################################################################################
+    #  DO NOT CITE THIS PROBE. Use scripts/probe_immigration_state_scope.py instead.  #
+    ###################################################################################
+
+This probe hardcodes `state_name: CA` (see `run()` below) and sweeps only months of
+2025. On that evidence it concluded that policyengine-us had not implemented the PL
+119-21 immigrant restrictions at all. It had. The engine restricts federally from
+2025-07-01 and California delays to 2026-04-01 per CDSS ACL 25-92, so California in 2025
+is precisely the cell in which correct behaviour and absent behaviour look identical.
+
+Kept, unmodified below this banner, because the mis-scoped measurement is the artifact
+the failure mode is recorded against (docs/LIMITS.md 16).
 
 Published rule (CBPP, "A Quick Guide to SNAP Eligibility and Benefits", updated
 2025-10-03, endnote 6, citing PL 119-21): SNAP eligibility is restricted to

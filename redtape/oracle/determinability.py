@@ -45,8 +45,10 @@ DEFAULT_TOLERANCE = 1.0
 SWEEPS: dict[str, tuple[Any, ...]] = {
     "employment_income": (0.0, 5_000.0, 12_000.0, 20_000.0, 30_000.0, 45_000.0, 80_000.0),
     "housing_cost": (0.0, 3_600.0, 9_000.0, 18_000.0, 30_000.0, 48_000.0),
-    # Restricted to SAFE_IMMIGRATION_STATUSES. Sweeping REFUGEE/ASYLEE and the other
-    # excluded statuses would probe determinability against a known-wrong answer key
+    # Restricted to SAFE_IMMIGRATION_STATUSES, which for the CA/2025 corpus scope is
+    # every engine status: California delays the HR 1 restriction to 2026-04-01 (CDSS
+    # ACL 25-92) and the engine models that correctly, so REFUGEE/ASYLEE and the other
+    # previously-excluded statuses carry a correct answer key here and are swept again
     # (docs/LIMITS.md 16).
     "immigration_status": tuple(
         s for s in ImmigrationStatus if s.value in SAFE_IMMIGRATION_STATUSES

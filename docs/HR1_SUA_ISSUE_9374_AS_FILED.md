@@ -1,3 +1,33 @@
+> ## ⚠ AS-FILED RECORD — PARTLY RETRACTED 2026-09-15. DO NOT REUSE AS-IS.
+>
+> This file is the verbatim text submitted as
+> [PolicyEngine/policyengine-us#9374](https://github.com/PolicyEngine/policyengine-us/issues/9374)
+> on 2026-09-02. It is kept unedited below as the historical record of what was filed.
+> **One half of it is wrong.**
+>
+> - **The SUA half stands.** `always_standard.yaml` still carries California as `true`
+>   from 2015-10-01 with no later entry, so the elderly-or-disabled condition P.L. 119-21
+>   §10103 added to the LIHEAP-triggered SUA is not drawn. Max Ghenis confirmed this on
+>   the issue and it is being retitled to the SUA change. One sourcing correction: CDSS
+>   ACL 25-68 keys the SUAS limitation to *completion of automation*, at initial
+>   certification and next recertification, with a 120-day hold-harmless from 2025-07-04,
+>   rather than naming a date — so the 2025-10-31 date used below needs its own citation
+>   (we took it from ACIN I-46-25) before it is encoded.
+> - **The immigrant-eligibility half is RETRACTED.** The section "A second, related
+>   divergence" and structural gap 2 ("The LPR five-year bar is unmodelled") are wrong as
+>   written. The restrictions *are* implemented, federally from 2025-07-01, with
+>   California delaying to 2026-04-01 per CDSS ACL 25-92 and applied by
+>   `ca_snap_immigration_status_eligible`. Our probe hardcoded `state_name: CA` and swept
+>   only 2025, so it could not distinguish a state override from a federal omission.
+>   `years_since_us_entry` also exists as an input (default 5, a modelling choice); SNAP's
+>   status test simply does not read it.
+> - **Structural gap 1 (COFA) stands**, but was already tracked upstream as
+>   [#8296](https://github.com/PolicyEngine/policyengine-us/issues/8296) and is not our
+>   discovery.
+>
+> The corrected account, and the failure mode that produced the error, are in
+> `docs/LIMITS.md` §16. Verified with `scripts/probe_immigration_state_scope.py`.
+
 **Package:** `policyengine-us==1.821.4` (with `policyengine-core==3.31.1`)
 **Also confirmed on:** `policyengine-core==3.31.0` — we pinned back to 3.31.0, captured a
 five-household golden master of oracle output, moved to 3.31.1 and re-ran it. Output is

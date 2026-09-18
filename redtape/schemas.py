@@ -30,34 +30,59 @@ WITHHOLDABLE_FACTS = (
 )
 
 
-# Statuses where the engine and the published post-HR 1 rules AGREE.
+# --------------------------------------------------------------------------------------
+# Corpus scope. The immigration-status gate below is valid ONLY for this scope.
+# --------------------------------------------------------------------------------------
+# These are not decoration. `SAFE_IMMIGRATION_STATUSES` is safe *because* the corpus is
+# California-only and 2025-only; the same statuses are NOT safe in another state or
+# another year. `tests/test_immigration_scope.py` fails if either constant moves without
+# the gate being re-derived. See docs/LIMITS.md 16 for why this guard exists.
+CORPUS_STATE = "CA"
+CORPUS_TAX_YEAR = 2025
+
+
+# Statuses whose engine answer key is CORRECT for the corpus scope (CORPUS_STATE,
+# CORPUS_TAX_YEAR).
 #
-# PL 119-21 (enacted 2025-07-04) restricted SNAP to citizens, LPRs (after a five-year
-# wait where applicable), Cuban/Haitian entrants, and COFA residents. The engine does not
-# implement this: REFUGEE, ASYLEE, DEPORTATION_WITHHELD, CONDITIONAL_ENTRANT and
-# PAROLED_ONE_YEAR are still modelled as fully eligible in every month of 2025
-# (docs/LIMITS.md 16). Generating households with those statuses would bake a known-wrong
-# answer key into the corpus, so they are excluded until upstream implements the rule.
+# PL 119-21 section 10108 (enacted 2025-07-04) restricted SNAP to citizens, LPRs (after a
+# five-year wait where applicable), Cuban/Haitian entrants, and COFA residents.
+# policyengine-us 1.821.4 DOES implement this, in two layers:
 #
-# COFA cannot be represented at all - the engine's enum has no such value - so that
-# eligible category is simply unavailable.
+#   gov/usda/snap/eligibility/eligible_immigration_statuses.yaml     2025-07-01 restricts
+#   gov/states/ca/cdss/snap/eligibility/...statuses.yaml             2026-04-01 for CA
+#
+# California delays the restriction to 2026-04-01 per CDSS ACL 25-92, and
+# `is_snap_immigration_status_eligible` returns `federal_eligible | ca_eligible`, where
+# `ca_snap_immigration_status_eligible` is `defined_for = StateCode.CA`. So in California
+# in 2025 every previously-eligible status is STILL eligible, and the engine is right to
+# say so. Verified against the engine at all four boundary cells by
+# `scripts/probe_immigration_state_scope.py`; pinned by tests.
+#
+# This is why the set is scope-conditional rather than absolute. In Texas the same five
+# statuses go ineligible at 2025-07; in California they go ineligible at 2026-04. Either
+# change to CORPUS_STATE or CORPUS_TAX_YEAR invalidates the reasoning here.
+#
+# COFA remains unrepresentable - the engine's enum has no such value, and the federal
+# 2025-07-01 layer carries COFA only as a YAML comment - so that eligible category cannot
+# be expressed as an input. Tracked upstream as PolicyEngine/policyengine-us#8296.
 SAFE_IMMIGRATION_STATUSES = (
-    "CITIZEN",                    # eligible under both
-    "LEGAL_PERMANENT_RESIDENT",   # eligible under both (5-year bar NOT modelled; see LIMITS 16)
-    "CUBAN_HAITIAN_ENTRANT",      # eligible under both
-    "UNDOCUMENTED",               # ineligible under both
-    "DACA",                       # ineligible under both
-    "TPS",                        # ineligible under both
+    "CITIZEN",                    # eligible; unaffected by HR 1
+    "LEGAL_PERMANENT_RESIDENT",   # eligible; 5-year bar not applied to SNAP (see LIMITS 16)
+    "CUBAN_HAITIAN_ENTRANT",      # eligible; retained by HR 1
+    "REFUGEE",                    # eligible in CA until 2026-04-01 (ACL 25-92)
+    "ASYLEE",                     # eligible in CA until 2026-04-01 (ACL 25-92)
+    "DEPORTATION_WITHHELD",       # eligible in CA until 2026-04-01 (ACL 25-92)
+    "CONDITIONAL_ENTRANT",        # eligible in CA until 2026-04-01 (ACL 25-92)
+    "PAROLED_ONE_YEAR",           # eligible in CA until 2026-04-01 (ACL 25-92)
+    "UNDOCUMENTED",               # ineligible
+    "DACA",                       # ineligible
+    "TPS",                        # ineligible
 )
 
-# Excluded, with the reason, so the exclusion is auditable rather than implicit.
-UNSAFE_IMMIGRATION_STATUSES = {
-    "REFUGEE": "HR 1 removed eligibility; engine still grants it",
-    "ASYLEE": "HR 1 removed eligibility; engine still grants it",
-    "DEPORTATION_WITHHELD": "HR 1 removed eligibility; engine still grants it",
-    "CONDITIONAL_ENTRANT": "HR 1 removed eligibility; engine still grants it",
-    "PAROLED_ONE_YEAR": "HR 1 removed eligibility; engine still grants it",
-}
+# Kept as a mechanism, deliberately empty. Nothing is excluded within the current corpus
+# scope. Populate it - do not delete it - if a scope change makes a status wrong again;
+# the disjoint/complete test is what forces a new engine status to be classified.
+UNSAFE_IMMIGRATION_STATUSES: dict[str, str] = {}
 
 
 class ImmigrationStatus(str, Enum):
@@ -69,7 +94,6 @@ class ImmigrationStatus(str, Enum):
     UNDOCUMENTED = "UNDOCUMENTED"
     DACA = "DACA"
     TPS = "TPS"
-    # Present so they can be named and excluded; never generated.
     REFUGEE = "REFUGEE"
     ASYLEE = "ASYLEE"
     DEPORTATION_WITHHELD = "DEPORTATION_WITHHELD"
@@ -141,8 +165,10 @@ class Household(Strict):
     seed: int
     index: int
 
+    # Kept as literals so the type system pins them; CORPUS_STATE / CORPUS_TAX_YEAR are
+    # the values the immigration gate is derived against, and a test ties the two together.
     state: Literal["CA"] = "CA"
-    tax_year: int = 2025
+    tax_year: int = CORPUS_TAX_YEAR
     month: str = Field(description='the SNAP month, "YYYY-MM"; SNAP is always scored monthly')
 
     people: tuple[Person, ...]
