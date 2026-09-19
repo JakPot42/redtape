@@ -24,12 +24,24 @@ are `verifiers` and `pydantic`, and that is the whole list. (The five baselines 
 exception: they read the federal poverty line from the engine, so running them from a
 checkout needs `pip install -e ".[dev,generate]"`.)
 
-**Status: first frontier-model result complete; one follow-up experiment incomplete.** Two 1,200-task splits built, Claude Opus 5
-evaluated end to end on the dev split, five baselines run, three headline metrics confirmed both
-discriminating and achievable, and the tool ablation complete for the scripted upper
-bound but only two of three conditions for the model itself. The held-out split has never
-been evaluated against and stays that way. One tool-condition experiment is two-thirds
-run and is labelled as such where it appears.
+**Status: ALL MODEL RESULTS WITHDRAWN (2026-09-19). The dev and held-out splits are being
+regenerated.** The published Opus 5 numbers were measured on a corpus whose answer keys rest
+on premises the case files never state, and in several cases get the law wrong:
+
+- **Two adults are keyed as a married couple filing jointly**: 393 of 1,200 dev tasks, 163
+  of them adults 18+ years apart (a parent and adult child keyed as spouses). The narratives
+  never state a relationship.
+- **Students are keyed as working zero hours** even when the case file states their earnings
+  (81 tasks). The SNAP student exemption turns on hours, and the eligibility-flip class is
+  built on student status.
+- **Undocumented people are keyed as holding a citizen's SSN card**, so the key credits them
+  EITC and CTC (97 and 110 tasks with an undocumented person present).
+
+A model that asked for the missing relationship was scored as abstaining needlessly. The
+benchmark penalised the behaviour it exists to reward. See
+[`docs/LIMITS.md`](docs/LIMITS.md) §35–§36. The previous numbers are kept below under
+*Superseded results*, for the record only. **Do not cite them.**
+
 **Nothing here is peer-reviewed**, and the validated surface is narrower than
 the test count suggests — read [`docs/LIMITS.md`](docs/LIMITS.md) before citing any number
 in this repo. It is written as the work happens rather than retrofitted, and it states what
@@ -43,231 +55,28 @@ harder half: whether an agent knows **which facts are required, which are missin
 when it cannot answer** — which is where real filings fail.
 
 The obvious objection is that "knows when it cannot answer" is just arithmetic competence
-wearing a different hat. The result below is the answer to that objection.
+wearing a different hat. The withdrawn Opus 5 result was offered as the answer to that
+objection; until the regenerated split is measured, the objection stands unanswered.
 
-## Result: it notices a missing category, not a missing quantity
+## Results: withdrawn, pending the regenerated split
 
-**Claude Opus 5, 1,200-task dev split, no tools.**
+There is no current model result. The previous headline ("it notices a missing *category*,
+not a missing *quantity*": Opus 5 abstention 0.396 on eligibility flips vs 0.050 on amount
+changes) was measured on the contaminated corpus described above. It may survive
+regeneration. It has not been re-measured, so it is not claimed.
 
-> **It recognises a missing fact when the fact's absence would change a *category*, and
-> largely misses one whose absence would change a *quantity*.**
->
-> | the withheld fact would change… | correct abstention rate |
-> |---|---:|
-> | SNAP eligibility — a category | **0.396** (38 / 96) |
-> | a benefit amount — a quantity | **0.050** (9 / 180) |
->
-> Both classes are cases where a required fact is absent and abstention is the correct
-> answer. They differ in one respect: whether the missing fact moves a yes/no or a number.
-> **An eight-fold gap.**
+Two further reasons it cannot stand as written, both found while fixing the scorer:
 
-That is the result. Two things frame it.
+- **The abstention scorer never checked which fact was named**, only which program. The fix
+  (a closed list of fact identifiers in the prompt, matched exactly) changes every prompt.
+- **The per-fact table had a confound.** `p1.employment_income` was the prompt's only example
+  identifier *and* the fact most often flagged (0.709). The README explained this as income
+  having an obvious slot in a case file. That the prompt named it explains it equally well.
+  Once the prompt lists every identifier, this is testable, and it will be reported either way.
 
-It is not incapacity at the task: the model computes benefits far better than any trivial
-strategy, **0.514 exact-match against a 0.205 best baseline**.
-
-And it is not blanket caution: where a fact is missing but does *not* decide the outcome — so
-answering is correct — it answers **95%** of the time (0.951). It is not abstaining
-indiscriminately and getting lucky; it is discriminating, on the wrong axis.
-
-Across the whole split it volunteers `cannot_determine` in **5.3%** of responses (64 of
-1,200). This line previously said 6.3%, a hand count that no definition over the stored
-responses reproduces; see `docs/LIMITS.md` §34.
-
-### Three headline metrics
-
-Reported separately. The weighted composite exists but is deliberately not the headline, so
-that retuning a weight cannot move a published number.
-
-| | exact-match<br>(determinate, n=780) | abstention<br>(T1b, n=420) | pair-consistency<br>(200 pairs) |
-|---|---:|---:|---:|
-| **Claude Opus 5** | **0.514** | **0.438** | **0.570** |
-| baseline: always_abstain | 0.000 | 0.131 | 0.000 |
-| baseline: never_abstain | 0.205 | 0.336 | 0.495 |
-| baseline: always_eligible | 0.036 | 0.343 | 0.500 |
-| baseline: never_eligible | 0.115 | 0.074 | 0.060 |
-| baseline: rules_only | 0.205 | 0.326 | 0.495 |
-| *ceiling: answers and abstains correctly* | *1.000* | *1.000* | *1.000* |
-
-Gate pass rate 0.981; **0 malformed-JSON, 0 schema-invalid, 0 scorer errors**. The ceiling
-row is a diagnostic agent that answers from the key **and** abstains on exactly the deciding
-programs — it exists because a metric nobody can score 1.000 on is broken, and until it was
-written nothing established that the abstention metric was reachable at all.
-
-Abstention at 0.438 is 0.102 above the never-abstain baseline: better than the degenerate
-strategy, and less than a third of the way from it to the ceiling.
-
-### The aggregate hides the split
-
-| class | correct | n | accuracy | correct behaviour |
-|---|---:|---:|---:|---|
-| indeterminate | 9 | 180 | **0.050** | abstain — the fact moves an amount past tolerance |
-| eligibility-flip | 38 | 96 | **0.396** | abstain — the fact flips SNAP eligibility |
-| incomplete-determinate | 137 | 144 | **0.951** | answer anyway — the fact does not decide |
-
-An eight-fold gap between the two classes where abstention is required. Both are cases where
-a required fact is absent; they differ only in whether its absence changes a *category* or a
-*quantity*. The incomplete-determinate class is what stops the benchmark being won by always
-abstaining — and 0.951 there confirms the model is not simply cautious.
-
-### Which missing facts go unnoticed
-
-| withheld fact | correct | n | accuracy |
-|---|---:|---:|---:|
-| `p1.employment_income` | 39 | 55 | 0.709 |
-| `p1.is_higher_ed_student` | 80 | 147 | 0.544 |
-| `housing_cost` | 26 | 50 | 0.520 |
-| `dependent_care_cost` | 18 | 47 | 0.383 |
-| `p1.age` | 13 | 61 | 0.213 |
-| `p1.immigration_status` | 8 | 60 | **0.133** |
-
-**Immigration status is noticed least often of all, at 0.133 — and it is the fact with the
-starkest consequence**, determining outright whether a person is eligible for federal SNAP.
-Age (0.213) is second-lowest and behaves similarly, setting elderly status and dependency.
-Income, the fact most often *stated* as an explicit line item in a case file, is noticed most
-(0.709).
-
-This is the category/quantity split seen fact by fact, and it suggests a mechanism for it.
-A case file has an obvious slot for income; immigration status and age are background
-premises a reader has to notice are *absent* rather than find blank. The facts the model
-flags best are the ones with a slot; the ones it misses are the ones that must be inferred to
-be missing.
-
-The data is consistent with that and does not establish it. Separating "premise vs line item"
-from "category vs quantity" needs a split that varies the same fact between the two
-presentations — which this one does not do, because every fact appears in exactly one form.
-It is the next experiment, not a conclusion.
-
-### The obvious objection, tested before publication
-
-The prompt names `cannot_determine` in three places, so this is not a measure of whether the
-model knows the mechanism exists. But the prompt's closing clause was one-sided where the
-scoring is symmetric: it warned that "a needless abstention is scored as wrong as a wrong
-number" and never stated the converse. Publishing an abstention figure with that clause in
-the prompt invites the charge that the result was written into the instructions.
-
-So we A/B'd it. 60 tasks weighted toward the classes where abstention is correct; arm B
-**balanced** the clause rather than deleting it (deleting would test silence-vs-deterrent, a
-different question).
-
-| | arm A (shipped) | arm B (balanced) | Fisher exact |
-|---|---|---|---|
-| replies containing any `cannot_determine` | **12 / 60** | **12 / 60** | p = 1.000 |
-| abstention accuracy, all T1b | 19 / 54 = 0.352 | 18 / 54 = 0.333 | p = 1.000 |
-
-The raw abstention rate is **identical, not similar**, and balancing the clause moved
-accuracy slightly *down*. Instruction asymmetry is ruled out as the explanation.
-
-### What this does and does not claim
-
-The claim: **a frontier model recognises a missing fact far more reliably when its absence
-would change a categorical outcome than when it would change a quantity, and volunteers
-abstention rarely in absolute terms.** Narrower than "models cannot tell when they lack
-information", and it is what the data supports.
-
-- **One model, one state, one prompt pair.** Claude Opus 5, California only, tax year 2025.
-- **The A/B excludes a large effect, not a modest one.** At a 12/60 base rate, 60 tasks per
-  arm reliably detects roughly a doubling. A real 12 → 18 shift would have been missed.
-- **These numbers are a correction.** An earlier version of this section reported abstention
-  0.357 and an indeterminate rate of 0.006, because the schema demanded a number for a
-  program the model had just declared undeterminable — so 47 correct abstentions were
-  rejected as malformed and scored as failures. The benchmark was penalising the behaviour it
-  exists to reward. Fixed, re-scored from cache, and recorded in `docs/LIMITS.md` §27.
-- **Abstention labels are approximate.** A perturbation sweep can prove a fact is deciding
-  but not that one is not (`docs/LIMITS.md` §4). Mislabelling would push the measured rate
-  *up*, not down, so the direction survives; the size is unmeasured.
-- **Medicaid is computed but not scored** — no external validation was obtainable, and a cell
-  backed only by the engine agreeing with itself is the circularity this project exists to
-  avoid.
-
-**Read [`docs/LIMITS.md`](docs/LIMITS.md) before citing any number here.** 27 sections,
-written as the work happened rather than retrofitted, stating what is *not* validated at
-least as carefully as what is — including three sections retracting our own errors.
-
-**Reproducing it:** every model response is cached in `cache/responses/dev/` and committed,
-so the scored artifact can be re-derived without spending anything. The full run cost $59.66.
-
-## The metric measures judgment, not arithmetic (scripted upper bound)
-
-Three conditions over the same tasks. `tool_equipped` gives the agent a calculator that
-takes a structured household and returns the benefit. `tool_equipped_unknowns` gives it the
-same calculator, except a fact may be passed as `"unknown"` — instead of defaulting it, the
-tool sweeps that fact and reports which programs its value decides.
-
-300 tasks, weighted toward T1b so neither cell is thin: 150 determinate and 150 T1b
-(60 indeterminate, 50 incomplete-determinate, 40 eligibility-flip).
-
-| condition | exact-match (n=150) | abstention (n=150) |
-|---|---:|---:|
-| `tool_less` | 0.247 | 0.327 |
-| `tool_equipped` | **0.740** | 0.333 |
-| `tool_equipped_unknowns` | 0.740 | **0.733** |
-
-**The calculator moves exact-match by +0.493 and abstention by +0.006. Marking withheld
-facts moves abstention by +0.400 and exact-match by exactly zero.**
-
-The two axes separate cleanly, and each "no effect" arm really is flat rather than merely
-small. Arithmetic help does not buy abstention accuracy; determinability help does not buy
-arithmetic accuracy. That is direct evidence the abstention metric measures something the
-amount-scoring benchmarks do not, which is the whole premise of the project — and the single
-result that could have shown the premise was empty. It didn't.
-
-Two things this is not. **No model is called** — all three conditions use scripted agents,
-so this is an upper bound on what the *tool* offers a perfect extractor, not a measurement
-of any model's behaviour; the model result is the section above. And pair rows are excluded
-from the sample, because they are all determinate and partially sampling them would make
-`pair_consistency` report a sampling artifact.
-
-## Giving the model the tool: a calculator improves its abstention, unexpectedly
-
-The section above measures what the tool offers a *perfect extractor*. This one asks the
-question that matters for the finding: hand the tool to the model, and does anything change?
-
-**This experiment is INCOMPLETE.** Two of three conditions ran before the API budget was
-exhausted. The third — the one that would settle whether the model can act on an explicit
-determinability signal — has not run, and the row below says so rather than being omitted.
-
-| condition | exact-match | abstention |
-|---|---:|---:|
-| `tool_less` | 0.553 (n=150) | 0.453 (n=150) |
-| `tool_equipped` | **0.927** (n=150) | **0.678** (n=149) |
-| `tool_equipped_unknowns` | — **NOT RUN** — | — **NOT RUN** — |
-
-*(A 15-task probe of the unrun condition gave 0.750 exact-match and 1.000 abstention on
-n=8 / n=7. That is 7 tasks. It is recorded for transparency and is not a result.)*
-
-### Two findings, one of them unexpected
-
-**A calculator nearly closes the arithmetic gap.** Exact-match goes 0.553 → 0.927, against a
-ceiling of 1.000. Whatever the model gets wrong on determinate cases is almost entirely
-computation, not comprehension of the case file — it knows what to compute and mis-computes
-it.
-
-**A calculator also improves abstention, 0.453 → 0.678.** This one was not predicted, and it
-is the more interesting of the two.
-
-It did not happen for the scripted extractor. Under the identical condition the scripted
-agent's abstention was flat — 0.327 → 0.333, a change of 0.006 on the same 300-task sample.
-So this is not a property of the tool. **Something about a model calling the tool makes it
-likelier to notice that it cannot answer.**
-
-The plausible mechanism, offered as a hypothesis: invoking the calculator requires naming
-every required field explicitly. A fact that is absent has to be confronted at the point of
-constructing the call, rather than glossed while writing prose. That would make the tool an
-*attention* aid rather than an arithmetic one — and it is the same line-item-versus-premise
-story the per-fact table suggests, reached from a different direction.
-
-It is a hypothesis. The experiment that would test it is the unrun third condition, plus a
-variant that requires the model to enumerate the fields it used without giving it a
-calculator at all — separating "had to name the fields" from "had a tool".
-
-### What is not claimed here
-
-- **Two conditions, not three.** The headline comparison this section was designed for —
-  explicit `"unknown"` marking versus none — has not been run.
-- `tool_equipped` abstention is n=149 rather than 150: one task's response was never
-  fetched, and dropping it is preferable to scoring an absent reply as a failure.
-- One model, one sample, one prompt. Same scope limits as the main result.
+The benchmark's machinery (the three metrics, the ceiling check, the baselines' mechanics,
+pair consistency's discrimination) is unaffected. What is withdrawn is every number that
+depends on the answer keys of the current split.
 
 ## Pair-consistency: both degenerate strategies fail, and they fail differently
 
@@ -455,6 +264,238 @@ but "the cited section has been read and matches". `docs/LIMITS.md` §10.
 
 No rule is at `high`. Claude drafts rules and never promotes their confidence; only the
 human reviewer does, via `rules/REVIEW_CHECKLIST.md`.
+
+## Superseded results: withdrawn 2026-09-19, do not cite
+
+Kept verbatim for the record. Every number below was measured on the corpus described at the
+top of this README (unstated household relationships keyed as marriages, students keyed at
+zero hours, undocumented filers keyed with a citizen's SSN) and scored by an abstention scorer
+that ignored the named fact. The scripted-agent rows are consistent with those same answer
+keys, so their *mechanics* hold, but their values are not re-verified.
+
+### Result: it notices a missing category, not a missing quantity
+
+**Claude Opus 5, 1,200-task dev split, no tools.**
+
+> **It recognises a missing fact when the fact's absence would change a *category*, and
+> largely misses one whose absence would change a *quantity*.**
+>
+> | the withheld fact would change… | correct abstention rate |
+> |---|---:|
+> | SNAP eligibility — a category | **0.396** (38 / 96) |
+> | a benefit amount — a quantity | **0.050** (9 / 180) |
+>
+> Both classes are cases where a required fact is absent and abstention is the correct
+> answer. They differ in one respect: whether the missing fact moves a yes/no or a number.
+> **An eight-fold gap.**
+
+That is the result. Two things frame it.
+
+It is not incapacity at the task: the model computes benefits far better than any trivial
+strategy, **0.514 exact-match against a 0.205 best baseline**.
+
+And it is not blanket caution: where a fact is missing but does *not* decide the outcome — so
+answering is correct — it answers **95%** of the time (0.951). It is not abstaining
+indiscriminately and getting lucky; it is discriminating, on the wrong axis.
+
+Across the whole split it volunteers `cannot_determine` in **5.3%** of responses (64 of
+1,200). This line previously said 6.3%, a hand count that no definition over the stored
+responses reproduces; see `docs/LIMITS.md` §34.
+
+#### Three headline metrics
+
+Reported separately. The weighted composite exists but is deliberately not the headline, so
+that retuning a weight cannot move a published number.
+
+| | exact-match<br>(determinate, n=780) | abstention<br>(T1b, n=420) | pair-consistency<br>(200 pairs) |
+|---|---:|---:|---:|
+| **Claude Opus 5** | **0.514** | **0.438** | **0.570** |
+| baseline: always_abstain | 0.000 | 0.131 | 0.000 |
+| baseline: never_abstain | 0.205 | 0.336 | 0.495 |
+| baseline: always_eligible | 0.036 | 0.343 | 0.500 |
+| baseline: never_eligible | 0.115 | 0.074 | 0.060 |
+| baseline: rules_only | 0.205 | 0.326 | 0.495 |
+| *ceiling: answers and abstains correctly* | *1.000* | *1.000* | *1.000* |
+
+Gate pass rate 0.981; **0 malformed-JSON, 0 schema-invalid, 0 scorer errors**. The ceiling
+row is a diagnostic agent that answers from the key **and** abstains on exactly the deciding
+programs — it exists because a metric nobody can score 1.000 on is broken, and until it was
+written nothing established that the abstention metric was reachable at all.
+
+Abstention at 0.438 is 0.102 above the never-abstain baseline: better than the degenerate
+strategy, and less than a third of the way from it to the ceiling.
+
+#### The aggregate hides the split
+
+| class | correct | n | accuracy | correct behaviour |
+|---|---:|---:|---:|---|
+| indeterminate | 9 | 180 | **0.050** | abstain — the fact moves an amount past tolerance |
+| eligibility-flip | 38 | 96 | **0.396** | abstain — the fact flips SNAP eligibility |
+| incomplete-determinate | 137 | 144 | **0.951** | answer anyway — the fact does not decide |
+
+An eight-fold gap between the two classes where abstention is required. Both are cases where
+a required fact is absent; they differ only in whether its absence changes a *category* or a
+*quantity*. The incomplete-determinate class is what stops the benchmark being won by always
+abstaining — and 0.951 there confirms the model is not simply cautious.
+
+#### Which missing facts go unnoticed
+
+| withheld fact | correct | n | accuracy |
+|---|---:|---:|---:|
+| `p1.employment_income` | 39 | 55 | 0.709 |
+| `p1.is_higher_ed_student` | 80 | 147 | 0.544 |
+| `housing_cost` | 26 | 50 | 0.520 |
+| `dependent_care_cost` | 18 | 47 | 0.383 |
+| `p1.age` | 13 | 61 | 0.213 |
+| `p1.immigration_status` | 8 | 60 | **0.133** |
+
+**Immigration status is noticed least often of all, at 0.133 — and it is the fact with the
+starkest consequence**, determining outright whether a person is eligible for federal SNAP.
+Age (0.213) is second-lowest and behaves similarly, setting elderly status and dependency.
+Income, the fact most often *stated* as an explicit line item in a case file, is noticed most
+(0.709).
+
+This is the category/quantity split seen fact by fact, and it suggests a mechanism for it.
+A case file has an obvious slot for income; immigration status and age are background
+premises a reader has to notice are *absent* rather than find blank. The facts the model
+flags best are the ones with a slot; the ones it misses are the ones that must be inferred to
+be missing.
+
+The data is consistent with that and does not establish it. Separating "premise vs line item"
+from "category vs quantity" needs a split that varies the same fact between the two
+presentations — which this one does not do, because every fact appears in exactly one form.
+It is the next experiment, not a conclusion.
+
+#### The obvious objection, tested before publication
+
+The prompt names `cannot_determine` in three places, so this is not a measure of whether the
+model knows the mechanism exists. But the prompt's closing clause was one-sided where the
+scoring is symmetric: it warned that "a needless abstention is scored as wrong as a wrong
+number" and never stated the converse. Publishing an abstention figure with that clause in
+the prompt invites the charge that the result was written into the instructions.
+
+So we A/B'd it. 60 tasks weighted toward the classes where abstention is correct; arm B
+**balanced** the clause rather than deleting it (deleting would test silence-vs-deterrent, a
+different question).
+
+| | arm A (shipped) | arm B (balanced) | Fisher exact |
+|---|---|---|---|
+| replies containing any `cannot_determine` | **12 / 60** | **12 / 60** | p = 1.000 |
+| abstention accuracy, all T1b | 19 / 54 = 0.352 | 18 / 54 = 0.333 | p = 1.000 |
+
+The raw abstention rate is **identical, not similar**, and balancing the clause moved
+accuracy slightly *down*. Instruction asymmetry is ruled out as the explanation.
+
+#### What this does and does not claim
+
+The claim: **a frontier model recognises a missing fact far more reliably when its absence
+would change a categorical outcome than when it would change a quantity, and volunteers
+abstention rarely in absolute terms.** Narrower than "models cannot tell when they lack
+information", and it is what the data supports.
+
+- **One model, one state, one prompt pair.** Claude Opus 5, California only, tax year 2025.
+- **The A/B excludes a large effect, not a modest one.** At a 12/60 base rate, 60 tasks per
+  arm reliably detects roughly a doubling. A real 12 → 18 shift would have been missed.
+- **These numbers are a correction.** An earlier version of this section reported abstention
+  0.357 and an indeterminate rate of 0.006, because the schema demanded a number for a
+  program the model had just declared undeterminable — so 47 correct abstentions were
+  rejected as malformed and scored as failures. The benchmark was penalising the behaviour it
+  exists to reward. Fixed, re-scored from cache, and recorded in `docs/LIMITS.md` §27.
+- **Abstention labels are approximate.** A perturbation sweep can prove a fact is deciding
+  but not that one is not (`docs/LIMITS.md` §4). Mislabelling would push the measured rate
+  *up*, not down, so the direction survives; the size is unmeasured.
+- **Medicaid is computed but not scored** — no external validation was obtainable, and a cell
+  backed only by the engine agreeing with itself is the circularity this project exists to
+  avoid.
+
+**Read [`docs/LIMITS.md`](docs/LIMITS.md) before citing any number here.** 27 sections,
+written as the work happened rather than retrofitted, stating what is *not* validated at
+least as carefully as what is — including three sections retracting our own errors.
+
+**Reproducing it:** every model response is cached in `cache/responses/dev/` and committed,
+so the scored artifact can be re-derived without spending anything. The full run cost $59.66.
+
+### The metric measures judgment, not arithmetic (scripted upper bound)
+
+Three conditions over the same tasks. `tool_equipped` gives the agent a calculator that
+takes a structured household and returns the benefit. `tool_equipped_unknowns` gives it the
+same calculator, except a fact may be passed as `"unknown"` — instead of defaulting it, the
+tool sweeps that fact and reports which programs its value decides.
+
+300 tasks, weighted toward T1b so neither cell is thin: 150 determinate and 150 T1b
+(60 indeterminate, 50 incomplete-determinate, 40 eligibility-flip).
+
+| condition | exact-match (n=150) | abstention (n=150) |
+|---|---:|---:|
+| `tool_less` | 0.247 | 0.327 |
+| `tool_equipped` | **0.740** | 0.333 |
+| `tool_equipped_unknowns` | 0.740 | **0.733** |
+
+**The calculator moves exact-match by +0.493 and abstention by +0.006. Marking withheld
+facts moves abstention by +0.400 and exact-match by exactly zero.**
+
+The two axes separate cleanly, and each "no effect" arm really is flat rather than merely
+small. Arithmetic help does not buy abstention accuracy; determinability help does not buy
+arithmetic accuracy. That is direct evidence the abstention metric measures something the
+amount-scoring benchmarks do not, which is the whole premise of the project — and the single
+result that could have shown the premise was empty. It didn't.
+
+Two things this is not. **No model is called** — all three conditions use scripted agents,
+so this is an upper bound on what the *tool* offers a perfect extractor, not a measurement
+of any model's behaviour; the model result is the section above. And pair rows are excluded
+from the sample, because they are all determinate and partially sampling them would make
+`pair_consistency` report a sampling artifact.
+
+### Giving the model the tool: a calculator improves its abstention, unexpectedly
+
+The section above measures what the tool offers a *perfect extractor*. This one asks the
+question that matters for the finding: hand the tool to the model, and does anything change?
+
+**This experiment is INCOMPLETE.** Two of three conditions ran before the API budget was
+exhausted. The third — the one that would settle whether the model can act on an explicit
+determinability signal — has not run, and the row below says so rather than being omitted.
+
+| condition | exact-match | abstention |
+|---|---:|---:|
+| `tool_less` | 0.553 (n=150) | 0.453 (n=150) |
+| `tool_equipped` | **0.927** (n=150) | **0.678** (n=149) |
+| `tool_equipped_unknowns` | — **NOT RUN** — | — **NOT RUN** — |
+
+*(A 15-task probe of the unrun condition gave 0.750 exact-match and 1.000 abstention on
+n=8 / n=7. That is 7 tasks. It is recorded for transparency and is not a result.)*
+
+#### Two findings, one of them unexpected
+
+**A calculator nearly closes the arithmetic gap.** Exact-match goes 0.553 → 0.927, against a
+ceiling of 1.000. Whatever the model gets wrong on determinate cases is almost entirely
+computation, not comprehension of the case file — it knows what to compute and mis-computes
+it.
+
+**A calculator also improves abstention, 0.453 → 0.678.** This one was not predicted, and it
+is the more interesting of the two.
+
+It did not happen for the scripted extractor. Under the identical condition the scripted
+agent's abstention was flat — 0.327 → 0.333, a change of 0.006 on the same 300-task sample.
+So this is not a property of the tool. **Something about a model calling the tool makes it
+likelier to notice that it cannot answer.**
+
+The plausible mechanism, offered as a hypothesis: invoking the calculator requires naming
+every required field explicitly. A fact that is absent has to be confronted at the point of
+constructing the call, rather than glossed while writing prose. That would make the tool an
+*attention* aid rather than an arithmetic one — and it is the same line-item-versus-premise
+story the per-fact table suggests, reached from a different direction.
+
+It is a hypothesis. The experiment that would test it is the unrun third condition, plus a
+variant that requires the model to enumerate the fields it used without giving it a
+calculator at all — separating "had to name the fields" from "had a tool".
+
+#### What is not claimed here
+
+- **Two conditions, not three.** The headline comparison this section was designed for —
+  explicit `"unknown"` marking versus none — has not been run.
+- `tool_equipped` abstention is n=149 rather than 150: one task's response was never
+  fetched, and dropping it is preferable to scoring an absent reply as a failure.
+- One model, one sample, one prompt. Same scope limits as the main result.
 
 ## License
 

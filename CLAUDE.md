@@ -113,7 +113,7 @@ rates in `docs/LIMITS.md` §28 instead of the recorded totals.
 ## Every green signal must be checked for what it is NOT measuring **[decided]**
 
 This is the standing principle, and it outranks any individual check below. It has now
-been learned eight times on this project, each time from a different direction, and each
+been learned nine times on this project, each time from a different direction, and each
 time the failure looked exactly like success right up until someone asked what the signal
 actually covered.
 
@@ -127,6 +127,7 @@ actually covered.
 | 6 | 242 tests pass on the scoring path | every baseline built `T1Answer` directly in Python, so the **prompt → schema → parse** path a real model traverses was never executed once (LIMITS §25) |
 | 7 | 300 tests pass on the generator | not one called `render()`, so re-widening the status set left 12% of households raising `KeyError`, and not one read `data/dev/t1.jsonl`, so the committed corpus silently went stale (LIMITS §31) |
 | 8 | CLAUDE.md required every paid run to take a hard cap "checked after every API call" | **nothing implemented it.** `run_eval.py` had no cap of any kind for two weeks, while the rule was cited as the reason overspend could not recur (LIMITS §32) |
+| 9 | Opus 5 on 1,200 tasks: 0 malformed, 0 schema-invalid, 0 scorer errors, and a clean 0.396 / 0.050 split | a third of the answer keys rested on premises no case file stated: two adults keyed as a married couple (a parent and adult child among them), students keyed at zero hours, undocumented filers keyed with a citizen's SSN. A model asking for the relationship was scored as abstaining needlessly (LIMITS §35–§36) |
 
 **The general form.** A passing check reports on the region it covers and says nothing
 whatsoever about the region it does not — but it is *read* as a statement about the whole.
@@ -155,6 +156,35 @@ Practical obligations, all of which have caught something here:
   never observed failing is an assumption.
 - **Distrust a check whose expected value came from the thing under test.** The engine
   agreeing with itself is not validation; see "Only externally validated cells are scored".
+
+### When comparable populations diverge, suspect the corpus before the model **[decided]**
+
+**When a metric moves unexpectedly between two populations that should be comparable, treat
+the corpus as a suspect before the model.**
+
+Instance 9 was visible in a number before anyone read a case file. Opus 5 exact-match was 0.550
+on single-adult households and 0.447 on multi-adult ones. The easy reading is "bigger
+households are harder for the model". The true reading was that the answer key for every
+multi-adult household assumed a marriage the case file never stated. Adjacent to the
+gap were model abstentions asking exactly which adult was whose, scored as needless.
+
+This is the fourth time a green number measured something adjacent to its claim, and the
+third time the defect was in the **corpus** rather than the code (instances 7 and 9, and
+§31's stale splits). A corpus defect is structurally hard to see. The code that produced it
+is internally consistent, the engine agrees with itself, every test built on the corpus
+passes, and the model's score looks like a statement about the model.
+
+Obligations:
+
+- **Before explaining a gap between subpopulations by model behaviour**, list what differs in
+  how the *corpus* treats them: which facts the narrative states for one and not the other,
+  and which engine defaults apply to one and not the other.
+- **Read the model's "wrong" answers as possible evidence about the corpus.** An abstention on
+  a fact that was never withheld is either confabulation or a premise the key assumed without
+  stating. Rule out the second before reporting the first.
+- **The prober only sees facts the generator withholds on purpose.** A fact the generator
+  never states is invisible to it by construction; that is what `tests/test_unstated_premises.py`
+  exists to catch (LIMITS §36).
 
 ### Test through the real entry point **[decided]**
 
@@ -237,7 +267,7 @@ dispositions in LIMITS §33:
 
 **This principle is the thesis of the benchmark, applied to ourselves.** Redtape exists
 because PolicyEngine answers every question plausibly and never says "I cannot determine" —
-a system that is silently confident where it should abstain. Eight times now our own tooling
+a system that is silently confident where it should abstain. Nine times now our own tooling
 has done the same thing to us. We do not get to ship a benchmark about undetectable
 confident wrongness while running on undetectable confident greenness.
 

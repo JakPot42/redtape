@@ -1294,6 +1294,8 @@ objects, not the rendering.** The prediction was right; the first check of it wa
 
 ### The decision: do not regenerate
 
+**TRIGGERED 2026-09-19.** The independent reason this section waited for now exists: the answer keys rest on unstated and in places legally wrong premises (section 35, section 36). Regeneration goes ahead once the generator and oracle pass tests/test_unstated_premises.py.
+
 Rebuilding costs ~92 minutes per split (the dev manifest records 5,534s) and would
 invalidate every committed result file, including paid live Opus 5 runs. Against that, the
 committed splits are **not wrong** — every task in them is correctly labelled, because
@@ -1582,3 +1584,79 @@ narrative states. The prompt enumerates the fact identifiers `missing_fact` must
 vocabulary, rendered from code like `_answer_shape()`, so it cannot drift). The scorer then
 matches identifiers exactly. That changes every prompt, so Opus 5 must be re-run too, and a
 prompt-only change of this kind is what the A/B machinery (§26) exists to cost.
+
+## 36. Answer keys rest on engine defaults no case file states, and some are wrong in law
+
+**Status: FOUND 2026-09-19 while implementing §35's fix. OPEN. All model results withdrawn from
+the README headline. Regeneration is triggered (§31's "independent reason" now exists).
+Acceptance test: `tests/test_unstated_premises.py`, xfail(strict=True) until the corpus
+passes it.**
+
+§35 framed the problem as unstated *relationships*. Tracing what the engine actually reads
+shows it is larger, and in three places the answer key is not merely unstated but
+**wrong**.
+
+### Method: ask the engine what it read
+
+For each representative household, the oracle's own situation is built and the scored
+variables (`is_snap_eligible`, `snap`, `eitc`, `ctc_value`) are computed with
+policyengine-core's tracer on. Every **input** variable (no formula) the computation touched,
+minus those the oracle set, was read at the engine's default. **About 285 distinct defaulted
+inputs per household.** Most are none-like (no alimony, no capital gains, no energy-credit
+spending), which one explicit closure sentence can state honestly. The ones that cannot:
+
+| default the engine read | what it means | measured effect (CA, 2025, engine output) |
+|---|---|---|
+| second adult in the single tax unit | **PolicyEngine makes them `is_tax_unit_spouse`** | two adults + child: EITC $1,207 as joint filers vs **$3,265** filing separately. A 45-year-old and a 20-year-old were keyed as **spouses** |
+| `weekly_hours_worked_before_lsr = 0` | everyone works zero hours, including people with stated earnings | student earning $18,000: SNAP **ineligible** at 0 hrs, **eligible, $206/mo** at 25 hrs/week |
+| `ssn_card_type = CITIZEN` | everyone holds a citizen's SSN card, **including undocumented people** | undocumented parent, $22,000: keyed EITC **$4,328** and CTC **$1,700**; with no SSN, both $0 |
+| `is_related_to_head_or_spouse = True` | every member is family | no effect in the case measured; unstated all the same |
+| `is_full_time_college_student = False` | no one is a full-time student | narratives say "enrolled **full-time** at a community college", so this contradicts rather than omits |
+| `takes_up_eitc`, `takes_up_snap_if_eligible`, `would_file_if_eligible_for_refundable_credit = True` | the household claims and files | reasonable, and unstated |
+| `has_heating_cooling_expense = True` | **set by the oracle** for every household | never narrated |
+
+The comment in `build_situation` reads "v0 does not model married couples". The engine does:
+with one tax unit, the second adult becomes the spouse. **The code's stated assumption was
+the opposite of what the engine did.** Nothing checked it, because nothing asked the engine
+which role each person had.
+
+### Exposure in the committed dev split (from the stored answer keys)
+
+| defect | tasks |
+|---|---:|
+| 2+ adults, keyed as joint filers | 393 |
+| … adults 18+ years apart (likely parent and adult child keyed as spouses) | 163 |
+| a stated student with earnings, keyed at 0 hours | 81 |
+| an undocumented person present, EITC > 0 in the key | 97 (35 with the undocumented person as head) |
+| an undocumented person present, CTC > 0 in the key | 110 |
+
+These overlap and are counted from narrative text, so they are exposure bounds, not
+per-task verdicts. The held-out split has the same generator and the same defects.
+
+### Legal confidence
+
+The engine measurements are exact (engine output, reproducible). The claims that the keys are
+**wrong in law** are MEDIUM, not high. The SSN requirement for EITC (IRC §32(m)) and the SNAP
+student work exemption (7 CFR 273.5(b)) are well known, but neither primary source was read
+in this session. Per the standing rule, they are not promoted until read.
+
+### What the acceptance test checks
+
+`tests/test_unstated_premises.py` traces representative households (single adult, two
+adults with a child, student earner, undocumented) through the real generator, oracle and
+`render()`. It requires every defaulted input to be either covered by a closure sentence
+present in the rendered narrative (none-like defaults only), or proved moot **by perturbation
+in that household**. Anything in `MUST_STATE` fails until the oracle sets it and the narrative
+states it. So does any oracle input the narrative does not state, and any engine filing role
+(head, spouse, dependent) not matched by a stated filing structure. Today each shape fails on
+the same nine problems. Before the xfail marker went on, the problem lists were printed to
+confirm the failures come from premises, not an exception in the test (an xfail absorbs both).
+
+### Decisions this needs (see the session report)
+
+The instruction was to make narratives "state what the oracle builds". For two-adult
+households that cannot be done honestly: the oracle builds parents married to their adult
+children. The generator has to produce explicit relationships and filing structure, the
+oracle has to build from them, and the narrative has to state them. That is a
+household-modelling decision, and it also touches SNAP household composition (who purchases
+and prepares food together), which the oracle likewise puts in one unit unconditionally.
