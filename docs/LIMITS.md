@@ -1416,7 +1416,10 @@ Dispositions:
 5. **Held-out cache and results never committed.** Protected only by `.gitignore` lines.
    No test runs `git check-ignore` on `cache/responses/heldout/…`, `data/heldout/…` or
    `results/…heldout….public.json`. **Highest-consequence gap in the audit**, and the
-   cheapest to close.
+   cheapest to close. **CLOSED 2026-09-18** by `tests/test_gitignore.py`, which was red
+   before the fix. It found a worse gap than the one reported: `results/*heldout*` matched one
+   folder deep only, so a held-out `.public.json` in a subfolder was committable. The patterns
+   are now `results/**/…`.
 6. **Period lock citation (§1)**: pointed at `tests/test_period_semantics.py`, which never
    existed in any commit. The control is real, under another name. Citation fixed in place.
    Recorded because a reader checking the citation would have concluded the control was
@@ -1429,10 +1432,14 @@ Dispositions:
 9. **§31 called itself "instance nine"** of the standing principle. It is row 7 of the
    CLAUDE.md table. Fixed in place.
 
-## 34. The first PREDICTED failure: reasoning tokens can exhaust `max_tokens` before any JSON
+## 34. A PREDICTED mechanism that was already in our data: reasoning tokens can exhaust `max_tokens`
 
-**Status: anticipated and instrumented 2026-09-18, BEFORE the first non-Anthropic run. Not
-yet observed, and it may never be. This entry records that the method caught it first.**
+**Status: the mechanism was predicted and instrumented 2026-09-18, before the first
+non-Anthropic run. The claim first written here, "not yet observed", was WRONG. It had already
+happened twice in the published Opus run, recorded as `no_json_found` parse failures and
+scored as model failures (see the correction below). The method predicted the mechanism and
+missed that it was already in our own data. That is a weaker claim than the one first made
+here, and the weaker one is the true one.**
 
 Every previous defect in this file was discovered after it had produced a wrong number. This
 one was predicted from the structure of the harness before a single GPT request was sent.
@@ -1471,3 +1478,107 @@ the fact: a green signal fails, then we ask what it was not measuring. Here the 
 asked of a signal that did not exist yet. Before the first run it was asked in this form:
 "what would still score as a model failure if the harness were the thing broken?". The
 answer was on the page of provider documentation already being read for other reasons.
+
+### §34 correction, 2026-09-18 (after the probe): the trap had ALREADY fired, in the Opus run
+
+"Not yet observed" above was wrong. The committed Opus 5 run has **2 of 1,200 responses at
+exactly 8,000 output tokens**, both on determinate tasks, both scored `no_json_found`, and
+both counted against exact-match. That's a harness budget recorded as model failure, the
+exact mechanism described above, sitting in a published run. The effect is 2/780 on
+exact-match, and no headline moves at three decimals beyond ±0.003. The README's
+"0 malformed-JSON, 0 schema-invalid" is true and omits the third parse-failure class, which
+is where these two were. So the prediction was right about the mechanism, and the evidence
+for it was already in our own data, unread. Output-token distribution for Opus (cached
+usage): mean 1,798, median 1,599, p90 3,285, p99 5,499, max 8,000.
+
+GPT-5.6 Sol probe (10 tasks, the same stratified sample): mean **3,987** output tokens,
+reasoning 92–97% of each; max **7,379**, on a determinate task. No truncation in 10, but the
+distribution sits far closer to the ceiling than Opus's.
+
+### §33 addendum: the abstention scorer never reads `missing_fact`
+
+CLAUDE.md (T1b section) says a correct abstention "must name the affected program and the
+missing fact". `score_abstention` compares programs only; `missing_fact` is never read. This
+is the rule of §33 violated in the scorer itself. Measured impact on the published Opus run,
+with a keyword heuristic over free-text fact names (models invent names such as
+`p1.college_enrollment`): **46 of 47 credited abstentions named the withheld fact.** So the
+category/quantity split does not rest on the leniency. It is still an absent control. In the
+GPT probe, the one credited abstention named an invented immigration waiting-period fact when
+student status was withheld. **Decision needed:** implement fact matching (it needs a mapping
+from free text to canonical facts, which is itself a judgement), or rewrite the CLAUDE.md
+sentence to say what is actually scored.
+
+### Reconciled: the README's "6.3% volunteer cannot_determine" was irreproducible; it is 5.3%
+
+The 6.3% entered the README in `571d308` (the schema-fix correction), with no script behind
+it. Every candidate definition was computed over the 1,200 committed Opus replies:
+
+| definition | count |
+|---|---:|
+| parsed by `parse_answer`, non-empty `cannot_determine`, any program | **64** |
+| … restricted to scored programs | 64 |
+| raw text contains a non-empty `cannot_determine` list | 64 |
+| raw text mentions the key at all | 65 |
+| non-empty, on T1b tasks only | 54 |
+| total `cannot_determine` entries (not responses) | 142 |
+| non-empty but unparseable | 0 |
+
+No definition gives ~76. **The README now says 5.3% (64 of 1,200)**, and this count comes from
+`scripts/model_report.py`, which reads the cached replies through `parse_answer`. The likely
+origin is a hand count during the schema-fix session, but that cannot be shown now. The
+lesson is the §28 one: a number carried forward with no generating script cannot be
+re-derived, so it cannot be checked.
+
+## 35. The answer key assumes household relationships the narrative never states
+
+**Status: FOUND 2026-09-18 while implementing fact-matching for the abstention scorer. OPEN,
+and it blocks the GPT-5.6 Sol full run: fixing it changes the prompts, so every model would
+have to be re-run.**
+
+**What the oracle assumes.** `policyengine_oracle.py` puts every household member into ONE
+tax unit and gives each adult a separate marital unit ("v0 does not model married couples").
+So the answer key silently assumes that nobody is married, the whole household files as one
+tax unit, and every child is a qualifying child of the filer. **None of this is in the
+narrative.** A case file lists `Person p1 is 40 … Person p2 is 11 … Person p3 is 9` and never
+says who is whose child, whether two adults are partners, or who files with whom. EITC and CTC
+turn on exactly these facts. Nothing in LIMITS, SPEC or the README recorded the assumption
+before this entry.
+
+**Exposure in the dev split:** 393 of 1,200 tasks (33%) have two or more adults with no
+stated relationship; 292 of those also contain a child. Opus 5 exact-match on determinate
+tasks is **0.447 on 2+-adult households vs 0.550 on single-adult**. That is consistent with
+the hidden assumption costing it, and does not establish it (household size confounds).
+
+**How it surfaced.** Of Opus's 142 `cannot_determine` entries, 32 name something other than
+the withheld fact. Read as "confabulated abstentions", they are mostly the reverse: the model
+asking for facts the answer key *assumed* without stating. There are ~14 relationship or
+filing-status requests (`p2.relationship_to_p1`, "which filer can claim p3"), several SNAP
+student work-hours requests (the 20-hour exemption; hours are never stated), and LPR
+entry-date requests (the five-year bar; entry date is never stated). On determinate tasks
+those are scored as needless abstentions. **The benchmark penalised the model for noticing
+the one kind of missing fact the generator never withholds on purpose.**
+
+**Why nothing caught it.** The perturbation prober sweeps the six facts the generator
+*withholds*. It cannot see a fact the generator never states in the first place, because to
+the prober that fact is simply an engine default. This is PolicyEngine's "every missing input
+becomes a plausible default" (CLAUDE.md, Other engine facts), one level up: our narratives
+inherit the engine's defaults as unstated premises. It is also the take-up problem again (a
+hidden assumption underneath the answer key), and it has the same fix: state it or remove it.
+
+**Consequences:**
+- "Confabulated abstention" cannot be measured until this is fixed. A named fact that was not
+  withheld is either confabulated or a real unstated premise, and today the two cannot be
+  told apart.
+- The fact-matching fix to `score_abstention` cannot be implemented fairly on the current
+  prompt. The prompt shows ONE example identifier (`p1.employment_income`) and no vocabulary,
+  so exact matching would score guessing (GPT wrote `p1.college_enrollment` for
+  `p1.is_higher_ed_student`). Also, `p1.employment_income` is the prompt's example AND the
+  fact Opus flags most (0.709). The README's "income has a slot" explanation has an equally
+  good competitor: the prompt names it.
+
+**Candidate fix (decision needed):** narratives state household relationships and filing
+structure explicitly, consistent with what the oracle builds, or the oracle builds what the
+narrative states. The prompt enumerates the fact identifiers `missing_fact` must use (a closed
+vocabulary, rendered from code like `_answer_shape()`, so it cannot drift). The scorer then
+matches identifiers exactly. That changes every prompt, so Opus 5 must be re-run too, and a
+prompt-only change of this kind is what the A/B machinery (§26) exists to cost.

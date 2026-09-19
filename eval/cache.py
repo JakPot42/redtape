@@ -28,6 +28,12 @@ from pathlib import Path
 
 CACHE_DIR = Path(__file__).resolve().parent.parent / "cache" / "responses"
 
+# Tests point this at an empty directory so "is this request uncached?" does not depend on
+# what has been paid for on the machine running them. A test that asserted a model was
+# uncached broke the moment the GPT probe cached those exact tasks.
+if os.environ.get("REDTAPE_CACHE_DIR"):
+    CACHE_DIR = Path(os.environ["REDTAPE_CACHE_DIR"])
+
 # The cache is PARTITIONED BY SPLIT, and the partition is part of the path rather than
 # something a caller opts into.
 #

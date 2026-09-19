@@ -230,7 +230,7 @@ dispositions in LIMITS §33:
 | "cross-platform determinism is verified … re-run after any dependency bump" | CLAUDE.md, Platform | nothing, and contradicted later in the same file (abandoned; Windows cannot import `verifiers.v1`) | **stale guarantee** |
 | "the oracle is never called during a rollout" / evaluation is engine-free | CLAUDE.md, Two hard rules; `pyproject.toml` | nothing. CI installs the `generate` extra, so an accidental `policyengine_us` import on the eval path would still pass | **untested** |
 | "all `verifiers` contact stays inside `redtape/envs/`" | CLAUDE.md, verifiers | true today by grep; no test | **untested** |
-| held-out cache and results never committed | `.gitignore` comments, CLAUDE.md | the `.gitignore` lines only; no test asserts `git check-ignore` on representative held-out paths | **untested**, the highest-consequence item here |
+| held-out cache and results never committed | `.gitignore` comments, CLAUDE.md | the `.gitignore` lines only; no test asserts `git check-ignore` on representative held-out paths | **closed 2026-09-18**: `tests/test_gitignore.py` (was red; also caught held-out results ignored one folder deep only) |
 | period semantics locked by `tests/test_period_semantics.py` | LIMITS §1 | the file **never existed** in any commit. The lock itself does exist, as `test_monthly_stock_variable_annual_query_returns_december` in `test_phase1.py` | **wrong citation**, control present |
 | "CI green means 202 of 207" / `t1_smoke.jsonl` is gitignored and never exists in CI | CLAUDE.md, Determinism; `tests.yml` comment | `t1_smoke.jsonl` is now committed | **stale**, in the conservative direction |
 | `redtape/eval/cache.py` recomputes cost | LIMITS §28 | the path is `eval/cache.py` | wrong citation |

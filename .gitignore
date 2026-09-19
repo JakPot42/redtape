@@ -42,8 +42,13 @@ results/*.tmp.json
 # Raw results carry per-task identity (household_id, pair_id) and regenerate in
 # minutes. The .public.json sibling is the file meant to be read and quoted, so that
 # is the one we keep. This also means a raw file can never be committed by reflex.
-results/*.json
-!results/*.public.json
+#
+# `**` - at ANY depth. These were `results/*.json` until 2026-09-18, which matched one folder
+# deep only, so `--results results/probe10` produced committable raw files, and a held-out
+# public file in a subfolder was not ignored either. tests/test_gitignore.py now checks the
+# rules against representative paths at several depths.
+results/**/*.json
+!results/**/*.public.json
 
 # Held-out RESULTS carry the private seed: metrics.py writes run.seed verbatim,
 # and every household_id/pair_id embeds it (hh-{seed}-{index}). Publishable
@@ -51,7 +56,7 @@ results/*.json
 #
 # LAST on purpose. It must override the .public.json re-inclusion above: a held-out
 # public file is still a held-out artifact and does not belong in the repository.
-results/*heldout*
+results/**/*heldout*
 
 # Model responses are partitioned by split (eval/cache.py::partition). The dev subtree
 # is committed - it comes from the PUBLIC seed and is paid for, so losing it costs money.

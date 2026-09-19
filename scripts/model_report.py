@@ -85,9 +85,30 @@ if u:
     if n_all:
         print(f"  per task           ${u['usd_if_uncached'] / n_all:.4f}")
 
-abst = sum(1 for t in new["per_task"]
-           if t.get("answer") and t["answer"].get("cannot_determine"))
-print(f"  replies with any cannot_determine: {abst}/{len(new['per_task'])}")
+# Read from the cached REPLIES. per_task carries no answer, so the first version of this
+# line counted a field that is never written and printed a confident 0/10 on a probe where
+# the model had abstained three times - a degenerate number from the report, not the model.
+import sys  # noqa: E402
+
+sys.path.insert(0, str(ROOT))
+from eval.cache import get as cache_get, partition  # noqa: E402
+from eval.run_eval import load_tasks, request_identity, task_cache_key  # noqa: E402
+from redtape.scoring.parsing import parse_answer  # noqa: E402
+
+cfg, system, tools = request_identity("tool_less", name)
+abst = n_cached = 0
+for t in load_tasks(str(SPLIT)):
+    if t.hash not in hashes:
+        continue
+    hit = cache_get(task_cache_key(t, cfg, system, tools), partition(t.data.seed))
+    if hit is None:
+        continue
+    n_cached += 1
+    # The project's own parser, not json.loads: replies it accepts (fenced, or wrapped in
+    # prose) are replies the scorer saw, and a raw json.loads silently skipped them.
+    parsed = parse_answer(hit["reply"])
+    abst += bool(parsed.answer is not None and parsed.answer.cannot_determine)
+print(f"  replies with a non-empty cannot_determine: {abst}/{n_cached} (from cached replies)")
 
 print("\nHEADLINES (reported separately; no composite)")
 e1, n1, a1, m1 = headlines(new["per_task"])

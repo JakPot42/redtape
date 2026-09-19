@@ -70,7 +70,9 @@ And it is not blanket caution: where a fact is missing but does *not* decide the
 answering is correct — it answers **95%** of the time (0.951). It is not abstaining
 indiscriminately and getting lucky; it is discriminating, on the wrong axis.
 
-Across the whole split it volunteers `cannot_determine` in **6.3%** of responses.
+Across the whole split it volunteers `cannot_determine` in **5.3%** of responses (64 of
+1,200). This line previously said 6.3%, a hand count that no definition over the stored
+responses reproduces; see `docs/LIMITS.md` §34.
 
 ### Three headline metrics
 

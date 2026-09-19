@@ -211,32 +211,36 @@ def test_failed_request_is_charged_not_refunded():
     assert b.spent == pytest.approx(r) and b.in_flight == 0
 
 
-def test_live_agent_without_budget_serves_hits_but_refuses_misses():
+def test_live_agent_without_budget_serves_hits_but_refuses_misses(monkeypatch, tmp_path):
+    """No budget: a cache hit is served, a miss raises NoBudget and nothing is built.
+
+    The miss is made certain with an EMPTY cache directory. The first version relied on gpt
+    being uncached on this machine, and broke the day the probe cached those tasks."""
+    import eval.cache as cache_mod
     from eval.run_eval import live_agent, load_tasks
 
-    tasks = load_tasks(str(DEV), limit=1)
-    opus = live_agent("tool_less", "claude-opus-5")        # cached: fine with no budget
-    assert opus(tasks[0])
-    gpt = live_agent("tool_less", "gpt-5.6-sol")
-    uncached = [t for t in load_tasks(str(DEV), limit=50)]
-    # At least one of these is uncached for gpt on any machine that has not paid for it;
-    # whichever it is must raise rather than bill.
+    task = load_tasks(str(DEV), limit=1)[0]
+    assert live_agent("tool_less", "claude-opus-5")(task)      # committed cache: a hit
+    monkeypatch.setattr(cache_mod, "CACHE_DIR", tmp_path)
     with pytest.raises(NoBudget):
-        for t in uncached:
-            gpt(t)
+        live_agent("tool_less", "gpt-5.6-sol")(task)
 
 
-def test_cli_refuses_paid_run_without_cap_before_any_request():
+def test_cli_refuses_paid_run_without_cap_before_any_request(tmp_path):
     """Through the real entry point: no --max-usd, uncached model -> exit 2, nothing sent.
     The credential is deliberately absent too; the cap check must fire first."""
-    env = {"PATH": "/usr/bin:/bin", "HOME": str(Path.home())}
+    # An empty cache makes every request a miss, whatever this machine has paid for.
+    env = {"PATH": "/usr/bin:/bin", "HOME": str(Path.home()),
+           "REDTAPE_CACHE_DIR": str(tmp_path / "empty_cache")}
+    out_dir = tmp_path / "results"
     r = subprocess.run(
         [sys.executable, "-m", "eval.run_eval", "live", "--model", "gpt-5.6-sol",
-         "--split", str(DEV), "--sample", "10", "--results", "/tmp/redtape_test_nocap"],
+         "--split", str(DEV), "--sample", "10", "--results", str(out_dir)],
         cwd=ROOT, env=env, capture_output=True, text=True, timeout=600)
     assert r.returncode == 2, r.stdout + r.stderr
+    assert "10 uncached" in r.stdout
     assert "--max-usd" in r.stderr
-    assert not Path("/tmp/redtape_test_nocap").exists()
+    assert not out_dir.exists()
 
 
 def test_cached_rescore_counts_each_hit_once_through_the_cli(tmp_path):
