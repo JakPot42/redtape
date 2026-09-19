@@ -33,6 +33,12 @@ from redtape.schemas import (
 )
 
 
+# schemas.SSN_BY_STATUS value -> the engine's SSNCardType. "work" maps to the engine's
+# NON_CITIZEN_VALID_EAD, the one non-citizen type that meets both the EITC (IRC §32(m)) and
+# CTC (§24(h)(7)) tests; "itin" is NONE, with has_tin=True. docs/PRIMARY_SOURCES_2026-09.md.
+_SSN_CARD = {"citizen": "CITIZEN", "work": "NON_CITIZEN_VALID_EAD", "itin": "NONE"}
+
+
 class MissingFactError(ValueError):
     """A required fact was withheld. The engine would have silently defaulted it."""
 
@@ -57,35 +63,71 @@ def build_situation(hh: Household) -> dict:
             "answer rather than let PolicyEngine substitute a default"
         )
 
+    # Coupled facts travel together (generator.withhold). A household with one half of a
+    # pair missing would hand the engine a default for the other half.
+    for p in hh.people:
+        if p.weekly_hours is None:
+            raise MissingFactError(f"{hh.household_id}: {p.person_id}.weekly_hours withheld")
+        if p.is_higher_ed_student and p.student_full_time is None:
+            raise MissingFactError(f"{hh.household_id}: {p.person_id} is a student with "
+                                   "no stated enrolment intensity")
+
     year = str(hh.tax_year)
     members = [p.person_id for p in hh.people]
+    adults = {p.person_id for p in hh.adults}
+    married = hh.household_type == "married_couple"
 
+    # Every value below was, until 2026-09-19, an ENGINE DEFAULT the answer key silently
+    # rested on (LIMITS §36). Each is now taken from the record and stated in the narrative;
+    # tests/test_unstated_premises.py fails if any becomes a default again.
     people = {}
     for p in hh.people:
         people[p.person_id] = {
             "age": {year: p.age},
             "employment_income": {year: p.employment_income},
+            "weekly_hours_worked_before_lsr": {year: p.weekly_hours},
             "immigration_status": {year: p.immigration_status.value},
+            # SSN from the stated status mapping (schemas.SSN_BY_STATUS). The engine
+            # default was CITIZEN for everyone, crediting undocumented filers with EITC/CTC.
+            "ssn_card_type": {year: _SSN_CARD[p.ssn_status]},
+            # Everyone has SOME TIN: an SSN, or an ITIN that the narrative states.
+            "has_tin": {year: True},
             "is_disabled": {year: p.is_disabled},
             "is_snap_higher_ed_student": {year: p.is_higher_ed_student},
+            "is_full_time_college_student": {year: bool(p.student_full_time)},
+            # Explicit roles. The engine's own rule is "oldest adult is head, next-oldest
+            # adult is spouse", which ignores marital units and made any second adult a
+            # spouse. Setting them was verified to propagate (a different role assignment
+            # moves filing status and EITC; the same assignment reproduces the engine's).
+            "is_tax_unit_head": {year: p.person_id == "p1"},
+            "is_tax_unit_spouse": {year: married and p.person_id == "p2"},
+            "is_tax_unit_dependent": {year: p.person_id not in adults},
+            "is_related_to_head_or_spouse": {year: True},
         }
 
-    # One marital unit per adult, matching PolicyEngine's expectations for
-    # unmarried households. v0 does not model married couples.
-    marital_units = {
-        f"mu_{p.person_id}": {"members": [p.person_id]} for p in hh.people if p.age >= 18
-    }
+    # Married: one marital unit for the couple. Single: the adult alone. Children each in
+    # their own. Built from household_type, never from ages.
+    marital_units = ({"mu_couple": {"members": ["p1", "p2"]}} if married
+                     else {"mu_p1": {"members": ["p1"]}})
+    for p in hh.children:
+        marital_units[f"mu_{p.person_id}"] = {"members": [p.person_id]}
 
     situation = {
         "people": people,
-        "tax_units": {"tu": {"members": members}},
+        "tax_units": {"tu": {
+            "members": members,
+            # Stated in the narrative's claim sentence: the household files and claims.
+            "takes_up_eitc": {year: True},
+            "would_file_if_eligible_for_refundable_credit": {year: True},
+        }},
         "families": {"fam": {"members": members}},
         "spm_units": {
             "spm": {
                 "members": members,
                 "housing_cost": {year: hh.housing_cost},
                 "childcare_expenses": {year: hh.dependent_care_cost},
-                "has_heating_cooling_expense": {year: True},
+                "has_heating_cooling_expense": {year: hh.pays_heating_cooling},
+                "takes_up_snap_if_eligible": {year: True},
             }
         },
         "households": {"hh": {"members": members, "state_name": {year: hh.state}}},

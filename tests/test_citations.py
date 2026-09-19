@@ -20,6 +20,8 @@ HISTORICAL = {
     "test_period_semantics": "same",
     "redtape/eval/cache.py": "records the wrong path fixed in LIMITS §28/§33",
     "tests/test_x.py": "placeholder in the CLAUDE.md rule text",
+    "test_opus_cache_keys_unchanged_for_every_committed_dev_task":
+        "replaced 2026-09-19; LIMITS §32 records the replacement",
 }
 
 PATH_RE = re.compile(r"(?:tests|scripts|eval|redtape)/[\w/]+\.(?:py|json|jsonl|yml|yaml)")

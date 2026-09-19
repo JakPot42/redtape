@@ -288,6 +288,8 @@ def scripted_tool_agent(condition: str):
         payload = {
             "month": r.month,
             "tax_year": r.year,
+            "household_type": r.household_type,
+            "pays_heating_cooling": r.pays_heating_cooling,
             "housing_cost": (r.monthly_shelter * 12) if r.shelter_stated else "unknown",
             "dependent_care_cost": 0.0,
             # One entry per person LINE. Building from r.ages dropped anyone whose age
@@ -299,7 +301,11 @@ def scripted_tool_agent(condition: str):
                     "age": p["age"] if p["age"] is not None else 40,
                     "employment_income": (p["employment_income"]
                                           if p["employment_income"] is not None else 0.0),
+                    "weekly_hours": (p["weekly_hours"]
+                                     if p["weekly_hours"] is not None else 0.0),
                     "immigration_status": p["immigration_status"] or "CITIZEN",
+                    "is_higher_ed_student": bool(p["is_higher_ed_student"]),
+                    "student_full_time": p["student_full_time"],
                 }
                 for p in r.people
             ],
@@ -317,13 +323,20 @@ def scripted_tool_agent(condition: str):
         # when the truth was "the third condition barely ran". The tool sweeps one fact per
         # call and errors on more than one, which matches generation withholding exactly
         # one, so first match wins.
+        # The identifier the abstention names is the fact actually marked unknown. It was
+        # hard-coded "housing_cost" for every abstention, which exact fact matching
+        # (2026-09-19) would score as a wrong-fact abstention on four of the five facts.
+        marked = "housing_cost"
         if allow_unknown:
             if r.any_age_withheld:
                 payload["people"][0]["age"] = UNKNOWN
+                marked = "p1.age"
             elif r.any_income_withheld:
                 payload["people"][0]["employment_income"] = UNKNOWN
+                marked = "p1.employment_income"
             elif r.any_status_withheld:
                 payload["people"][0]["immigration_status"] = UNKNOWN
+                marked = "p1.immigration_status"
 
         if not allow_unknown and payload["housing_cost"] == UNKNOWN:
             payload["housing_cost"] = 0.0
@@ -362,7 +375,7 @@ def scripted_tool_agent(condition: str):
             "ctc": {"period": "year", "period_label": out["ctc"]["period"],
                     "amount": out["ctc"]["annual_amount_received"],
                     "gross_entitlement": out["ctc"]["gross_entitlement"]},
-            "cannot_determine": [{"program": p, "missing_fact": "housing_cost"}
+            "cannot_determine": [{"program": p, "missing_fact": marked}
                                  for p in abstain],
         }
         return json.dumps(answer)

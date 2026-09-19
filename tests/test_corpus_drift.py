@@ -43,7 +43,12 @@ DEV_MANIFEST = REPO / "data" / "dev" / "t1.manifest.json"
 #   1. update this constant,
 #   2. decide whether to regenerate (docs/LIMITS.md 31 records why we did not in Sep 2026),
 #   3. if not regenerating, move the old value into STALE_FINGERPRINTS below with a note.
-EXPECTED_GENERATOR_FINGERPRINT = "5af23f90feb737e1"
+# 2026-09-19: 5af23f90feb737e1 -> 93c3b90c3f0cae06. Explicit household shapes, stated hours,
+# SSN by status, and the new constants added to the fingerprint (LIMITS 36). Step 2: the
+# decision is to REGENERATE (LIMITS 31, triggered), so no STALE entry is added; until the
+# split is rebuilt, test_committed_dev_split_is_consistent_or_knowingly_stale fails, as it
+# should.
+EXPECTED_GENERATOR_FINGERPRINT = "93c3b90c3f0cae06"
 
 # Fingerprints of generator configurations that produced committed splits we have
 # deliberately chosen NOT to regenerate. Each needs a reason and a LIMITS reference.

@@ -103,14 +103,24 @@ def score_periods(given: T1Answer, truth: T1Answer) -> Scored:
 
 @_guard
 def score_abstention(
-    given: T1Answer, truth_label: Determinability, deciding_programs: tuple[str, ...]
+    given: T1Answer, truth_label: Determinability, deciding_programs: tuple[str, ...],
+    withheld_fact: str,
 ) -> Scored:
     """The three-class T1b scorer.
 
     * DETERMINATE            - any `cannot_determine` is a needless abstention -> 0.
-    * INDETERMINATE          - must abstain, naming the affected program(s).
+    * INDETERMINATE          - must abstain, naming the affected program(s) AND, for each,
+                               the withheld fact by its EXACT identifier.
     * INCOMPLETE_DETERMINATE - a fact is missing but the outcome does not turn on it,
                                so the model should answer anyway. Abstaining -> 0.
+
+    `withheld_fact` is required, not defaulted. Until 2026-09-19 the scorer compared programs
+    only and never read `missing_fact`, although CLAUDE.md said the answer must name the
+    fact. "I can't determine SNAP because X is missing", where X was not missing, scored as
+    correct. GPT-5.6 Sol's one credited abstention in its probe did exactly that. The match is
+    exact, which is only fair because the prompt now lists every identifier
+    (schemas.PERSON_FACTS / HOUSEHOLD_FACTS). Right programs with a wrong fact earns 0.5,
+    the same partial credit as wrong programs, and never counts as abstention_correct.
 
     Class 3 is what stops a model scoring well by always abstaining, so it is scored as
     strictly as class 2.
@@ -124,11 +134,18 @@ def score_abstention(
     if truth_label is Determinability.INDETERMINATE:
         if not claimed:
             return Scored(0.0, {"reason": "failed to abstain", "expected": sorted(expected)})
-        correct = claimed == expected
+        named = {c.missing_fact.strip() for c in given.cannot_determine
+                 if c.program in expected}
+        right_programs = claimed == expected
+        right_fact = named == {withheld_fact}
+        correct = right_programs and right_fact
+        reason = ("abstained" if correct else
+                  "abstained, wrong programs" if not right_programs else
+                  "abstained on the right programs, wrong fact")
         return Scored(
             1.0 if correct else 0.5,
-            {"reason": "abstained" + ("" if correct else ", wrong programs"),
-             "claimed": sorted(claimed), "expected": sorted(expected)},
+            {"reason": reason, "claimed": sorted(claimed), "expected": sorted(expected),
+             "named_facts": sorted(named), "withheld_fact": withheld_fact},
         )
 
     # Both remaining classes require a confident answer.

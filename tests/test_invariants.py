@@ -140,11 +140,15 @@ def test_the_prober_cannot_produce_a_medicaid_only_indeterminate_label():
 def test_abstaining_on_medicaid_is_neither_credited_nor_punished():
     """Medicaid is unscored, so an opinion about it is outside what we measure."""
     given = _answer(cd=(("medicaid", "p1.age"),))
-    assert score_abstention(given, Determinability.DETERMINATE, ()).value == 1.0
-    assert score_abstention(given, Determinability.INCOMPLETE_DETERMINATE, ()).value == 1.0
+    assert score_abstention(given, Determinability.DETERMINATE, (), "").value == 1.0
+    assert score_abstention(given, Determinability.INCOMPLETE_DETERMINATE, (),
+                            "p1.age").value == 1.0
 
-    both = _answer(cd=(("snap", "x"), ("medicaid", "x")))
-    assert score_abstention(both, Determinability.INDETERMINATE, ("snap",)).value == 1.0
+    # The Medicaid entry is ignored entirely - including its fact, which is only checked
+    # for the programs the withheld fact decides.
+    both = _answer(cd=(("snap", "p1.age"), ("medicaid", "other: anything")))
+    assert score_abstention(both, Determinability.INDETERMINATE, ("snap",),
+                            "p1.age").value == 1.0
 
 
 def test_exact_match_is_all_or_nothing():

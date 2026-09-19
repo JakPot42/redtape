@@ -37,9 +37,14 @@ def _household(ages, disabled=None, earned=0.0, housing=10_800.0, month="2025-04
         )
         for i, a in enumerate(ages)
     )
+    # Explicit structure (LIMITS §36). Two adults can only be a married couple in v0, which is
+    # also what the engine silently made of them before: it keyed any second adult as the
+    # head's spouse. These fixtures now STATE what they were always testing.
+    n_adults = sum(a >= 18 for a in ages)
     return Household(
         household_id="test-hh", seed=0, index=0, month=month,
         people=people, housing_cost=housing,
+        household_type="married_couple" if n_adults == 2 else "single_adult",
     )
 
 

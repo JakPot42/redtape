@@ -3,29 +3,28 @@
 This is the test that was missing when a third of the dev split's answer keys turned out to
 rest on unstated premises: two adults keyed as married, students keyed at zero hours,
 undocumented filers keyed with a citizen's SSN. The perturbation prober could not see any of
-them, because it only varies the facts the generator withholds ON PURPOSE. This test instead
-asks the engine what it actually READ.
+them, because it only varies the facts the generator withholds ON PURPOSE. This test asks
+the engine what it actually READ.
 
-Method, per representative household:
+Per representative household, built by the real generator, oracle and `render()`:
 
-1. Build the situation exactly as the oracle does, and compute every scored variable with the
-   engine's tracer on.
-2. Collect every INPUT variable (no formula) the computation read. Anything the oracle did not
-   set was read at the engine's default: an unstated premise.
-3. Each premise must be accounted for in exactly one way:
-   - STATED    - the oracle sets it and the rendered narrative states it.
-   - CLOSURE   - a none-like default (0, False, empty) covered by the narrative's explicit
-                 "nothing else" sentence, which must be present in the rendered text.
-   - MOOT      - proved irrelevant HERE by perturbing it: scored answers must not move.
-   - anything else fails, including MUST_STATE entries: defaults that are not none-like
-     (the engine assumes relatedness, a citizen SSN, take-up) or whose "none" would be false
-     (zero weekly hours for someone with earnings).
-4. Filing structure is not an input variable, so it is checked separately: the engine's
-   head / spouse / dependent roles must match a filing structure the narrative states.
+1. Compute every scored variable with the engine's tracer on, and collect every INPUT
+   variable (no formula) the computation read.
+2. Every input the ORACLE SET must have evidence in the rendered narrative (`_evidence`).
+   An oracle input with no registered evidence check fails, so a new oracle input cannot
+   slip in unstated.
+3. Every input read at the engine's DEFAULT must be one of:
+   - MUST_STATE    - fails. Non-none defaults, or a "none" that would be false.
+   - MOOT          - proved irrelevant HERE by perturbation: scored answers must not move.
+   - none-like     - covered by the closure sentences, which must be present verbatim.
+   - anything else - fails as UNCLASSIFIED.
+4. The engine's tax-unit roles and filing status must equal the structure parsed back out of
+   the narrative's structure sentence.
+5. Guards against the checker going blind: the trace must have read a realistic number of
+   inputs, and every representative shape must be found.
 
-It is marked xfail(strict=True) because the corpus is known to fail it (LIMITS §36). Strict:
-the day it starts passing, the run FAILS until the marker is removed by hand. That is the
-moment to verify its teeth and record it.
+Mutation checks that this passes for the RIGHT reason are recorded in LIMITS §36: removing a
+narrative clause, an oracle setting, or a closure sentence each turns it red.
 """
 from __future__ import annotations
 
@@ -44,26 +43,23 @@ from redtape.oracle.policyengine_oracle import build_situation  # noqa: E402
 SCORED = (("is_snap_eligible", "month"), ("snap", "month"),
           ("eitc", "year"), ("ctc_value", "year"))
 
-# Non-none defaults, and none-like defaults whose "none" would be false for some households.
-# Each is a premise the narrative must state and the oracle must set. Adding an entry is a
-# decision, never a way to make the test pass: entries here FAIL until they are set.
+# Defaults that must NEVER be read at their default. Adding one is a decision; it makes the
+# test fail until the oracle sets it and the narrative states it.
 MUST_STATE = {
     "is_related_to_head_or_spouse": "engine assumes every member is family (default True)",
     "ssn_card_type": "engine assumes a citizen's SSN card for everyone, incl. undocumented",
+    "has_tin": "engine assumes everyone has a TIN (an ITIN if no SSN)",
     "takes_up_eitc": "engine assumes the household claims EITC",
     "takes_up_snap_if_eligible": "engine assumes the household applies for SNAP",
     "would_file_if_eligible_for_refundable_credit": "engine assumes a return is filed",
-    "weekly_hours_worked_before_lsr": "0 hours for a person with stated earnings is false; "
-                                      "the SNAP student exemption reads it",
-    "is_full_time_college_student": "narratives say 'enrolled full-time'; the flag stays False",
+    "weekly_hours_worked_before_lsr": "0 hours for a stated earner is false; 7 CFR 273.5(b)(5)",
+    "is_full_time_college_student": "7 CFR 273.5(b)(10) reads it",
+    "is_tax_unit_head": "the engine would infer it from age order",
+    "is_tax_unit_spouse": "the engine would make any second adult a spouse",
+    "is_tax_unit_dependent": "the engine would infer it",
 }
 
-# Set by the oracle but, today, not stated by any narrative.
-SET_BUT_UNSTATED = {
-    "has_heating_cooling_expense": "oracle sets True for every household; never narrated",
-}
-
-# Proved irrelevant per household by perturbation, not asserted: (variable, perturbed value).
+# Proved irrelevant per household by perturbation, not asserted.
 MOOT_PERTURBATIONS = {
     "divorce_year": 2020,
     "county_fips": "06037",
@@ -77,44 +73,174 @@ MOOT_PERTURBATIONS = {
     "estate_income_would_be_qualified": False,
 }
 
-CLOSURE_PATTERN = re.compile(r"no other (income|resources|expenses|circumstances)", re.I)
-FILING_PATTERN = re.compile(r"\b(files|file) (a|their|one|separate|joint)\b.*\breturn", re.I)
+# EXPECTATIONS ARE OWNED BY THIS TEST, NOT IMPORTED FROM THE RENDERER. The first version
+# imported CLOSURE_SENTENCES and the phrase tables from narratives.py, so shrinking a closure
+# sentence, or mapping "itin" to citizen wording, changed the narrative AND the expectation
+# together, and the test stayed green (mutation check, LIMITS §36). What each premise must SAY
+# is pinned here, independently of how the renderer happens to say it.
+REQUIRED_CLOSURE = (
+    "nobody in the household has any income",          # other income sources: none
+    "nobody has savings or other assets",               # assets / resources: none
+    "no expenses other than shelter, heating and cooling, and dependent care",
+    "work-study",                                       # 7 CFR 273.5(b)(6)
+    "on-the-job training",                              # 273.5(b)(7)
+    "employment-and-training programme",                # 273.5(b)(11)
+    "CalWORKs or other cash assistance",                # TANF, 273.5(b)(3)
+)
+REQUIRED_CLAIM = ("applying for SNAP", "federal tax return", "claiming every credit")
+# What each SSN status must convey: (must contain all, must contain none).
+SSN_MEANING = {
+    # Not the bare word "work": "is not working" is on many citizens' lines. That was a
+    # false failure in this test's first hardened version, caught by running it on correct
+    # code before trusting it.
+    "citizen": (("Social Security number",),
+                ("no Social Security", "ITIN", "valid for work", "work-authorized")),
+    "work": (("Social Security number",), ("no Social Security", "ITIN")),
+    "itin": (("ITIN", "no Social Security number"), ()),
+}
+SSN_WORK_WORDS = ("valid for work", "work-authorized")
+# What each generated immigration status must convey (any of).
+STATUS_MEANING = {
+    "CITIZEN": ("citizen",),
+    "LEGAL_PERMANENT_RESIDENT": ("permanent resident", "green card"),
+    "CUBAN_HAITIAN_ENTRANT": ("Cuban/Haitian",),
+    "REFUGEE": ("refugee",),
+    "ASYLEE": ("asylee", "asylum"),
+    "UNDOCUMENTED": ("undocumented", "without lawful immigration status"),
+}
+
+_GROUP = {"person": "people", "tax_unit": "tax_units", "spm_unit": "spm_units",
+          "household": "households", "family": "families", "marital_unit": "marital_units"}
+_NO_EARNINGS = ("has no earnings", "is not working", "reports no wages")
+_NOT_STUDENT = ("not enrolled in college", "not attending a degree", "not a student")
+_SUPPRESSED = ("ssi", "social_security", "social_security_disability",
+               "unemployment_compensation", "tanf", "ca_tanf", "ca_state_supplement")
+
+
+def _person_lines(narrative: str) -> dict[str, str]:
+    return {m.group(1): m.group(0) for m in re.finditer(r"^Person (p\d+) .*$", narrative, re.M)}
+
+
+def _any(phrases, text) -> bool:
+    return any(ph in text for ph in phrases)
+
+
+def _closure(narr: str) -> bool:
+    return all(s in narr for s in REQUIRED_CLOSURE)
+
+
+def _ssn_stated(status: str, line: str) -> bool:
+    must, must_not = SSN_MEANING[status]
+    ok = all(m in line for m in must) and not any(m in line for m in must_not)
+    if status == "work":
+        ok = ok and _any(SSN_WORK_WORDS, line)
+    return ok
+
+
+def _evidence(var: str, value, hh, narr: str, pid: str | None) -> bool:
+    """Is the value the oracle set for `var` stated in the narrative? Checked on the
+    person's own line where the variable is per person. Raises KeyError for a variable with
+    no registered check."""
+    line = _person_lines(narr).get(pid, "")
+    p = next((x for x in hh.people if x.person_id == pid), None)
+    if var == "age":
+        return line.startswith(f"Person {pid} is {p.age},")
+    if var == "employment_income":
+        return ("earns $" in line) if p.employment_income > 0 else _any(_NO_EARNINGS, line)
+    if var == "weekly_hours_worked_before_lsr":
+        if p.employment_income > 0:
+            return f"working {int(p.weekly_hours)} hour" in line
+        return _any(_NO_EARNINGS, line)
+    if var == "immigration_status":
+        return _any(STATUS_MEANING[p.immigration_status.value], line)
+    if var in ("ssn_card_type", "has_tin"):
+        return _ssn_stated(p.ssn_status, line)
+    if var == "is_disabled":
+        if p.is_disabled:
+            return "reports a disability" in line
+        return _any(("reports no disability", "does not report a disability"), line)
+    if var in ("is_snap_higher_ed_student", "is_full_time_college_student"):
+        if not p.is_higher_ed_student:
+            return _any(_NOT_STUDENT, line)
+        return ("full-time" in line and "not full-time" not in line) == bool(p.student_full_time)
+    if var in ("is_tax_unit_head", "is_tax_unit_spouse", "is_tax_unit_dependent",
+               "is_related_to_head_or_spouse"):
+        return _stated_structure(narr) is not None      # values compared in step 4
+    if var == "housing_cost":
+        return "shelter costs are" in narr
+    if var == "childcare_expenses":
+        return ("for dependent care" in narr and "pays nothing" not in narr) if value \
+            else "pays nothing for dependent care" in narr
+    if var == "has_heating_cooling_expense":
+        return ("pays for heating and cooling" in narr) if value \
+            else "does not pay for heating or cooling" in narr
+    if var in ("takes_up_eitc", "would_file_if_eligible_for_refundable_credit",
+               "takes_up_snap_if_eligible"):
+        return all(c in narr for c in REQUIRED_CLAIM) and f"{hh.tax_year} federal" in narr
+    if var == "state_name":
+        return "California" in narr
+    # Take-up suppression zeroes these. Zero is stated by the closure sentences; a declared
+    # (non-zero) amount must appear on the person's line.
+    if var in _SUPPRESSED:
+        return _closure(narr) if not value else "receives $" in line
+    raise KeyError(var)
+
+
+def _stated_structure(narr: str):
+    """(married, children) parsed from the structure sentence, or None."""
+    if "p1 and p2 are married to each other and file a joint federal tax return." in narr:
+        married = True
+    elif "p1 is not married, is the only adult in the household" in narr:
+        married = False
+    else:
+        return None
+    m = re.search(r"((?:p\d+)(?:(?:, | and )p\d+)*) (?:are|is) (?:their|p1's) child", narr)
+    kids = tuple(re.findall(r"p\d+", m.group(1))) if m else ()
+    return married, kids
+
+
+def _set_vars(situation) -> dict[str, list]:
+    """var -> [(person_id or None, value), ...] for everything the oracle set."""
+    out: dict[str, list] = {}
+    for group, ents in situation.items():
+        for eid, e in ents.items():
+            for k, v in e.items():
+                if k == "members":
+                    continue
+                out.setdefault(k, []).append((eid if group == "people" else None,
+                                              next(iter(v.values()))))
+    return out
 
 
 def _none_like(v) -> bool:
     return v in (0, 0.0, False, "", None) or getattr(v, "name", "") == "NONE"
 
 
-def _set_vars(situation) -> set[str]:
-    out = set()
-    for group, ents in situation.items():
-        for e in ents.values():
-            out |= {k for k in e if k != "members"}
-    return out
+SHAPES = ("single_no_children", "single_parent", "married_with_children",
+          "student_under_20h", "student_20h_plus", "undocumented_adult",
+          "mixed_status_couple")
 
 
-def _representative(n_scan: int = 80) -> list:
-    """First household of each risky shape, from the real generator."""
-    want = {"single_adult": None, "two_adults_child": None, "student_earner": None,
-            "undocumented": None}
+def _representative(n_scan: int = 400):
+    want: dict[str, object] = dict.fromkeys(SHAPES)
     for i in range(n_scan):
         hh = generate(DEV_SEED, i)
-        try:
-            build_situation(hh)
-        except Exception:
-            continue            # withheld-fact households raise by design
-        adults = [p for p in hh.people if p.age >= 18]
-        kids = [p for p in hh.people if p.age < 18]
-        if len(adults) == 1 and want["single_adult"] is None:
-            want["single_adult"] = hh
-        if len(adults) >= 2 and kids and want["two_adults_child"] is None:
-            want["two_adults_child"] = hh
-        if (any(p.is_higher_ed_student and p.employment_income > 0 for p in hh.people)
-                and want["student_earner"] is None):
-            want["student_earner"] = hh
-        if (any(p.immigration_status.value == "UNDOCUMENTED" for p in hh.people)
-                and want["undocumented"] is None):
-            want["undocumented"] = hh
+        a, kids = hh.adults, hh.children
+        hit = {
+            "single_no_children": hh.household_type == "single_adult" and not kids,
+            "single_parent": hh.household_type == "single_adult" and bool(kids),
+            "married_with_children": hh.household_type == "married_couple" and bool(kids),
+            "student_under_20h": any(p.is_higher_ed_student and p.weekly_hours < 20
+                                     for p in a),
+            "student_20h_plus": any(p.is_higher_ed_student and p.weekly_hours >= 20
+                                    for p in a),
+            "undocumented_adult": any(p.ssn_status == "itin" for p in a),
+            "mixed_status_couple": hh.household_type == "married_couple"
+            and len({p.ssn_status == "itin" for p in a}) == 2,
+        }
+        for k, h in hit.items():
+            if h and want[k] is None:
+                want[k] = hh
     return [(k, v) for k, v in want.items() if v is not None]
 
 
@@ -134,53 +260,85 @@ def _problems(hh) -> list[str]:
     tbs = sim.tax_benefit_system
     read = {n.name for n in sim.tracer.browse_trace()}
     inputs = {v for v in read if v in tbs.variables and not tbs.variables[v].formulas}
-    defaulted = inputs - _set_vars(situation)
+    set_vars = _set_vars(situation)
 
     problems = []
-    for var in sorted(defaulted):
+    if len(inputs) < 200:
+        problems.append(f"trace read only {len(inputs)} inputs; the checker may be blind")
+
+    # 1b. every MUST_STATE premise is SET by the oracle, for every person/entity - not merely
+    # absent from the defaulted inputs. Role variables have formulas, so the trace never
+    # lists them as inputs, and for v0's two shapes the engine's inference happens to give
+    # the right roles: deleting the oracle's explicit spouse role left the first version of
+    # this test green (mutation check). "Neither may infer" has to be checked directly.
+    n_people = len(hh.people)
+    for var in MUST_STATE:
+        got = set_vars.get(var, [])
+        per_person = tbs.variables[var].entity.key == "person"
+        if not got or (per_person and len(got) != n_people):
+            problems.append(f"{var}: not set explicitly by the oracle "
+                            f"({len(got)} entries); the engine would infer or default it")
+
+    # 2. everything the oracle set is stated
+    for var, entries in sorted(set_vars.items()):
+        for pid, value in entries:
+            try:
+                ok = _evidence(var, value, hh, narrative, pid)
+            except KeyError:
+                problems.append(f"{var}: set by the oracle with NO registered evidence check")
+                break
+            if not ok:
+                problems.append(f"{var}[{pid}]={value!r}: set by the oracle, not stated")
+
+    # 3. everything read at a default is accounted for
+    for var in sorted(inputs - set(set_vars)):
         if var in MUST_STATE:
-            problems.append(f"{var}: defaulted, must be stated ({MUST_STATE[var]})")
+            problems.append(f"{var}: read at its DEFAULT, must be stated ({MUST_STATE[var]})")
         elif var in MOOT_PERTURBATIONS:
             s2 = copy.deepcopy(situation)
-            ent = tbs.variables[var].entity.key
-            year = str(hh.tax_year)
-            groups = {"person": "people", "tax_unit": "tax_units", "spm_unit": "spm_units",
-                      "household": "households", "family": "families",
-                      "marital_unit": "marital_units"}[ent]
-            for e in s2[groups].values():
-                e[var] = {year: MOOT_PERTURBATIONS[var]}
+            for e in s2[_GROUP[tbs.variables[var].entity.key]].values():
+                e[var] = {str(hh.tax_year): MOOT_PERTURBATIONS[var]}
             if _scored(Simulation(situation=s2), hh) != baseline:
                 problems.append(f"{var}: registered MOOT but perturbing it moves the answer")
         elif _none_like(tbs.variables[var].default_value):
-            if not CLOSURE_PATTERN.search(narrative):
-                problems.append(f"{var}: none-like default, but the narrative has no "
-                                f"closure sentence covering it")
+            if not _closure(narrative):
+                problems.append(f"{var}: none-like default with no closure sentence")
         else:
             problems.append(f"{var}: UNCLASSIFIED non-none default "
                             f"{tbs.variables[var].default_value!r}")
 
-    for var in sorted(_set_vars(situation) & set(SET_BUT_UNSTATED)):
-        problems.append(f"{var}: set by the oracle, not stated ({SET_BUT_UNSTATED[var]})")
-
-    # Filing structure: engine roles must be matched by a stated structure.
+    # 4. engine roles == stated structure
+    stated = _stated_structure(narrative)
+    if stated is None:
+        problems.append("no structure sentence in the narrative")
+        return problems
+    married, kids = stated
     year = hh.tax_year
+    ids = [p.person_id for p in hh.people]
+    head = [bool(x) for x in sim.calculate("is_tax_unit_head", year)]
     spouse = [bool(x) for x in sim.calculate("is_tax_unit_spouse", year)]
-    dependent = [bool(x) for x in sim.calculate("is_tax_unit_dependent", year)]
-    if (any(spouse) or any(dependent) or len(hh.people) > 1) and \
-            not FILING_PATTERN.search(narrative):
-        problems.append(f"filing structure: engine roles spouse={spouse} "
-                        f"dependent={dependent}, narrative states none")
+    dep = [bool(x) for x in sim.calculate("is_tax_unit_dependent", year)]
+    want = ([i == "p1" for i in ids], [married and i == "p2" for i in ids],
+            [i in kids for i in ids])
+    if (head, spouse, dep) != want:
+        problems.append(f"roles: engine head={head} spouse={spouse} dependent={dep}; "
+                        f"narrative says married={married} children={kids}")
+    filing = sim.calculate("filing_status", year).decode_to_str()[0]
+    if (filing == "JOINT") != married:
+        problems.append(f"filing status {filing} contradicts stated married={married}")
+    if set(kids) | {"p1"} | ({"p2"} if married else set()) != set(ids):
+        problems.append(f"structure sentence does not account for everyone: {ids}")
     return problems
 
 
-@pytest.mark.xfail(strict=True, reason="LIMITS §36: the corpus is known to rest on unstated "
-                                       "premises; remove this marker only when it passes")
-@pytest.mark.parametrize("shape,hh", _representative(), ids=lambda x: x if isinstance(x, str) else "")
+REPRESENTATIVE = _representative()
+
+
+@pytest.mark.parametrize("shape,hh", REPRESENTATIVE, ids=[s for s, _ in REPRESENTATIVE])
 def test_no_scored_answer_rests_on_an_unstated_premise(shape, hh):
     assert _problems(hh) == []
 
 
 def test_representative_shapes_were_all_found():
     """If the scan stops finding a shape, the test above silently covers less."""
-    assert {k for k, _ in _representative()} == {
-        "single_adult", "two_adults_child", "student_earner", "undocumented"}
+    assert {k for k, _ in REPRESENTATIVE} == set(SHAPES)

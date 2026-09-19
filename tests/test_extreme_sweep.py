@@ -223,11 +223,12 @@ def test_zero_income_does_not_produce_a_gross_entitlement_in_the_answer():
         people=(
             Person(person_id="p1", age=35, employment_income=0.0,
                    immigration_status=ImmigrationStatus.CITIZEN, is_disabled=False),
-            Person(person_id="c1", age=8, employment_income=0.0,
+            Person(person_id="p2", age=8, employment_income=0.0,
                    immigration_status=ImmigrationStatus.CITIZEN, is_disabled=False),
-            Person(person_id="c2", age=5, employment_income=0.0,
+            Person(person_id="p3", age=5, employment_income=0.0,
                    immigration_status=ImmigrationStatus.CITIZEN, is_disabled=False),
         ),
+        household_type="single_adult",
         housing_cost=12_000.0, dependent_care_cost=0.0,
     )
     answer = compute(hh).answer

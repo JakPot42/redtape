@@ -31,7 +31,13 @@ import json
 
 from redtape.oracle.determinability import SWEEPS, probe
 from redtape.oracle.policyengine_oracle import compute
-from redtape.schemas import Household, ImmigrationStatus, Person
+from redtape.schemas import (
+    HOUSEHOLD_TYPES,
+    SAFE_IMMIGRATION_STATUSES,
+    Household,
+    ImmigrationStatus,
+    Person,
+)
 
 UNKNOWN = "unknown"
 
@@ -56,7 +62,9 @@ def _person(raw: dict, i: int) -> tuple[Person, list[str]]:
     for name, caster in (
         ("age", int),
         ("employment_income", float),
+        ("weekly_hours", float),
         ("is_higher_ed_student", bool),
+        ("student_full_time", bool),
         ("is_disabled", bool),
     ):
         value = raw.get(name)
@@ -66,6 +74,9 @@ def _person(raw: dict, i: int) -> tuple[Person, list[str]]:
         elif value is not None:
             fields[name] = caster(value)
 
+    # No silent fallback. This used to default a missing status to CITIZEN - the engine's
+    # own "missing becomes a plausible default" pathology (LIMITS 3), inside our tool, and
+    # with a citizen's SSN now derived from status the default would reach EITC/CTC too.
     status = raw.get("immigration_status")
     if status == UNKNOWN:
         unknown.append(f"{fields['person_id']}.immigration_status")
@@ -73,8 +84,12 @@ def _person(raw: dict, i: int) -> tuple[Person, list[str]]:
     elif status:
         fields["immigration_status"] = ImmigrationStatus(str(status).upper())
     else:
-        fields["immigration_status"] = ImmigrationStatus.CITIZEN
+        raise ValueError(f"{fields['person_id']}: immigration_status is required "
+                         '(or "unknown" in the unknowns condition)')
 
+    # Coupled facts travel together, as in generator.withhold.
+    if fields.get("employment_income") is None and "employment_income" in fields:
+        fields["weekly_hours"] = None
     fields.setdefault("is_disabled", False)
     fields.setdefault("is_higher_ed_student", False)
     return Person(**fields), unknown
@@ -94,6 +109,9 @@ def build_household(payload: dict) -> tuple[Household, list[str]]:
         "month": payload["month"],
         "tax_year": int(payload.get("tax_year", 2025)),
         "people": tuple(people),
+        # Required: the structure is stated in every case file and is never inferred.
+        "household_type": payload["household_type"],
+        "pays_heating_cooling": bool(payload["pays_heating_cooling"]),
     }
     for name in ("housing_cost", "dependent_care_cost"):
         value = payload.get(name)
@@ -175,20 +193,24 @@ def tool_schema(*, allow_unknown: bool) -> dict:
             "person_id": {"type": "string", "description": 'e.g. "p1"'},
             "age": {"description": described("Age in years.")},
             "employment_income": {"description": described("Annual employment income, USD.")},
+            "weekly_hours": {"description": described(
+                "Average paid hours per week (0 if not working).")},
             "immigration_status": {
+                # Rendered from the code. The hand-written list omitted REFUGEE, ASYLEE and
+                # the other statuses re-added on 2026-09-16.
                 "description": described(
-                    "One of CITIZEN, LEGAL_PERMANENT_RESIDENT, CUBAN_HAITIAN_ENTRANT, "
-                    "UNDOCUMENTED, DACA, TPS."
-                )
+                    "One of " + ", ".join(SAFE_IMMIGRATION_STATUSES) + ".")
             },
             "is_higher_ed_student": {
                 "description": described(
-                    "Enrolled more than half-time in higher education (7 CFR 273.5)."
+                    "Enrolled at least half-time in higher education (7 CFR 273.5)."
                 )
             },
+            "student_full_time": {"description": described(
+                "For a student: true if enrolled full-time.")},
             "is_disabled": {"description": described("Self-reported disability.")},
         },
-        "required": ["person_id"],
+        "required": ["person_id", "immigration_status"],
     }
     return {
         "name": "calculate_benefits",
@@ -199,10 +221,15 @@ def tool_schema(*, allow_unknown: bool) -> dict:
                 "month": {"type": "string", "description": 'SNAP month, "YYYY-MM".'},
                 "tax_year": {"type": "integer"},
                 "people": {"type": "array", "items": person},
+                "household_type": {"type": "string", "enum": list(HOUSEHOLD_TYPES),
+                                   "description": "single_adult: p1 is the only adult. "
+                                   "married_couple: p1 and p2 are married. Everyone else "
+                                   "is their child."},
+                "pays_heating_cooling": {"type": "boolean"},
                 "housing_cost": {"description": described("Annual shelter cost, USD.")},
                 "dependent_care_cost": {"description": described("Annual dependent care cost, USD.")},
             },
-            "required": ["month", "people"],
+            "required": ["month", "people", "household_type", "pays_heating_cooling"],
         },
     }
 

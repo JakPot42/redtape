@@ -109,18 +109,40 @@ def test_tool_conditions_are_refused_not_half_supported():
 # ------------------------------------------------------------------ cache compatibility
 
 
-def test_opus_cache_keys_unchanged_for_every_committed_dev_task():
-    """Every one of the 1,200 paid Opus responses must still be found by the new code.
+def test_no_committed_response_is_served_for_the_changed_prompt():
+    """The committed Opus 5 responses answer the PRE-2026-09-19 prompt. That prompt changed
+    (closed fact vocabulary, no real fact in the worked example), so every one of them must
+    now MISS. A cache that served an answer written for a different prompt would put a
+    withdrawn result back into a new one without any error (LIMITS §36).
 
-    If the registry's params or cache_model drifted by one character, this drops to 0/1200
-    and the next re-score would try to re-buy the whole run."""
+    This replaced a test asserting 1200/1200 hits, which was right until the prompt
+    deliberately changed."""
     from eval.run_eval import load_tasks, request_identity, task_cache_key
 
     tasks = load_tasks(str(DEV))
     cfg, system, tools = request_identity("tool_less", "claude-opus-5")
     hits = sum(cache_get(task_cache_key(t, cfg, system, tools), partition(t.data.seed))
                is not None for t in tasks)
-    assert (hits, len(tasks)) == (1200, 1200)
+    assert hits == 0
+
+
+def _plant(tmp_path, tasks, model="claude-opus-5"):
+    """Write fake cached responses for `tasks` into an isolated cache dir. The reply is the
+    task's own answer key, so it parses and scores; usage is small and fixed."""
+    import eval.cache as cache_mod
+    from eval.run_eval import request_identity, task_cache_key
+
+    cfg, system, tools = request_identity("tool_less", model)
+    old = cache_mod.CACHE_DIR
+    cache_mod.CACHE_DIR = tmp_path
+    try:
+        for t in tasks:
+            cache_mod.put(task_cache_key(t, cfg, system, tools),
+                          {"reply": t.data.answer_key.model_dump_json(),
+                           "usage": {"input_tokens": 100, "output_tokens": 100}},
+                          partition(t.data.seed))
+    finally:
+        cache_mod.CACHE_DIR = old
 
 
 def test_opus_key_matches_the_pre_provider_formula_literally():
@@ -213,17 +235,16 @@ def test_failed_request_is_charged_not_refunded():
 
 def test_live_agent_without_budget_serves_hits_but_refuses_misses(monkeypatch, tmp_path):
     """No budget: a cache hit is served, a miss raises NoBudget and nothing is built.
-
-    The miss is made certain with an EMPTY cache directory. The first version relied on gpt
-    being uncached on this machine, and broke the day the probe cached those tasks."""
+    Both are made certain with an isolated cache, independent of what this machine paid for."""
     import eval.cache as cache_mod
     from eval.run_eval import live_agent, load_tasks
 
     task = load_tasks(str(DEV), limit=1)[0]
-    assert live_agent("tool_less", "claude-opus-5")(task)      # committed cache: a hit
+    _plant(tmp_path, [task])
     monkeypatch.setattr(cache_mod, "CACHE_DIR", tmp_path)
+    assert live_agent("tool_less", "claude-opus-5")(task)          # planted: a hit
     with pytest.raises(NoBudget):
-        live_agent("tool_less", "gpt-5.6-sol")(task)
+        live_agent("tool_less", "gpt-5.6-sol")(task)               # never planted: a miss
 
 
 def test_cli_refuses_paid_run_without_cap_before_any_request(tmp_path):
@@ -248,13 +269,18 @@ def test_cached_rescore_counts_each_hit_once_through_the_cli(tmp_path):
 
     Pre-warm counted every hit and the scoring pass counted it again; a committed results
     file (t1_live300.live.tool_less.json) records 600 hits for 300 tasks because of it."""
-    env = {"PATH": "/usr/bin:/bin", "HOME": str(Path.home())}
+    from eval.run_eval import load_tasks
+
+    cache_dir, out_dir = tmp_path / "cache", tmp_path / "results"
+    _plant(cache_dir, load_tasks(str(DEV), sample=10))
+    env = {"PATH": "/usr/bin:/bin", "HOME": str(Path.home()),
+           "REDTAPE_CACHE_DIR": str(cache_dir)}
     r = subprocess.run(
         [sys.executable, "-m", "eval.run_eval", "live", "--model", "claude-opus-5",
-         "--split", str(DEV), "--sample", "10", "--results", str(tmp_path)],
+         "--split", str(DEV), "--sample", "10", "--results", str(out_dir)],
         cwd=ROOT, env=env, capture_output=True, text=True, timeout=600)
     assert r.returncode == 0, r.stdout + r.stderr
-    out = json.loads((tmp_path / "t1.live.claude-opus-5.tool_less.json").read_text())
+    out = json.loads((out_dir / "t1.live.claude-opus-5.tool_less.json").read_text())
     usage = out["run"]["usage"]
     assert usage["cached"]["n"] == 10
     assert usage["billed"]["n"] == 0

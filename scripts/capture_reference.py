@@ -28,7 +28,11 @@ OUT = Path(__file__).resolve().parent.parent / "tests" / "data" / "determinism_r
 
 # Indices into the PUBLIC dev seed. Nothing private goes near this fixture: it is committed
 # and it is the one file in the repo whose entire purpose is to be compared against.
-INDICES = (0, 1, 2, 3, 4)
+# 6, 8, 27 added 2026-09-19: the old five were all single-adult with no undocumented adult,
+# so this fixture could never have exercised the LIMITS 36 defects. Now: single with and
+# without children, a married couple, an undocumented adult (0-4 under the new generator),
+# a mixed-status couple (6), and student earners under (8) and over (27) 20 hours.
+INDICES = (0, 1, 2, 3, 4, 6, 8, 27)
 
 
 def main() -> int:

@@ -186,6 +186,23 @@ Obligations:
   never states is invisible to it by construction; that is what `tests/test_unstated_premises.py`
   exists to catch (LIMITS §36).
 
+**Order of suspicion, as of 2026-09-19: corpus, then scorer, then model.** Instance 9 is the
+fourth published number to measure something adjacent to its claim, and the **first whose
+defect was in the answer keys themselves**, not the scoring or the harness. So the corpus
+is now the most-suspected layer. Check it before the scorer, and both before concluding
+anything about a model.
+
+**The specific attack surface is the oracle's DEFAULTS.** PolicyEngine reads about 285
+inputs per household and supplies a default for every one the oracle does not set. A
+default that is legally wrong (a citizen's SSN card for an undocumented filer, zero hours for
+someone with stated earnings, a spouse inferred from age order) produces an answer key that
+is **indistinguishable from a correct one**. It is internally consistent, the engine agrees
+with itself, and every test built on the corpus passes. The only way to see it is to
+**enumerate what the engine read**. That is the tracer check in
+`tests/test_unstated_premises.py`, and it must stay in the suite. Its expectations are owned by
+the test, not imported from the renderer. Its first version imported them, and two of eight
+mutations survived.
+
 ### Test through the real entry point **[decided]**
 
 **A test whose input is constructed on the far side of the interface under test is not

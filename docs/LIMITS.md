@@ -1380,7 +1380,9 @@ $59.18. Fixed by counting hits only once `prewarm` has run. The CLI test
 
 **Provider abstraction.** `eval/providers.py` puts the model behind a registry key. Opus's
 cache identity is byte-identical to the pre-refactor harness, proven two ways: all 1,200
-committed Opus responses still hit (`test_opus_cache_keys_unchanged_for_every_committed_dev_task`),
+committed Opus responses still hit (`test_opus_cache_keys_unchanged_for_every_committed_dev_task`;
+replaced 2026-09-19 by `test_no_committed_response_is_served_for_the_changed_prompt` when the
+prompt deliberately changed and every committed response became, correctly, a miss),
 and `python -m eval.run_eval live --model claude-opus-5` with **no credential and no cap**
 re-scores to 0.514 / 0.438 / 0.570, exactly the committed headlines.
 

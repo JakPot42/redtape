@@ -28,7 +28,10 @@ from typing import Any
 
 # Fingerprint format version. Bump ONLY when the set of inputs below changes shape;
 # bumping invalidates every recorded fingerprint by design, so it is a deliberate act.
-FINGERPRINT_VERSION = 1
+# 2 (2026-09-19): generator LOGIC changed - explicit household shapes, children bounded
+# by the youngest parent, hours derived from earnings (LIMITS 36). A logic change that
+# moves no constant is invisible to the hash below, so the version is bumped by hand.
+FINGERPRINT_VERSION = 2
 
 
 def _generator_config() -> dict[str, Any]:
@@ -39,7 +42,9 @@ def _generator_config() -> dict[str, Any]:
     from redtape.schemas import (
         CORPUS_STATE,
         CORPUS_TAX_YEAR,
+        HOUSEHOLD_TYPES,
         SAFE_IMMIGRATION_STATUSES,
+        SSN_BY_STATUS,
     )
 
     return {
@@ -57,6 +62,17 @@ def _generator_config() -> dict[str, Any]:
         "tax_year": H.TAX_YEAR,
         "corpus_state": CORPUS_STATE,
         "corpus_tax_year": CORPUS_TAX_YEAR,
+        # Added 2026-09-19 with the explicit-structure generator (LIMITS 36).
+        "household_types": list(HOUSEHOLD_TYPES),
+        "p_married": H._P_MARRIED,
+        "spouse_age_gap": H._SPOUSE_AGE_GAP,
+        "min_parent_gap": H._MIN_PARENT_GAP,
+        "p_student": H._P_STUDENT,
+        "p_full_time": H._P_FULL_TIME,
+        "ca_min_wage_2025": H.CA_MIN_WAGE_2025,
+        "max_wage": H._MAX_WAGE,
+        "max_hours": H._MAX_HOURS,
+        "ssn_by_status": dict(sorted(SSN_BY_STATUS.items())),
     }
 
 

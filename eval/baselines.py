@@ -39,6 +39,7 @@ import re
 from dataclasses import dataclass
 from functools import lru_cache
 
+from redtape.generator.narratives import _STATUS_PHRASE
 from redtape.schemas import (
     SCORED_PROGRAMS,
     AnnualAmount,
@@ -117,6 +118,8 @@ class ReadNarrative:
     any_age_withheld: bool
     any_income_withheld: bool
     any_status_withheld: bool
+    household_type: str = "single_adult"
+    pays_heating_cooling: bool = True
     people: tuple[dict, ...] = ()
     """One entry per person line, IN ORDER, with None where the narrative states nothing.
 
@@ -134,6 +137,15 @@ def _money_monthly(text: str) -> float | None:
         return None
     amount = float(m.group(1).replace(",", ""))
     return amount / 12 if m.group(2) == "year" else amount
+
+
+# Longest phrase first, so "a U.S. citizen" is matched whole rather than as "citizen".
+_PHRASE_TO_STATUS = {ph.lower(): status for status, phrases in _STATUS_PHRASE.items()
+                     for ph in phrases}
+_STATUS_RE = re.compile(
+    "|".join(re.escape(ph) for ph in sorted(_PHRASE_TO_STATUS, key=len, reverse=True)),
+    re.IGNORECASE,
+)
 
 
 def read_narrative(prompt: str) -> ReadNarrative:
@@ -185,18 +197,35 @@ def read_narrative(prompt: str) -> ReadNarrative:
         # carrying none of them has had the status withheld - which is a DIFFERENT thing
         # from stating CITIZEN, and the whole point of the unknowns condition is that the
         # tool must not collapse the two the way the engine does (LIMITS 3).
-        if not re.search(
-            r"citizen|lawful permanent resident|green card holder|Cuban/Haitian|"
-            r"undocumented|without lawful immigration status|DACA|"
-            r"Temporary Protected Status|covered by TPS",
-            line, re.IGNORECASE,
-        ):
+        #
+        # Built from the renderer's own phrase table. The hand-written list this replaced
+        # omitted refugee, asylee and the other statuses re-added on 2026-09-16, so a
+        # STATED refugee read as "status withheld".
+        m = _STATUS_RE.search(line)
+        if not m:
             any_status_withheld = True
         else:
-            person["immigration_status"] = "CITIZEN"
+            # The actual status, not "CITIZEN" for everything. Harmless when status did not
+            # touch tax credits; since SSN is derived from status (2026-09-19) it would give
+            # an undocumented person a citizen's SSN in the scripted agent's tool calls.
+            person["immigration_status"] = _PHRASE_TO_STATUS[m.group(0).lower()]
+
+        h = re.search(r"working (\d+) hours? a week", line)
+        person["weekly_hours"] = (float(h.group(1)) if h else
+                                  0.0 if person["employment_income"] == 0.0 else None)
+        if re.search(r"not enrolled in college|not attending a degree|not a student", line):
+            person["is_higher_ed_student"], person["student_full_time"] = False, None
+        elif re.search(r"enrolled|attends", line):
+            person["is_higher_ed_student"] = True
+            person["student_full_time"] = "full-time" in line and "not full-time" not in line
+        else:
+            person["is_higher_ed_student"], person["student_full_time"] = None, None
 
         people.append(person)
 
+    household_type = ("married_couple" if "are married to each other" in prompt
+                      else "single_adult")
+    pays_heating_cooling = "does not pay for heating or cooling" not in prompt
     shelter_stated = "shelter costs are" in prompt
     monthly_shelter = 0.0
     if shelter_stated:
@@ -216,6 +245,8 @@ def read_narrative(prompt: str) -> ReadNarrative:
         any_income_withheld=any_income_withheld,
         any_status_withheld=any_status_withheld,
         people=tuple(people),
+        household_type=household_type,
+        pays_heating_cooling=pays_heating_cooling,
     )
 
 
@@ -284,7 +315,11 @@ def ctc_estimate(r: ReadNarrative) -> float:
 
 
 def _answer(r: ReadNarrative, *, eligible: bool, snap: float, eitc: float, ctc: float,
-            abstain=()) -> T1Answer:
+            abstain=(), fact: str = "other: unstated") -> T1Answer:
+    """`fact` is what the abstention names. Since exact fact matching (2026-09-19) a
+    baseline must name the fact it actually has a reason to think is missing; one with no
+    such reason (always_abstain) names none from the list, so it can never be fully
+    credited for an abstention it did not reason about."""
     return T1Answer(
         snap=SnapAnswer(period_label=r.month, eligible=eligible, benefit=snap),
         # Medicaid is unscored; a baseline states the shape and nothing more.
@@ -295,7 +330,7 @@ def _answer(r: ReadNarrative, *, eligible: bool, snap: float, eitc: float, ctc: 
         eitc=AnnualAmount(period_label=str(r.year), amount=eitc),
         ctc=AnnualAmount(period_label=str(r.year), amount=ctc),
         cannot_determine=tuple(
-            CannotDetermine(program=p, missing_fact="unstated") for p in abstain
+            CannotDetermine(program=p, missing_fact=fact) for p in abstain
         ),
     )
 
@@ -342,7 +377,7 @@ def rules_only(prompt: str) -> T1Answer:
     eligible, snap = snap_estimate(r)
     abstain = ("snap",) if not r.shelter_stated else ()
     return _answer(r, eligible=eligible, snap=snap, eitc=0.0, ctc=ctc_estimate(r),
-                   abstain=abstain)
+                   abstain=abstain, fact="housing_cost")
 
 
 # ------------------------------------------------------- pair-consistency diagnostics

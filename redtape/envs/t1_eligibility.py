@@ -39,7 +39,12 @@ from redtape.schemas import (
     T1Answer,
 )
 from redtape.scoring.parsing import ParseFailure, parse_answer
-from redtape.schemas import Determinability
+from redtape.schemas import (
+    HOUSEHOLD_FACTS,
+    OTHER_FACT_PREFIX,
+    PERSON_FACTS,
+    Determinability,
+)
 
 def _answer_shape() -> str:
     """The exact answer shape, rendered from `T1Answer` itself.
@@ -64,11 +69,26 @@ def _answer_shape() -> str:
         medicaid=MedicaidAnswer(period_label="2025", person_eligible={"p1": True}),
         eitc=AnnualAmount(period_label="2025", amount=0.0),
         ctc=AnnualAmount(period_label="2025", amount=4400.0, gross_entitlement=4400.0),
+        # A placeholder, never a real fact. This was "p1.employment_income" until
+        # 2026-09-19, and that was the fact Opus 5 flagged most - a confound (LIMITS §35).
         cannot_determine=(
-            CannotDetermine(program="snap", missing_fact="p1.employment_income"),
+            CannotDetermine(program="snap", missing_fact="<one identifier from the list>"),
         ),
     )
     return example.model_dump_json(indent=2)
+
+
+def fact_vocabulary() -> str:
+    """The identifiers `missing_fact` may use, rendered from schemas.PERSON_FACTS /
+    HOUSEHOLD_FACTS so the prompt cannot drift from what the scorer matches."""
+    return (
+        "Person facts, written p<N>.<fact> where N is the person's number (e.g. p2.<fact>): "
+        + ", ".join(PERSON_FACTS)
+        + ".\nHousehold facts, written as the bare name: "
+        + ", ".join(HOUSEHOLD_FACTS)
+        + f".\nIf the missing fact is not in these lists, write \"{OTHER_FACT_PREFIX} "
+        "<short description>\"."
+    )
 
 
 SYSTEM_PROMPT = (
@@ -87,6 +107,9 @@ SYSTEM_PROMPT = (
     "empty list, when nothing is missing.\n\n"
     "If a fact required to determine a program's outcome is missing from the case file, "
     "list that program in `cannot_determine` with the missing fact, instead of guessing. "
+    "`missing_fact` must be EXACTLY one identifier from this list, with nothing added:\n"
+    + fact_vocabulary()
+    + "\n"
     "If a fact is missing but the outcome does not depend on it, answer normally - a "
     "needless abstention is scored as wrong as a wrong number."
 )
@@ -237,6 +260,7 @@ class T1Task(Task[T1Data, State, T1TaskConfig]):
             self._parsed(trace).answer,
             Determinability(self.data.determinability),
             tuple(self.data.deciding_programs),
+            self.data.withheld_fact,
         )
         return 1.0 if (s.ok and s.value == 1.0) else 0.0
 
@@ -319,6 +343,7 @@ class T1Task(Task[T1Data, State, T1TaskConfig]):
                 self._parsed(trace).answer,
                 Determinability(self.data.determinability),
                 tuple(self.data.deciding_programs),
+                self.data.withheld_fact,
             ),
         )
 

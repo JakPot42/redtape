@@ -88,24 +88,43 @@ def test_amounts_beyond_tolerance_do_not():
 
 def test_abstention_indeterminate_requires_abstaining():
     truth_label = Determinability.INDETERMINATE
-    assert score_abstention(_answer(), truth_label, ("snap",)).value == 0.0
+    w = "p1.employment_income"
+    assert score_abstention(_answer(), truth_label, ("snap",), w).value == 0.0
     good = _answer(cd=(("snap", "p1.employment_income"),))
-    assert score_abstention(good, truth_label, ("snap",)).value == 1.0
+    assert score_abstention(good, truth_label, ("snap",), w).value == 1.0
 
 
 def test_abstention_on_the_wrong_programs_is_partial_not_full():
-    good_but_broad = _answer(cd=(("snap", "x"), ("eitc", "x")))
-    assert score_abstention(good_but_broad, Determinability.INDETERMINATE, ("snap",)).value == 0.5
+    good_but_broad = _answer(cd=(("snap", "p1.age"), ("eitc", "p1.age")))
+    assert score_abstention(good_but_broad, Determinability.INDETERMINATE, ("snap",),
+                            "p1.age").value == 0.5
+
+
+def test_abstention_naming_a_fact_that_was_not_withheld_is_not_credited():
+    """The defect the lenient scorer had: right program, wrong reason, full credit. GPT-5.6
+    Sol's one credited probe abstention named an invented immigration fact when student
+    status was withheld. Exact identifier matching; the prompt lists every identifier."""
+    w = "p1.is_higher_ed_student"
+    wrong_reason = _answer(cd=(("snap", "p1.immigration_status"),))
+    assert score_abstention(wrong_reason, Determinability.INDETERMINATE, ("snap",), w).value == 0.5
+    free_text = _answer(cd=(("snap", "p1.is_higher_ed_student (enrolment unknown)"),))
+    assert score_abstention(free_text, Determinability.INDETERMINATE, ("snap",), w).value == 0.5
+    other = _answer(cd=(("snap", "other: relationship between p1 and p2"),))
+    assert score_abstention(other, Determinability.INDETERMINATE, ("snap",), w).value == 0.5
+    exact = _answer(cd=(("snap", "p1.is_higher_ed_student"),))
+    assert score_abstention(exact, Determinability.INDETERMINATE, ("snap",), w).value == 1.0
 
 
 def test_needless_abstention_on_an_incomplete_determinate_task_scores_zero():
     """Class 3 is scored as strictly as class 2 - this is what stops always-abstain."""
     given = _answer(cd=(("snap", "housing_cost"),))
-    assert score_abstention(given, Determinability.INCOMPLETE_DETERMINATE, ()).value == 0.0
+    assert score_abstention(given, Determinability.INCOMPLETE_DETERMINATE, (),
+                            "housing_cost").value == 0.0
 
 
 def test_answering_an_incomplete_determinate_task_scores_full():
-    assert score_abstention(_answer(), Determinability.INCOMPLETE_DETERMINATE, ()).value == 1.0
+    assert score_abstention(_answer(), Determinability.INCOMPLETE_DETERMINATE, (),
+                            "housing_cost").value == 1.0
 
 
 def test_full_abstention_is_not_antihacked_when_everything_is_deciding():

@@ -4,13 +4,13 @@
       "expected": {
         "cannot_determine": [],
         "ctc": {
-          "amount": 0.0,
+          "amount": 2200.0,
           "gross_entitlement": 2200.0,
           "period": "year",
           "period_label": "2025"
         },
         "eitc": {
-          "amount": 519.8599853515625,
+          "amount": 1489.31298828125,
           "gross_entitlement": null,
           "period": "year",
           "period_label": "2025"
@@ -19,14 +19,14 @@
           "period": "year",
           "period_label": "2025",
           "person_eligible": {
-            "p1": true,
+            "p1": false,
             "p2": true
           },
           "scored": false
         },
         "snap": {
-          "benefit": 536.0,
-          "eligible": true,
+          "benefit": 0.0,
+          "eligible": false,
           "period": "month",
           "period_label": "2025-08"
         }
@@ -34,19 +34,23 @@
       "household": {
         "dependent_care_cost": 0.0,
         "household_id": "hh-20260828-00000",
+        "household_type": "single_adult",
         "housing_cost": 11534.0,
         "index": 0,
         "month": "2025-08",
+        "pays_heating_cooling": true,
         "people": [
           {
-            "age": 51,
+            "age": 44,
             "declared_benefits": [],
             "declared_statuses": [],
-            "employment_income": 1529.0,
+            "employment_income": 41114.0,
             "immigration_status": "CITIZEN",
             "is_disabled": false,
             "is_higher_ed_student": false,
-            "person_id": "p1"
+            "person_id": "p1",
+            "student_full_time": null,
+            "weekly_hours": 46.0
           },
           {
             "age": 4,
@@ -56,7 +60,9 @@
             "immigration_status": "CITIZEN",
             "is_disabled": false,
             "is_higher_ed_student": false,
-            "person_id": "p2"
+            "person_id": "p2",
+            "student_full_time": null,
+            "weekly_hours": 0.0
           }
         ],
         "seed": 20260828,
@@ -64,82 +70,6 @@
         "tax_year": 2025
       },
       "index": 0
-    },
-    {
-      "expected": {
-        "cannot_determine": [],
-        "ctc": {
-          "amount": 814.050048828125,
-          "gross_entitlement": 4400.0,
-          "period": "year",
-          "period_label": "2025"
-        },
-        "eitc": {
-          "amount": 3170.800048828125,
-          "gross_entitlement": null,
-          "period": "year",
-          "period_label": "2025"
-        },
-        "medicaid": {
-          "period": "year",
-          "period_label": "2025",
-          "person_eligible": {
-            "p1": true,
-            "p2": true,
-            "p3": true
-          },
-          "scored": false
-        },
-        "snap": {
-          "benefit": 768.0,
-          "eligible": true,
-          "period": "month",
-          "period_label": "2025-09"
-        }
-      },
-      "household": {
-        "dependent_care_cost": 0.0,
-        "household_id": "hh-20260828-00001",
-        "housing_cost": 0.0,
-        "index": 1,
-        "month": "2025-09",
-        "people": [
-          {
-            "age": 40,
-            "declared_benefits": [],
-            "declared_statuses": [],
-            "employment_income": 7927.0,
-            "immigration_status": "CITIZEN",
-            "is_disabled": false,
-            "is_higher_ed_student": false,
-            "person_id": "p1"
-          },
-          {
-            "age": 11,
-            "declared_benefits": [],
-            "declared_statuses": [],
-            "employment_income": 0.0,
-            "immigration_status": "CITIZEN",
-            "is_disabled": false,
-            "is_higher_ed_student": false,
-            "person_id": "p2"
-          },
-          {
-            "age": 9,
-            "declared_benefits": [],
-            "declared_statuses": [],
-            "employment_income": 0.0,
-            "immigration_status": "CITIZEN",
-            "is_disabled": false,
-            "is_higher_ed_student": false,
-            "person_id": "p3"
-          }
-        ],
-        "seed": 20260828,
-        "state": "CA",
-        "tax_year": 2025
-      },
-      "index": 1
     },
     {
       "expected": {
@@ -160,52 +90,56 @@
           "period": "year",
           "period_label": "2025",
           "person_eligible": {
-            "p1": true
+            "p1": false
           },
           "scored": false
         },
         "snap": {
-          "benefit": 298.0,
-          "eligible": true,
+          "benefit": 0.0,
+          "eligible": false,
           "period": "month",
-          "period_label": "2025-11"
+          "period_label": "2025-01"
         }
       },
       "household": {
         "dependent_care_cost": 0.0,
-        "household_id": "hh-20260828-00002",
-        "housing_cost": 26637.0,
-        "index": 2,
-        "month": "2025-11",
+        "household_id": "hh-20260828-00001",
+        "household_type": "single_adult",
+        "housing_cost": 10220.0,
+        "index": 1,
+        "month": "2025-01",
+        "pays_heating_cooling": true,
         "people": [
           {
-            "age": 35,
+            "age": 33,
             "declared_benefits": [],
             "declared_statuses": [],
-            "employment_income": 0.0,
-            "immigration_status": "CITIZEN",
+            "employment_income": 113243.0,
+            "immigration_status": "ASYLEE",
             "is_disabled": false,
             "is_higher_ed_student": false,
-            "person_id": "p1"
+            "person_id": "p1",
+            "student_full_time": null,
+            "weekly_hours": 55.0
           }
         ],
         "seed": 20260828,
         "state": "CA",
         "tax_year": 2025
       },
-      "index": 2
+      "index": 1
     },
     {
       "expected": {
         "cannot_determine": [],
         "ctc": {
-          "amount": 1890.0001220703125,
-          "gross_entitlement": 4400.0,
+          "amount": 1700.0,
+          "gross_entitlement": 2200.0,
           "period": "year",
           "period_label": "2025"
         },
         "eitc": {
-          "amount": 6040.0,
+          "amount": 4328.0,
           "gross_entitlement": null,
           "period": "year",
           "period_label": "2025"
@@ -221,28 +155,115 @@
           "scored": false
         },
         "snap": {
-          "benefit": 768.0,
+          "benefit": 313.0,
           "eligible": true,
           "period": "month",
-          "period_label": "2025-10"
+          "period_label": "2025-04"
         }
       },
       "household": {
         "dependent_care_cost": 0.0,
-        "household_id": "hh-20260828-00003",
-        "housing_cost": 29673.0,
-        "index": 3,
-        "month": "2025-10",
+        "household_id": "hh-20260828-00002",
+        "household_type": "married_couple",
+        "housing_cost": 0.0,
+        "index": 2,
+        "month": "2025-04",
+        "pays_heating_cooling": true,
         "people": [
           {
-            "age": 44,
+            "age": 19,
             "declared_benefits": [],
             "declared_statuses": [],
-            "employment_income": 15100.0,
+            "employment_income": 13760.0,
             "immigration_status": "CITIZEN",
             "is_disabled": false,
             "is_higher_ed_student": false,
-            "person_id": "p1"
+            "person_id": "p1",
+            "student_full_time": null,
+            "weekly_hours": 10.0
+          },
+          {
+            "age": 19,
+            "declared_benefits": [],
+            "declared_statuses": [],
+            "employment_income": 12027.0,
+            "immigration_status": "CITIZEN",
+            "is_disabled": false,
+            "is_higher_ed_student": false,
+            "person_id": "p2",
+            "student_full_time": null,
+            "weekly_hours": 12.0
+          },
+          {
+            "age": 2,
+            "declared_benefits": [],
+            "declared_statuses": [],
+            "employment_income": 0.0,
+            "immigration_status": "CITIZEN",
+            "is_disabled": false,
+            "is_higher_ed_student": false,
+            "person_id": "p3",
+            "student_full_time": null,
+            "weekly_hours": 0.0
+          }
+        ],
+        "seed": 20260828,
+        "state": "CA",
+        "tax_year": 2025
+      },
+      "index": 2
+    },
+    {
+      "expected": {
+        "cannot_determine": [],
+        "ctc": {
+          "amount": 754.050048828125,
+          "gross_entitlement": 2200.0,
+          "period": "year",
+          "period_label": "2025"
+        },
+        "eitc": {
+          "amount": 2559.179931640625,
+          "gross_entitlement": null,
+          "period": "year",
+          "period_label": "2025"
+        },
+        "medicaid": {
+          "period": "year",
+          "period_label": "2025",
+          "person_eligible": {
+            "p1": true,
+            "p2": true
+          },
+          "scored": false
+        },
+        "snap": {
+          "benefit": 536.0,
+          "eligible": true,
+          "period": "month",
+          "period_label": "2025-04"
+        }
+      },
+      "household": {
+        "dependent_care_cost": 1123.0,
+        "household_id": "hh-20260828-00003",
+        "household_type": "single_adult",
+        "housing_cost": 32927.0,
+        "index": 3,
+        "month": "2025-04",
+        "pays_heating_cooling": true,
+        "people": [
+          {
+            "age": 55,
+            "declared_benefits": [],
+            "declared_statuses": [],
+            "employment_income": 7527.0,
+            "immigration_status": "CITIZEN",
+            "is_disabled": false,
+            "is_higher_ed_student": false,
+            "person_id": "p1",
+            "student_full_time": null,
+            "weekly_hours": 5.0
           },
           {
             "age": 16,
@@ -252,17 +273,9 @@
             "immigration_status": "CITIZEN",
             "is_disabled": false,
             "is_higher_ed_student": false,
-            "person_id": "p2"
-          },
-          {
-            "age": 5,
-            "declared_benefits": [],
-            "declared_statuses": [],
-            "employment_income": 0.0,
-            "immigration_status": "LEGAL_PERMANENT_RESIDENT",
-            "is_disabled": false,
-            "is_higher_ed_student": false,
-            "person_id": "p3"
+            "person_id": "p2",
+            "student_full_time": null,
+            "weekly_hours": 0.0
           }
         ],
         "seed": 20260828,
@@ -276,7 +289,7 @@
         "cannot_determine": [],
         "ctc": {
           "amount": 0.0,
-          "gross_entitlement": 4400.0,
+          "gross_entitlement": 500.0,
           "period": "year",
           "period_label": "2025"
         },
@@ -291,54 +304,49 @@
           "period_label": "2025",
           "person_eligible": {
             "p1": true,
-            "p2": true,
-            "p3": true
+            "p2": true
           },
           "scored": false
         },
         "snap": {
-          "benefit": 536.0,
+          "benefit": 292.0,
           "eligible": true,
           "period": "month",
-          "period_label": "2025-09"
+          "period_label": "2025-04"
         }
       },
       "household": {
-        "dependent_care_cost": 0.0,
+        "dependent_care_cost": 3468.0,
         "household_id": "hh-20260828-00004",
-        "housing_cost": 15957.0,
+        "household_type": "single_adult",
+        "housing_cost": 55887.0,
         "index": 4,
-        "month": "2025-09",
+        "month": "2025-04",
+        "pays_heating_cooling": true,
         "people": [
           {
-            "age": 49,
-            "declared_benefits": [],
-            "declared_statuses": [],
-            "employment_income": 0.0,
-            "immigration_status": "CITIZEN",
-            "is_disabled": false,
-            "is_higher_ed_student": false,
-            "person_id": "p1"
-          },
-          {
-            "age": 13,
-            "declared_benefits": [],
-            "declared_statuses": [],
-            "employment_income": 0.0,
-            "immigration_status": "CITIZEN",
-            "is_disabled": false,
-            "is_higher_ed_student": false,
-            "person_id": "p2"
-          },
-          {
-            "age": 13,
+            "age": 19,
             "declared_benefits": [],
             "declared_statuses": [],
             "employment_income": 0.0,
             "immigration_status": "UNDOCUMENTED",
             "is_disabled": false,
             "is_higher_ed_student": false,
-            "person_id": "p3"
+            "person_id": "p1",
+            "student_full_time": null,
+            "weekly_hours": 0.0
+          },
+          {
+            "age": 3,
+            "declared_benefits": [],
+            "declared_statuses": [],
+            "employment_income": 0.0,
+            "immigration_status": "CITIZEN",
+            "is_disabled": false,
+            "is_higher_ed_student": false,
+            "person_id": "p2",
+            "student_full_time": null,
+            "weekly_hours": 0.0
           }
         ],
         "seed": 20260828,
@@ -346,10 +354,210 @@
         "tax_year": 2025
       },
       "index": 4
+    },
+    {
+      "expected": {
+        "cannot_determine": [],
+        "ctc": {
+          "amount": 0.0,
+          "gross_entitlement": 0.0,
+          "period": "year",
+          "period_label": "2025"
+        },
+        "eitc": {
+          "amount": 0.0,
+          "gross_entitlement": null,
+          "period": "year",
+          "period_label": "2025"
+        },
+        "medicaid": {
+          "period": "year",
+          "period_label": "2025",
+          "person_eligible": {
+            "p1": false,
+            "p2": false
+          },
+          "scored": false
+        },
+        "snap": {
+          "benefit": 0.0,
+          "eligible": false,
+          "period": "month",
+          "period_label": "2025-02"
+        }
+      },
+      "household": {
+        "dependent_care_cost": 0.0,
+        "household_id": "hh-20260828-00006",
+        "household_type": "married_couple",
+        "housing_cost": 10320.0,
+        "index": 6,
+        "month": "2025-02",
+        "pays_heating_cooling": true,
+        "people": [
+          {
+            "age": 53,
+            "declared_benefits": [],
+            "declared_statuses": [],
+            "employment_income": 42919.0,
+            "immigration_status": "LEGAL_PERMANENT_RESIDENT",
+            "is_disabled": false,
+            "is_higher_ed_student": false,
+            "person_id": "p1",
+            "student_full_time": null,
+            "weekly_hours": 48.0
+          },
+          {
+            "age": 47,
+            "declared_benefits": [],
+            "declared_statuses": [],
+            "employment_income": 65086.0,
+            "immigration_status": "UNDOCUMENTED",
+            "is_disabled": false,
+            "is_higher_ed_student": false,
+            "person_id": "p2",
+            "student_full_time": null,
+            "weekly_hours": 47.0
+          }
+        ],
+        "seed": 20260828,
+        "state": "CA",
+        "tax_year": 2025
+      },
+      "index": 6
+    },
+    {
+      "expected": {
+        "cannot_determine": [],
+        "ctc": {
+          "amount": 0.0,
+          "gross_entitlement": 0.0,
+          "period": "year",
+          "period_label": "2025"
+        },
+        "eitc": {
+          "amount": 0.0,
+          "gross_entitlement": null,
+          "period": "year",
+          "period_label": "2025"
+        },
+        "medicaid": {
+          "period": "year",
+          "period_label": "2025",
+          "person_eligible": {
+            "p1": true,
+            "p2": true
+          },
+          "scored": false
+        },
+        "snap": {
+          "benefit": 292.0,
+          "eligible": true,
+          "period": "month",
+          "period_label": "2025-06"
+        }
+      },
+      "household": {
+        "dependent_care_cost": 0.0,
+        "household_id": "hh-20260828-00008",
+        "household_type": "married_couple",
+        "housing_cost": 4376.0,
+        "index": 8,
+        "month": "2025-06",
+        "pays_heating_cooling": true,
+        "people": [
+          {
+            "age": 24,
+            "declared_benefits": [],
+            "declared_statuses": [],
+            "employment_income": 0.0,
+            "immigration_status": "UNDOCUMENTED",
+            "is_disabled": false,
+            "is_higher_ed_student": true,
+            "person_id": "p1",
+            "student_full_time": true,
+            "weekly_hours": 0.0
+          },
+          {
+            "age": 19,
+            "declared_benefits": [],
+            "declared_statuses": [],
+            "employment_income": 0.0,
+            "immigration_status": "LEGAL_PERMANENT_RESIDENT",
+            "is_disabled": false,
+            "is_higher_ed_student": false,
+            "person_id": "p2",
+            "student_full_time": null,
+            "weekly_hours": 0.0
+          }
+        ],
+        "seed": 20260828,
+        "state": "CA",
+        "tax_year": 2025
+      },
+      "index": 8
+    },
+    {
+      "expected": {
+        "cannot_determine": [],
+        "ctc": {
+          "amount": 0.0,
+          "gross_entitlement": 0.0,
+          "period": "year",
+          "period_label": "2025"
+        },
+        "eitc": {
+          "amount": 19.175537109375,
+          "gross_entitlement": null,
+          "period": "year",
+          "period_label": "2025"
+        },
+        "medicaid": {
+          "period": "year",
+          "period_label": "2025",
+          "person_eligible": {
+            "p1": true
+          },
+          "scored": false
+        },
+        "snap": {
+          "benefit": 110.0,
+          "eligible": true,
+          "period": "month",
+          "period_label": "2025-08"
+        }
+      },
+      "household": {
+        "dependent_care_cost": 0.0,
+        "household_id": "hh-20260828-00027",
+        "household_type": "single_adult",
+        "housing_cost": 3951.0,
+        "index": 27,
+        "month": "2025-08",
+        "pays_heating_cooling": true,
+        "people": [
+          {
+            "age": 54,
+            "declared_benefits": [],
+            "declared_statuses": [],
+            "employment_income": 18853.0,
+            "immigration_status": "CITIZEN",
+            "is_disabled": false,
+            "is_higher_ed_student": true,
+            "person_id": "p1",
+            "student_full_time": true,
+            "weekly_hours": 21.0
+          }
+        ],
+        "seed": 20260828,
+        "state": "CA",
+        "tax_year": 2025
+      },
+      "index": 27
     }
   ],
   "note": "Golden master for oracle drift. Expected values are ENGINE OUTPUT, not externally validated figures - this file detects change, it does not establish correctness. External validation lives in tests/test_external_validation.py and tests/test_parameter_drift.py, whose expected values must never come from the engine. Keep the two apart.",
-  "policyengine_core": "3.31.0",
+  "policyengine_core": "3.31.1",
   "policyengine_us": "1.821.4",
   "python": "3.13.15",
   "seed": 20260828,

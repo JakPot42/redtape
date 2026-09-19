@@ -101,6 +101,40 @@ class ImmigrationStatus(str, Enum):
     PAROLED_ONE_YEAR = "PAROLED_ONE_YEAR"
 
 
+# SSN held, by immigration status. docs/PRIMARY_SOURCES_2026-09.md §4. Values:
+#   "citizen"  - an SSN issued to a citizen (20 CFR 422.104(a)(1))
+#   "work"     - an SSN valid for work: LPRs and noncitizens with work authority
+#                (422.104(a)(2)). Work authority incident to refugee/asylee/entrant/parolee
+#                status is 8 CFR 274a.12(a), NOT READ - MEDIUM. Stated in every narrative,
+#                so the answer key does not depend on this mapping being exact.
+#   "itin"     - no SSN; files with an ITIN. Undocumented: no lawful work authority.
+# Covers EVERY engine status, not only the generated ones, because the prober sweeps all
+# of them; a missing key must crash, never default.
+SSN_BY_STATUS = {
+    "CITIZEN": "citizen",
+    "LEGAL_PERMANENT_RESIDENT": "work",
+    "CUBAN_HAITIAN_ENTRANT": "work",
+    "REFUGEE": "work",
+    "ASYLEE": "work",
+    "DEPORTATION_WITHHELD": "work",
+    "CONDITIONAL_ENTRANT": "work",
+    "PAROLED_ONE_YEAR": "work",
+    "DACA": "work",
+    "TPS": "work",
+    "UNDOCUMENTED": "itin",
+}
+
+# The two household shapes v0 generates (decision A, 2026-09-19). Relationships are
+# EXPLICIT: the generator produces them, the oracle builds from them, the narrative states
+# them, and neither the oracle nor the engine is allowed to infer one. Adult children,
+# unmarried partners and roommates are v1: dependency tests and SNAP's
+# purchase-and-prepare rule are their own project.
+#   single_adult    - p1 is the only adult; every other member is p1's own child.
+#   married_couple  - p1 and p2 are married and file jointly; every other member is their
+#                     own child.
+HOUSEHOLD_TYPES = ("single_adult", "married_couple")
+
+
 class Strict(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
 
@@ -144,6 +178,31 @@ class Person(Strict):
         description="boolean status facts the narrative states, e.g. is_permanently_disabled_veteran",
     )
 
+    # Added 2026-09-19 (LIMITS §36). Each was an engine DEFAULT the answer key silently
+    # rested on: 0 weekly hours for everyone (the SNAP student exemption, 7 CFR
+    # 273.5(b)(5), reads it) and part-time enrolment for everyone (273.5(b)(10) reads it).
+    weekly_hours: float | None = Field(
+        default=0.0,
+        description="average paid hours per week. Withheld TOGETHER with employment_income: "
+        "stated hours would reveal withheld earnings. None means withheld.",
+    )
+    student_full_time: bool | None = Field(
+        default=None,
+        description="for a higher-education student, True = full-time, False = at least "
+        "half-time but not full-time. None for non-students, and when student status is "
+        "withheld.",
+    )
+
+    @property
+    def ssn_status(self) -> str | None:
+        """Derived from immigration status, never generated independently, so withholding
+        the status withholds this too. The mapping is docs/PRIMARY_SOURCES_2026-09.md §4
+        (20 CFR 422.104). The narrative STATES the result, so the answer key never rests
+        on the mapping being legally exact."""
+        if self.immigration_status is None:
+            return None
+        return SSN_BY_STATUS[self.immigration_status.value]
+
     @property
     def declared_annual_total(self) -> float:
         return sum(b.annual_amount for b in self.declared_benefits)
@@ -172,12 +231,42 @@ class Household(Strict):
     month: str = Field(description='the SNAP month, "YYYY-MM"; SNAP is always scored monthly')
 
     people: tuple[Person, ...]
+    household_type: Literal["single_adult", "married_couple"] = Field(
+        description="see HOUSEHOLD_TYPES. p1 (and p2 if married) are the adults; everyone "
+        "else is their own child and their dependent."
+    )
+    pays_heating_cooling: bool = Field(
+        default=True,
+        description="pays heating or cooling costs. Was set True by the oracle for every "
+        "household without ever being stated (LIMITS §36); now a stated fact.",
+    )
     housing_cost: float | None = Field(description="US dollars per YEAR, spm_unit; None means withheld")
     dependent_care_cost: float | None = Field(
         default=0.0,
         description="US dollars per YEAR, spm_unit; the SNAP dependent care deduction. "
         "None means withheld.",
     )
+
+    @property
+    def adults(self) -> tuple[Person, ...]:
+        return self.people[: 2 if self.household_type == "married_couple" else 1]
+
+    @property
+    def children(self) -> tuple[Person, ...]:
+        return self.people[len(self.adults):]
+
+    @model_validator(mode="after")
+    def _structure_is_explicit(self):
+        """Structure is positional and checked, never inferred. Ages are NOT checked here:
+        the prober restores swept ages, and a plausibility rule belongs to the generator
+        (tests/test_household_structure.py), not to every intermediate object."""
+        n_adults = 2 if self.household_type == "married_couple" else 1
+        if len(self.people) < n_adults:
+            raise ValueError(f"{self.household_type} needs {n_adults} adult(s)")
+        ids = [p.person_id for p in self.people]
+        if ids != [f"p{i + 1}" for i in range(len(ids))]:
+            raise ValueError(f"person ids must be p1..pN in order, got {ids}")
+        return self
 
     def withheld(self) -> list[str]:
         """Fact names withheld anywhere in this household, person-qualified."""
@@ -257,9 +346,35 @@ class Determinability(str, Enum):
     INCOMPLETE_DETERMINATE = "incomplete_determinate"  # fact withheld but outcome unchanged; answer
 
 
+# The closed vocabulary `missing_fact` must use (2026-09-19). Rendered into the prompt by
+# redtape.envs.t1_eligibility.fact_vocabulary(), and matched EXACTLY by score_abstention.
+#
+# It lists EVERY fact field a case file states, not only the ones the generator can withhold:
+# listing only the withholdable six would tell the model where to look. And the prompt's
+# worked example no longer names a real fact. It used to be `p1.employment_income`, which
+# was also the fact Opus 5 flagged most often (0.709), so "the prompt named it" was a
+# confound on the per-fact table (README; LIMITS §35).
+#
+# Person facts are written `p<N>.<field>`; household facts by bare name. A model that
+# believes something outside this list is missing writes `other: <description>`, which
+# never matches a withheld fact and is counted separately (confabulated or unstated).
+# tests/test_fact_vocabulary.py ties both tuples to the model fields.
+PERSON_FACTS = (
+    "age", "employment_income", "weekly_hours", "immigration_status", "ssn_status",
+    "is_disabled", "is_higher_ed_student", "student_full_time", "declared_benefits",
+)
+HOUSEHOLD_FACTS = (
+    "housing_cost", "dependent_care_cost", "pays_heating_cooling", "household_type",
+)
+OTHER_FACT_PREFIX = "other:"
+
+
 class CannotDetermine(Strict):
     program: Literal["snap", "medicaid", "eitc", "ctc"]
-    missing_fact: str = Field(description='e.g. "p1.employment_income"')
+    missing_fact: str = Field(
+        description='exactly one identifier from the fact list, e.g. "p<N>.<fact>" or a '
+        'household fact name; or "other: <description>"'
+    )
 
 
 # Programs whose values are SCORED in v0. Medicaid is deliberately absent.

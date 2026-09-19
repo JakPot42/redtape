@@ -42,8 +42,20 @@ DEFAULT_TOLERANCE = 1.0
 # immigration_status - every status the generator can produce; direction is never
 #                      assumed, since UNDOCUMENTED can raise the benefit.
 # age                - child/adult/senior boundaries that gate several programs.
+def _paid(annual: float) -> tuple[float, float]:
+    """(annual income, weekly hours) at the California 2025 minimum wage, capped at 40 hrs.
+    Earnings and hours are ONE withheld fact (generator.withhold), so they are swept as a
+    pair; holding stated hours fixed while income ran to $0 would sweep impossible
+    households."""
+    return (annual, float(min(40, int(annual // (52 * 16.50)))))
+
+
 SWEEPS: dict[str, tuple[Any, ...]] = {
-    "employment_income": (0.0, 5_000.0, 12_000.0, 20_000.0, 30_000.0, 45_000.0, 80_000.0),
+    # (income, hours) pairs. 20,000 is ~23 hrs at the minimum wage: straddles the 20-hour
+    # SNAP student exemption (7 CFR 273.5(b)(5)) on the low side via 12,000 (~13 hrs).
+    "employment_income": tuple(_paid(a) for a in
+                               (0.0, 5_000.0, 12_000.0, 20_000.0, 30_000.0, 45_000.0,
+                                80_000.0)),
     "housing_cost": (0.0, 3_600.0, 9_000.0, 18_000.0, 30_000.0, 48_000.0),
     # Restricted to SAFE_IMMIGRATION_STATUSES, which for the CA/2025 corpus scope is
     # every engine status: California delays the HR 1 restriction to 2026-04-01 (CDSS
@@ -54,12 +66,23 @@ SWEEPS: dict[str, tuple[Any, ...]] = {
         s for s in ImmigrationStatus if s.value in SAFE_IMMIGRATION_STATUSES
     ),
     "dependent_care_cost": (0.0, 600.0, 2_400.0, 6_000.0, 12_000.0),
-    "age": (2, 10, 17, 19, 35, 59, 66, 75),
+    # Only p1.* facts are withheld and p1 is always an adult parent now, so child ages are
+    # not plausible values (the old sweep included 2, 10 and 17 for the head of household).
+    # Adult values at the legal thresholds: 25/65 childless EITC, 50 SNAP student
+    # exemption, 60 SNAP elderly.
+    "age": (19, 24, 25, 35, 49, 50, 59, 60, 64, 65, 75),
     "is_disabled": (False, True),
-    # Student status is the one fact found that flips SNAP ELIGIBILITY rather than
-    # only the amount (7 CFR 273.5). Eligibility-flipping facts are the scarcest and
-    # most valuable T1b class - see docs/LIMITS.md 17.
-    "is_higher_ed_student": (False, True),
+    # (is_higher_ed_student, student_full_time). Swept with intensity because 7 CFR
+    # 273.5(b)(10) reads full-time status. Student status was the fact the flip class was
+    # built on; with hours now stated, a student working 20+ hours is exempt and does not
+    # flip - the class may shrink, and that is the correct result.
+    "is_higher_ed_student": ((False, None), (True, False), (True, True)),
+}
+
+# Facts whose sweep value is a tuple spanning several fields (see generator.withhold).
+_COUPLED = {
+    "employment_income": ("employment_income", "weekly_hours"),
+    "is_higher_ed_student": ("is_higher_ed_student", "student_full_time"),
 }
 
 
@@ -97,8 +120,9 @@ def _restore(hh: Household, fact: str, value: Any) -> Household:
         return hh.model_copy(update={fact: float(value)})
 
     pid, _, field = fact.partition(".")
+    update = dict(zip(_COUPLED[field], value)) if field in _COUPLED else {field: value}
     people = [
-        p.model_copy(update={field: value}) if p.person_id == pid else p for p in hh.people
+        p.model_copy(update=update) if p.person_id == pid else p for p in hh.people
     ]
     return hh.model_copy(update={"people": tuple(people)})
 
