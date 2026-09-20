@@ -23,7 +23,7 @@ import pytest
 
 from eval.budget import Budget, BudgetExhausted, NoBudget
 from eval.cache import cache_key, get as cache_get, partition
-from eval.providers import MODELS, OpenAICompatProvider, get_model
+from eval.providers import MAX_TOKENS, MODELS, OpenAICompatProvider, get_model
 
 ROOT = Path(__file__).resolve().parent.parent
 DEV = ROOT / "data" / "dev" / "t1.jsonl"
@@ -68,7 +68,7 @@ def test_openrouter_request_carries_pinned_routing_and_effort():
     assert body["model"] == "openai/gpt-5.6-sol"
     assert body["messages"][0] == {"role": "system", "content": "SYS"}
     assert body["messages"][1] == {"role": "user", "content": "case file"}
-    assert body["max_tokens"] == 8000
+    assert body["max_tokens"] == MAX_TOKENS == 16_000
     assert body["reasoning"] == {"effort": "high"}
     assert body["provider"]["only"] == ["openai"]
     assert body["provider"]["allow_fallbacks"] is False
@@ -145,15 +145,20 @@ def _plant(tmp_path, tasks, model="claude-opus-5"):
         cache_mod.CACHE_DIR = old
 
 
-def test_opus_key_matches_the_pre_provider_formula_literally():
-    legacy_params = {"max_tokens": 8_000, "thinking": {"type": "adaptive"},
-                     "output_config": {"effort": "high"}}
+def test_changing_a_sampling_parameter_rekeys_the_cache():
+    """A different sampling configuration is a different request.
+
+    This replaced a test asserting the Opus key still matched the PRE-PROVIDER params dict
+    (max_tokens 8,000). That identity was deliberately broken on 2026-09-20 when max_tokens
+    went to 16,000 for both models, so the property worth pinning is the one that keeps a
+    response produced under one configuration from being served for another."""
     cfg = get_model("claude-opus-5")
-    assert cfg.cache_model == "claude-opus-5"
-    assert cache_key(model=cfg.cache_model, system="s", prompt="p", tools=[],
-                     params=cfg.params) == cache_key(model="claude-opus-5", system="s",
-                                                     prompt="p", tools=[],
-                                                     params=legacy_params)
+    key = cache_key(model=cfg.cache_model, system="s", prompt="p", tools=[],
+                    params=cfg.params)
+    for changed in ({**cfg.params, "max_tokens": 8_000},
+                    {**cfg.params, "output_config": {"effort": "low"}}):
+        assert cache_key(model=cfg.cache_model, system="s", prompt="p", tools=[],
+                         params=changed) != key
 
 
 def test_different_providers_never_share_a_cache_key():

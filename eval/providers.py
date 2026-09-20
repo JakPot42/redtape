@@ -78,9 +78,15 @@ class ModelConfig:
     max_output_tokens: int   # upper bound used for worst-case budget reservation
 
 
-# Kept verbatim from the pre-provider harness. Do not reformat or reorder: this dict is
-# hashed into the key of every committed Opus response.
-_ANTHROPIC_PARAMS = {"max_tokens": 8_000, "thinking": {"type": "adaptive"},
+# max_tokens raised 8,000 -> 16,000 on 2026-09-20, for BOTH models, before either ran on the
+# corrected corpus. At 8,000, 1 of 20 GPT-5.6 Sol probe responses stopped at the limit with no
+# JSON (5%; ~60 of 1,200 tasks would be scored as model failures for a harness budget - see
+# LIMITS §34). There was no parity to protect: every earlier run is superseded along with the
+# corpus, and only a response that would have truncated costs more. This re-keys the response
+# cache, which is correct - a different sampling configuration is a different request.
+MAX_TOKENS = 16_000
+
+_ANTHROPIC_PARAMS = {"max_tokens": MAX_TOKENS, "thinking": {"type": "adaptive"},
                      "output_config": {"effort": "high"}}
 
 # Pinned routing. Without `only` + `allow_fallbacks: False`, OpenRouter may serve the same
@@ -95,18 +101,18 @@ MODELS: dict[str, ModelConfig] = {
     "claude-opus-5": ModelConfig(
         key="claude-opus-5", provider="anthropic", api_model="claude-opus-5",
         cache_model="claude-opus-5", params=_ANTHROPIC_PARAMS,
-        price_in=5.00, price_out=25.00, max_output_tokens=8_000,
+        price_in=5.00, price_out=25.00, max_output_tokens=MAX_TOKENS,
     ),
     # GPT-5.6 Sol: OpenRouter lists it (created 2026-07-09) as "the flagship model in
     # OpenAI's GPT-5.6 series"; $2 / $10 per M, read from /api/v1/models on 2026-09-18.
-    # Same 8,000-token ceiling and "high" effort as the Opus run, so the two differ in model
-    # and not in configuration.
+    # Same token ceiling and "high" effort as the Opus configuration, so the two differ in
+    # model and not in configuration.
     "gpt-5.6-sol": ModelConfig(
         key="gpt-5.6-sol", provider="openrouter", api_model="openai/gpt-5.6-sol",
         cache_model="openrouter:openai/gpt-5.6-sol",
-        params={"max_tokens": 8_000, "reasoning": {"effort": "high"},
+        params={"max_tokens": MAX_TOKENS, "reasoning": {"effort": "high"},
                 "provider": _OPENROUTER_OPENAI_ROUTING},
-        price_in=2.00, price_out=10.00, max_output_tokens=8_000,
+        price_in=2.00, price_out=10.00, max_output_tokens=MAX_TOKENS,
     ),
 }
 
