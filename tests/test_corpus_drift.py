@@ -135,29 +135,19 @@ def test_committed_dev_split_is_consistent_or_knowingly_stale():
 
 
 @pytest.mark.skipif(not DEV_SPLIT.exists(), reason="committed dev split absent")
-def test_committed_dev_corpus_under_samples_immigration_as_documented():
-    """Pin the SHAPE of the known staleness, so a different staleness is not mistaken for it.
+def test_committed_dev_corpus_samples_every_generated_status():
+    """LIMITS 31's staleness is RESOLVED by the 2026-09-19 rebuild (LIMITS 36).
 
-    LIMITS 31 records exactly one defect in the committed corpus: no refugee or asylee
-    households. If that ever stops being true - or if something else about the status
-    distribution moves - the recorded account is wrong and must be re-derived.
+    This test used to pin the stale shape: no refugee or asylee households. The rebuilt
+    corpus contains them, so it now asserts the opposite: every status the generator
+    produces appears in the published file. It reads the committed corpus directly,
+    because a generator test never would (LIMITS 31: 300 tests passed while the two
+    disagreed).
     """
     prose = DEV_SPLIT.read_text(encoding="utf-8").lower()
-    assert "refugee" not in prose, (
-        "the committed dev split now contains refugee households, so it is no longer the "
-        "stale artifact docs/LIMITS.md 31 describes. Re-derive LIMITS 31 and update "
-        "STALE_FINGERPRINTS."
-    )
-    assert "asylee" not in prose and "asylum" not in prose, (
-        "the committed dev split now contains asylee households; see above"
-    )
-    # The statuses it DOES exercise must still be there - this is a narrowing, not an
-    # emptying.
-    for needle in ("undocumented", "lawful permanent resident"):
-        assert needle in prose, (
-            f"{needle!r} absent from the committed dev split; the staleness recorded in "
-            "LIMITS 31 is a narrowing of the immigration fact space, not its removal"
-        )
+    for needle in ("refugee", "asyl", "cuban/haitian", "undocumented",
+                   "lawful permanent resident", "citizen"):
+        assert needle in prose, f"{needle!r} absent from the committed dev split"
 
 
 @pytest.mark.skipif(not DEV_SPLIT.exists(), reason="committed dev split absent")

@@ -1662,3 +1662,65 @@ children. The generator has to produce explicit relationships and filing structu
 oracle has to build from them, and the narrative has to state them. That is a
 household-modelling decision, and it also touches SNAP household composition (who purchases
 and prepares food together), which the oracle likewise puts in one unit unconditionally.
+
+### §36 resolution, 2026-09-19: fixed, verified, and both splits rebuilt
+
+**The fix** (commit `1debd8b`, details in its message and docs/PRIMARY_SOURCES_2026-09.md):
+two explicit household shapes; oracle-set roles, SSN, hours, enrolment intensity and take-up;
+narratives that state all of it; a closed fact vocabulary in the prompt; exact identifier
+matching in `score_abstention`. The primary sources were read first, and the engine matches
+the statute on every rule read. Each wrong key came from a default our oracle left unset, so
+there is no upstream report.
+
+**The acceptance test passes for the right reason.** `tests/test_unstated_premises.py`
+passes on seven representative shapes, and ten deliberate mutations each turn it red:
+dropping the SSN, hours or closure clause; a wrong structure sentence; the oracle omitting
+hours or SSN; the oracle letting the engine infer the spouse; swapping the ITIN wording or the
+undocumented wording for citizen wording; a blind tracer. Its first version let two
+mutations survive. It imported its expectations from the renderer it was checking, and it
+could not see roles the engine inferred correctly by coincidence. Both are fixed; the test
+now owns its expectations and requires every must-state premise to be SET, not merely absent
+from the defaults. It also produced two false failures on correct code (a second phrasing of
+"no disability"; "work" matching "is not working"), both caught by running it on correct code
+before trusting it.
+
+**The determinism fixture could never have caught §36.** Before re-capturing, its five
+households were run through the new oracle and gave identical answers, because all five were
+single-adult with no undocumented adult. It now holds eight: a married couple, an
+undocumented adult, a mixed-status couple, and student earners under and over 20 hours.
+
+**Both splits rebuilt** on generator fingerprint `93c3b90c3f0cae06`, in 34 minutes each
+(the previous build took 92):
+
+| | dev | held-out |
+|---|---|---|
+| class mix 780 / 96 / 144 / 180 | exact | exact |
+| pairs, differ / same | 100 / 100 | 100 / 100 |
+| distinct task hashes | 1,200 | 1,200 |
+| overlap | 0 with the old dev corpus | 0 with the new dev split |
+
+The held-out manifest records `seed: None` and fingerprint `9a608a27bead4c03` only.
+§31's staleness is resolved: the corpus contains refugee and asylee households again, and
+`test_committed_dev_corpus_samples_every_generated_status` now asserts it.
+
+**The eligibility-flip rate fell** from the earlier corpus to about 5% (3 of 60 in a probe).
+Stated hours exempt students working 20+ hours (7 CFR 273.5(b)(5)), so they no longer flip.
+That is the correct result: the old flips included students whose "ineligibility" was the
+0-hours default. The 96-flip quota still filled before 1,000 candidates.
+
+**Metrics on the rebuilt dev split** (real `run_eval` entry point, $0):
+
+| | exact-match | abstention | pair |
+|---|---:|---:|---:|
+| ceiling (perfect agent) | **1.000** | **1.000** | **1.000** |
+| always_abstain | 0.000 | **0.000** (was 0.131) | 0.000 |
+| never_abstain | 0.194 | 0.340 | 0.480 |
+| always_eligible | 0.041 | 0.343 | 0.500 |
+| never_eligible | 0.123 | 0.083 | 0.085 |
+| rules_only | 0.194 | 0.376 | 0.480 |
+| pair_always_differ | 0.158 | 0.340 | 0.370 |
+
+The ceiling holds under exact fact matching, so the metric is reachable. `always_abstain`
+falling to 0.000 is intended: it abstains without naming the withheld fact, so it no longer
+earns credit it did not reason for. The pair diagnostics stay discriminating and asymmetric
+(0.480 vs 0.370, was 0.495 vs 0.380).
