@@ -1388,8 +1388,7 @@ re-scores to 0.514 / 0.438 / 0.570, exactly the committed headlines.
 
 ## 33. Audit: controls asserted in CLAUDE.md and LIMITS that nothing verifies
 
-**Status: audited 2026-09-18 after §32 (instance 8). Two citation errors fixed in place;
-the rest are OPEN, awaiting a decision. The audit table is in CLAUDE.md under "A documented
+**Status: audited 2026-09-18 after §32 (instance 8). Two citation errors fixed in place. All five control gaps are now CLOSED: items 1-4 on 2026-09-19, item 5 on 2026-09-18. The audit table is in CLAUDE.md under "A documented
 control needs a test that fails when it is absent".**
 
 The method: search both files for claims phrased as active guarantees ("enforces", "always",
@@ -1405,18 +1404,15 @@ Dispositions:
    when the package became engine-free for the Hub. `uv.lock` pins CI, so CI results are
    reproducible. A Hub install does not use the lock, though, so it resolves whatever
    `verifiers` is current, and v1's API is the churn CLAUDE.md fences into `redtape/envs/`.
-   **Decision needed:** pin exactly, or rewrite the rule as "exact in the lock, bounded in
-   the package", with a test asserting the bound.
+   **CLOSED 2026-09-19:** pinned exactly (verifiers==0.3.1, pydantic==2.12.3, pyyaml==6.0.3, pytest==8.4.2, ruff==0.9.0), `uv.lock` refreshed, and `tests/test_audit_controls.py` fails on any non-`==` specifier in any table of `pyproject.toml`. Teeth verified by loosening a pin.
 2. **Cross-platform determinism.** The Platform section still says the check "is verified …
    re-run after any dependency bump". The Determinism section of the same file abandons it.
-   Nothing can test it (`verifiers.v1` cannot import on Windows). **Proposed:** delete the
-   first statement.
+   Nothing can test it (`verifiers.v1` cannot import on Windows). **CLOSED 2026-09-19:** the claim is deleted from CLAUDE.md, replaced by a note saying why it cannot be re-established.
 3. **Engine-free evaluation / oracle never called at rollout.** No test. CI installs the
    `generate` extra, so an accidental `policyengine_us` import on the load → prompt → parse →
-   score path would pass CI and fail for a Hub user. **Proposed test:** block `policyengine*`
-   imports in a subprocess, then load and score dev tasks.
+   score path would pass CI and fail for a Hub user. **CLOSED 2026-09-19:** `tests/test_audit_controls.py` blocks every `policyengine` import with a `meta_path` hook, then runs load -> prompt -> parse -> score over 25 dev tasks. The engine IS installed here, so its absence would prove nothing; a positive control asserts the blocker really blocks.
 4. **`verifiers` isolation.** True today (`grep` finds no import outside `redtape/envs/`);
-   no test. **Proposed:** an AST scan test.
+   no test. **CLOSED 2026-09-19:** an AST scan over `redtape/` outside `redtape/envs/`, with a planted-import positive control. Teeth verified by planting an import in two real modules.
 5. **Held-out cache and results never committed.** Protected only by `.gitignore` lines.
    No test runs `git check-ignore` on `cache/responses/heldout/…`, `data/heldout/…` or
    `results/…heldout….public.json`. **Highest-consequence gap in the audit**, and the

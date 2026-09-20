@@ -1,0 +1,1 @@
+{"reply": "", "usage": {"input_tokens": 954, "output_tokens": 8000, "reasoning_tokens": 8000}, "model": "openrouter:openai/gpt-5.6-sol", "condition": "tool_less", "task_hash": "113e2110851f3123da367892b7c76196c769fba55ed26aadc215e5794f273056", "stop": "length", "raw_stop": "length", "served_by": "OpenAI", "reported_cost_usd": 0.081908, "cached_at": 1789945019.7701402}

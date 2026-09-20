@@ -31,6 +31,12 @@ rows = {r["household_id"]: r for r in
 
 hashes = {t["task_hash"] for t in new["per_task"]}
 opus_tasks = [t for t in opus["per_task"] if not args.match_tasks or t["task_hash"] in hashes]
+# The committed Opus run was measured on the SUPERSEDED corpus (LIMITS 35-36). If it shares
+# no task hashes with the file being reported, the two are not comparable and the column
+# would invite exactly the comparison the withdrawal exists to prevent.
+SUPERSEDED = not (hashes & {t["task_hash"] for t in opus["per_task"]})
+if SUPERSEDED:
+    opus_tasks = []
 name = new["run"]["model"]
 
 
@@ -113,12 +119,14 @@ print(f"  replies with a non-empty cannot_determine: {abst}/{n_cached} (from cac
 print("\nHEADLINES (reported separately; no composite)")
 e1, n1, a1, m1 = headlines(new["per_task"])
 e2, n2, a2, m2 = headlines(opus_tasks)
-print(f"  {'':<34}{name:>26}{'claude-opus-5':>26}")
+col2 = "(superseded corpus)" if SUPERSEDED else "claude-opus-5"
+print(f"  {'':<34}{name:>26}{col2:>26}")
 print(f"  {'T1 exact-match (determinate)':<34}{fmt(e1, n1):>26}{fmt(e2, n2):>26}")
 print(f"  {'T1b abstention':<34}{fmt(a1, m1):>26}{fmt(a2, m2):>26}")
 pc = new["pair_consistency"]
 pc_new = "n/a" if pc["value"] is None else f"{pc['value']:.3f} ({pc.get('n_pairs')} pairs)"
-pc_opus = ("(full run only)" if args.match_tasks
+pc_opus = ("(superseded corpus)" if SUPERSEDED else
+           "(full run only)" if args.match_tasks
            else f"{opus['pair_consistency']['value']:.3f} (200 pairs)")
 print(f"  {'pair-consistency':<34}{pc_new:>26}{pc_opus:>26}")
 

@@ -101,6 +101,26 @@ def score_periods(given: T1Answer, truth: T1Answer) -> Scored:
     return Scored(value=sum(hits.values()) / len(hits), detail={"per_field": hits})
 
 
+# Facts the generator withholds TOGETHER (generator.withhold), so naming either identifies
+# the same hole in the case file. Found in the first GPT-5.6 Sol probe on the corrected
+# corpus: with `p1.immigration_status` withheld, it named `p1.ssn_status` - which is derived
+# from the status, so the SSN clause is absent from the narrative too. That is a correct
+# observation about a genuinely missing fact, not a wrong reason, and scoring it 0.5 would
+# have measured which half of a pair we happen to call canonical.
+_COUPLED_FACTS = (
+    {"employment_income", "weekly_hours"},
+    {"immigration_status", "ssn_status"},
+    {"is_higher_ed_student", "student_full_time"},
+)
+
+
+def _acceptable_facts(withheld_fact: str) -> set[str]:
+    """The withheld identifier, plus any coupled with it, person-qualified as written."""
+    prefix, _, field = withheld_fact.rpartition(".")
+    group = next((g for g in _COUPLED_FACTS if field in g), {field})
+    return {f"{prefix}.{f}" if prefix else f for f in group}
+
+
 @_guard
 def score_abstention(
     given: T1Answer, truth_label: Determinability, deciding_programs: tuple[str, ...],
@@ -137,7 +157,7 @@ def score_abstention(
         named = {c.missing_fact.strip() for c in given.cannot_determine
                  if c.program in expected}
         right_programs = claimed == expected
-        right_fact = named == {withheld_fact}
+        right_fact = named <= _acceptable_facts(withheld_fact) and bool(named)
         correct = right_programs and right_fact
         reason = ("abstained" if correct else
                   "abstained, wrong programs" if not right_programs else

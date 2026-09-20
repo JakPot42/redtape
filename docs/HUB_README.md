@@ -1,5 +1,33 @@
 # Redtape — verifiable abstention for public-benefits determinations
 
+> ## Known defect in v0.1.0: answer keys for EITC, CTC and SNAP student eligibility
+>
+> **v0.1.0's task corpus has known answer-key defects.** The environment code, the scoring
+> and the install are unaffected; the problem is in the ground truth for some tasks:
+>
+> - **Two-adult households are keyed as married couples filing jointly**, although the case
+>   files never state a relationship. Among them are parents and adult children keyed as
+>   spouses. This affects EITC and CTC on about a third of dev tasks.
+> - **Undocumented filers are keyed as if they held a Social Security number**, so the key
+>   credits EITC and CTC where the correct answer is $0.
+> - **Students with stated earnings are keyed as working zero hours**, which denies the SNAP
+>   20-hour student exemption and changes SNAP eligibility for student households.
+>
+> **Every published result measured on v0.1.0 is superseded**, including the Claude Opus 5
+> numbers this README previously led with. Please do not cite them.
+>
+> **This version ships the corrected corpus.** Every premise the answer key depends on is now
+> stated in the case file: relationships and filing structure, weekly hours, Social Security
+> status, and heating and cooling costs. A test fails if any scored answer rests on a fact the
+> case file does not state, and the defects were found by tracing every input the engine reads
+> rather than by inspection. **No model has been run on the corrected corpus yet**, so this
+> version carries no model results at all.
+>
+> Nothing here is a PolicyEngine defect. The statutes were read (IRC §32(c)(1)(E) and §32(m),
+> §24(h)(7) as amended by PL 119-21, 7 CFR 273.5(b)); the engine matches them. Each wrong key
+> came from an input our own oracle left unset, so the engine supplied a default.
+> The full account is in `docs/LIMITS.md` §35–§36.
+
 **Does the agent know when a required fact is missing?** Most benefit-calculation evals score
 whether the number is right. This one scores whether the agent notices it *cannot* produce a
 number, and says so.

@@ -11,9 +11,13 @@ tags = ["single-turn", "v1", "eval", "abstention", "calibration", "public-benefi
 # never recomputed at rollout (CLAUDE.md, "Answer keys are baked at generation time"), so
 # running this environment needs no microsimulation engine and installs in seconds.
 # policyengine-us is required only to GENERATE a new split - see the `generate` extra.
+# EXACT pins, never >=. CLAUDE.md required this and pyproject did not do it: the runtime
+# deps floated, so a Hub install resolved whatever  was current, and v1 API churn
+# is the thing redtape/envs/ exists to contain (LIMITS 33, audit item 1).
+# tests/test_dependency_pins.py fails on any non-== specifier here.
 dependencies = [
-    "verifiers>=0.3.1",
-    "pydantic>=2.12",
+    "verifiers==0.3.1",
+    "pydantic==2.12.3",
 ]
 
 [project.optional-dependencies]
@@ -24,11 +28,11 @@ dependencies = [
 generate = [
     "policyengine-us==1.821.4",
     "policyengine-core==3.31.1",
-    "pyyaml>=6.0",
+    "pyyaml==6.0.3",
 ]
 dev = [
-    "pytest>=8.4",
-    "ruff>=0.9",
+    "pytest==8.4.2",
+    "ruff==0.9.0",
 ]
 
 [project.urls]

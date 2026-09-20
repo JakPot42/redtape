@@ -115,6 +115,22 @@ def test_abstention_naming_a_fact_that_was_not_withheld_is_not_credited():
     assert score_abstention(exact, Determinability.INDETERMINATE, ("snap",), w).value == 1.0
 
 
+def test_either_half_of_a_coupled_fact_counts():
+    """Coupled facts are withheld together, so naming either identifies the same hole.
+
+    GPT-5.6 Sol's first probe on the corrected corpus named `p1.ssn_status` where
+    `p1.immigration_status` was withheld; SSN is derived from status, so the SSN clause is
+    absent too. Scoring that 0.5 would measure which half we call canonical."""
+    w = "p1.immigration_status"
+    for named in ("p1.immigration_status", "p1.ssn_status"):
+        given = _answer(cd=(("snap", named),))
+        assert score_abstention(given, Determinability.INDETERMINATE, ("snap",), w).value == 1.0
+    # ... and it stays narrow: an unrelated fact is still not the withheld one.
+    for named in ("p1.age", "housing_cost", "p2.ssn_status"):
+        given = _answer(cd=(("snap", named),))
+        assert score_abstention(given, Determinability.INDETERMINATE, ("snap",), w).value == 0.5
+
+
 def test_needless_abstention_on_an_incomplete_determinate_task_scores_zero():
     """Class 3 is scored as strictly as class 2 - this is what stops always-abstain."""
     given = _answer(cd=(("snap", "housing_cost"),))

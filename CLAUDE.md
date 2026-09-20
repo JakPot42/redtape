@@ -23,7 +23,7 @@ Verified environment (2026-08-26):
 - Distro default Python is **3.14.4 — too new**, see below. Never use it directly.
 - **Docker is not installed in the distro.** Not a Phase 1 blocker; it is a prerequisite for T3 and must be resolved before that work starts.
 
-**Cross-platform determinism is verified, not assumed.** The same household produced bit-identical oracle output on Windows and Linux (`snap` 969.0, `eitc` 4328.0, `ctc` 2200.0, `household_net_income` 32658.21, `medicaid` [11360.863, 7112.096]). Re-run this check after any dependency bump; if it ever diverges, stop and report before generating anything.
+**Cross-platform determinism is NOT claimed** (deleted 2026-09-19, LIMITS §33 audit item 2). This file used to say it was "verified, not assumed" and to re-run the check after any dependency bump. Nothing re-ran it, nothing could: `verifiers.v1` cannot import on Windows, so Linux is the only platform that produces a shipping artifact, and the values the claim cited were abandoned in the determinism rewrite. Determinism is enforced across *versions* on one platform by `tests/test_determinism.py` — which is the axis that actually threatens an answer key.
 
 ### Python 3.13 — not the machine default anywhere
 
@@ -191,6 +191,15 @@ fourth published number to measure something adjacent to its claim, and the **fi
 defect was in the answer keys themselves**, not the scoring or the harness. So the corpus
 is now the most-suspected layer. Check it before the scorer, and both before concluding
 anything about a model.
+
+**Companion rule: OUR defaults before THEIR rules** **[decided]**. Reading the statutes for
+§36 found **zero** engine divergence. IRC §32(c)(1)(E)/(m), §24(h)(7) as amended by PL 119-21,
+and 7 CFR 273.5(b) are all implemented correctly by `policyengine-us`; every wrong answer key
+came from a default *our* oracle left unset. That is the opposite of LIMITS §11 and the
+issue-9374 report, where upstream was genuinely stale — and those two successes trained an
+instinct that was wrong here. On a bad number the order is: **our inputs, then our scoring,
+then their rules.** Suspecting upstream first is how half of #9374 was filed wrong, and it
+costs credibility that is slow to rebuild.
 
 **The specific attack surface is the oracle's DEFAULTS.** PolicyEngine reads about 285
 inputs per household and supplies a default for every one the oracle does not set. A
