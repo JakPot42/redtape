@@ -1,43 +1,54 @@
 # Redtape — verifiable abstention for public-benefits determinations
 
-> ## Known defect in v0.1.0: answer keys for EITC, CTC and SNAP student eligibility
+> ## Retraction (2026-09-21): the category/quantity finding was an artifact
 >
-> **v0.1.0's task corpus has known answer-key defects.** The environment code, the scoring
-> and the install are unaffected; the problem is in the ground truth for some tasks:
+> This environment's headline claim — that a frontier model notices a missing fact far more
+> reliably when its absence changes a **category** than when it changes a **quantity**,
+> measured at 0.396 against 0.050 — **is retracted.** It does not hold on the corrected
+> corpus, on either model tested.
 >
-> - **Two-adult households are keyed as married couples filing jointly**, although the case
->   files never state a relationship. Among them are parents and adult children keyed as
->   spouses. This affects EITC and CTC on about a third of dev tasks.
-> - **Undocumented filers are keyed as if they held a Social Security number**, so the key
->   credits EITC and CTC where the correct answer is $0.
-> - **Students with stated earnings are keyed as working zero hours**, which denies the SNAP
->   20-hour student exemption and changes SNAP eligibility for student households.
+> **The reason is a design defect, not a measurement error.** The generator routes each
+> withheld fact to whichever stream can produce a given class, so **class and withheld fact
+> are entangled by construction**: 55% of the eligibility-flip class is a single fact
+> (`p1.employment_income`, 53 of 96), and that fact has **one task of 180** in the
+> indeterminate class. The comparison was never between "category" and "quantity" — it was
+> between two different mixtures of facts. **No model run on this design can answer the
+> question**, and the original 0.396/0.050 is plausibly the same confound. Holding the fact
+> constant, the flip class does *worse* in five strata of six (pooled difference −0.154).
 >
-> **Every published result measured on v0.1.0 is superseded**, including the Claude Opus 5
-> numbers this README previously led with. Please do not cite them.
+> A design that could test the claim needs each fact to appear in both classes in balanced
+> proportions. That is scoped in `docs/LIMITS.md` §44 and **not built**.
 >
-> **This version ships the corrected corpus.** Every premise the answer key depends on is now
-> stated in the case file: relationships and filing structure, weekly hours, Social Security
-> status, and heating and cooling costs. A test fails if any scored answer rests on a fact the
-> case file does not state, and the defects were found by tracing every input the engine reads
-> rather than by inspection.
+> **What the corrected corpus does support, across two labs' models** — both measured on the
+> same 875 tasks:
 >
-> **First result on the corrected corpus: the finding does not reproduce.** GPT-5.6 Sol,
-> 1,198 of 1,200 tasks. Abstention accuracy on the eligibility-flip class (a missing fact that
-> moves a *category*) was **0.688**; on the indeterminate class (one that moves a *quantity*)
-> it was **0.689**. Difference −0.001, 95% CI [−0.118, +0.109], Fisher exact p = 1.000 —
-> against the withdrawn claim of 0.396 vs 0.050. The two classes are indistinguishable.
+> | | Claude Opus 5 | GPT-5.6 Sol |
+> |---|---|---|
+> | abstention accuracy | 0.624 [0.576, 0.669] | **0.791** [0.750, 0.828] |
+> | exact-match (determinate) | 0.629 [0.584, 0.672] | 0.633 [0.588, 0.676] |
+> | named the missing fact in exact form | **100%** (154/154) | 93.2% (220/236) |
+> | named a fact that was never withheld | **0%** | 7.6% (18) |
 >
-> A second model, Claude Opus 5 on the same corrected corpus, is pending and decides between
-> the two branches of a correction that was **written before the results**
-> (`docs/CORRECTION_DRAFT.md`): either the effect is specific to one model, or the original
-> was an artifact and is retracted outright. Until that run exists, the honest state is
-> **not reproduced** — not refuted, and not holding.
+> GPT-5.6 Sol is better calibrated about when it cannot answer. Claude Opus 5 is better at
+> saying *which* fact is missing and never invents one. **The two abilities are
+> independent** — a benchmark measuring only format compliance would rank these models the
+> other way round.
+>
+> **This version ships the corrected corpus.** Every premise an answer key depends on is
+> stated in the case file — relationships and filing structure, weekly hours, Social
+> Security status, heating and cooling costs — and a test fails if that stops being true.
+> The v0.1.0 corpus defects (two-adult households keyed as married couples, undocumented
+> filers keyed as holding SSNs, students keyed at zero work hours) are recorded in
+> `docs/LIMITS.md` §35–§36. **Every result measured on v0.1.0 is superseded. Please do not
+> cite it.**
 >
 > Nothing here is a PolicyEngine defect. The statutes were read (IRC §32(c)(1)(E) and §32(m),
 > §24(h)(7) as amended by PL 119-21, 7 CFR 273.5(b)); the engine matches them. Each wrong key
 > came from an input our own oracle left unset, so the engine supplied a default.
-> The full account is in `docs/LIMITS.md` §35–§36.
+>
+> The pre-registered decision rule, the result reported exactly as that rule dictates
+> (+0.130, CI [+0.007, +0.250]), and the disclosed reasons for departing from it are in
+> `docs/LIMITS.md` §43.
 
 **Does the agent know when a required fact is missing?** Most benefit-calculation evals score
 whether the number is right. This one scores whether the agent notices it *cannot* produce a

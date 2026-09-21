@@ -1,35 +1,39 @@
 # Redtape v0
 
-> ## Known defect in v0.1.0: answer keys for EITC, CTC and SNAP student eligibility
+> ## Retraction (2026-09-21): the category/quantity finding was an artifact
 >
-> The task corpus shipped in `jakpotvin/redtape` v0.1.0 has known answer-key defects. The
-> environment code, the scoring and the install are unaffected; the problem is in the ground
-> truth for some tasks:
+> This project's headline claim — that a frontier model notices a missing fact far more
+> reliably when its absence changes a **category** than when it changes a **quantity**,
+> measured at 0.396 against 0.050 — **is retracted.** It does not hold on the corrected
+> corpus, on either model tested.
 >
-> - **Two-adult households are keyed as married couples filing jointly**, although the case
->   files never state a relationship. Among them are parents and adult children keyed as
->   spouses. This affects EITC and CTC on about a third of dev tasks.
-> - **Undocumented filers are keyed as if they held a Social Security number**, so the key
->   credits EITC and CTC where the correct answer is $0.
-> - **Students with stated earnings are keyed as working zero hours**, which denies the SNAP
->   20-hour student exemption and changes SNAP eligibility for student households.
+> **The deepest reason is a design defect, not a measurement error.** The generator routes
+> each withheld fact to whichever stream can produce a given class, so **class and withheld
+> fact are entangled by construction**: 55% of the eligibility-flip class is a single fact
+> (`p1.employment_income`, 53 of 96), and that fact has **one** task of 180 in the
+> indeterminate class. The
+> comparison was never between "category" and "quantity". It was between two different
+> mixtures of facts. **No model run on this design can answer the question**, and the
+> original 0.396/0.050 is plausibly the same confound rather than a real effect.
 >
-> **Every published result from v0.1.0 is superseded**, including the Claude Opus 5 numbers
-> previously headlined in this README ("it notices a missing category, not a missing
-> quantity"). Please do not cite them.
+> Hold the withheld fact constant and the difference reverses: the flip class does *worse*
+> in five strata of six (Mantel-Haenszel pooled difference −0.154). The aggregate that
+> appeared to support the claim on Opus 5 is Simpson's paradox.
 >
-> A corrected corpus is built and in this repository. In it, every premise the answer key
-> depends on is stated in the case file: relationships and filing structure, weekly hours,
-> Social Security status, and heating and cooling costs. A test fails if any scored answer
-> rests on a fact the case file does not state. The full account, including how the defect was
-> found, is in [`docs/LIMITS.md`](docs/LIMITS.md) §35–§36.
+> **What the corrected corpus does support**, across two labs' models and reported in full
+> below: GPT-5.6 Sol abstains correctly more often than Claude Opus 5 (0.791 against 0.624,
+> intervals disjoint), while Opus 5 names the missing fact in the exact form asked for 100%
+> of the time and never names a fact that was not withheld, against GPT-5.6 Sol's 7.6%
+> confabulation rate. **Format compliance and calibration are independent.**
 >
-> **One model has now been measured on the corrected corpus** (GPT-5.6 Sol, 1,198 of 1,200
-> tasks): on it, the category and quantity classes are **indistinguishable**, 0.688 against
-> 0.689. That is the opposite of the withdrawn claim. A second model is required before the
-> claim is retracted or narrowed, and the correction is drafted in advance either way
-> ([`docs/CORRECTION_DRAFT.md`](docs/CORRECTION_DRAFT.md)). Numbers and intervals:
-> [`docs/LIMITS.md`](docs/LIMITS.md) §38.
+> Corpus defects found and fixed along the way (two-adult households keyed as married
+> couples, undocumented filers keyed as holding SSNs, students keyed at zero work hours) are
+> recorded in [`docs/LIMITS.md`](docs/LIMITS.md) §35–§36. The corrected corpus states every
+> premise its answer keys depend on, and a test fails if that stops being true.
+>
+> The superseded numbers are kept below under *Superseded results*, labelled. **Do not cite
+> them.** Full account, including the pre-registered decision rule and the disclosed
+> deviation from it: [`docs/LIMITS.md`](docs/LIMITS.md) §43.
 
 Verifiable training-and-evaluation environments for US public-benefits work.
 
@@ -55,9 +59,9 @@ are `verifiers` and `pydantic`, and that is the whole list. (The five baselines 
 exception: they read the federal poverty line from the engine, so running them from a
 checkout needs `pip install -e ".[dev,generate]"`.)
 
-**Status: the previously published Opus 5 results are WITHDRAWN (2026-09-19). Both splits
-were rebuilt on 2026-09-20, and one model has been measured on the rebuilt corpus since
-(GPT-5.6 Sol; see the notice above and `docs/LIMITS.md` §38).** The withdrawn Opus 5 numbers
+**Status: the category/quantity claim is RETRACTED (2026-09-21) after both models were
+measured on the rebuilt corpus. The original Opus 5 results were withdrawn on 2026-09-19
+and the splits rebuilt on 2026-09-20; see the notice above and `docs/LIMITS.md` §43.** The withdrawn Opus 5 numbers
 were measured on a corpus whose answer keys rest on premises the case files never state, and
 in several cases get the law wrong:
 
@@ -89,39 +93,88 @@ when it cannot answer** — which is where real filings fail.
 
 The obvious objection is that "knows when it cannot answer" is just arithmetic competence
 wearing a different hat. The withdrawn Opus 5 result was offered as the answer to that
-objection; until the regenerated split is measured, the objection stands unanswered.
+objection, and it is retracted. What the corrected corpus shows instead is that the two
+abilities come apart between models: on the same 875 tasks, Claude Opus 5 and GPT-5.6 Sol
+compute amounts equally well (0.629 against 0.633) and judge answerability very
+differently (0.624 against 0.791). That is evidence the second question is not the first
+one restated — but it is a two-model observation, not a law.
 
-## Results: one model measured, the finding not reproduced, a second model pending
+## Results: the claim is retracted, and three findings survive
 
 The previous headline ("it notices a missing *category*, not a missing *quantity*": Opus 5
-abstention 0.396 on eligibility flips vs 0.050 on amount changes) was measured on the
-contaminated corpus described above and is withdrawn.
+abstention 0.396 on eligibility flips against 0.050 on amount changes) was measured on the
+contaminated corpus described above. **It is retracted.**
 
-**On the rebuilt corpus it does not reproduce.** GPT-5.6 Sol, 1,198 of 1,200 tasks:
-abstention **0.688** on the eligibility-flip class against **0.689** on the indeterminate
-class — difference −0.001, 95% CI [−0.118, +0.109], Fisher exact p = 1.000, where the
-withdrawn claim was a ratio of 7.9×. Exact-match 0.629, abstention overall 0.767, pair
-consistency 0.655. Full numbers, intervals and failure counts: `docs/LIMITS.md` §38.
+Two models have now been measured on the corrected corpus: **GPT-5.6 Sol** (1,198 of 1,200
+tasks) and **Claude Opus 5** (877 of 1,200 — the run stopped at a provider spending limit,
+not at ours). Every comparison below is computed on the **875 tasks both models answered**,
+so model-to-model differences do not depend on which tasks were reached.
 
-One model cannot separate "the original was an artifact of the corpus and scorer" from "the
-effect is specific to Opus 5". Claude Opus 5 on the same rebuilt corpus is the deciding run,
-and the correction is written in advance for both outcomes
-([`docs/CORRECTION_DRAFT.md`](docs/CORRECTION_DRAFT.md)) so the wording is not chosen after
-seeing which way it goes.
+### Why the claim cannot be tested on this design
 
-Two further reasons it cannot stand as written, both found while fixing the scorer:
+The generator picks, for each task, a fact to withhold and a class to produce — and it
+routes each fact to the stream where that fact *can* produce that class. The result is that
+class and fact are not independent:
 
-- **The abstention scorer never checked which fact was named**, only which program. The fix
-  (a closed list of fact identifiers in the prompt, matched exactly) changes every prompt.
-- **The per-fact table had a confound.** `p1.employment_income` was the prompt's only example
-  identifier *and* the fact most often flagged (0.709). The README explained this as income
-  having an obvious slot in a case file. That the prompt named it explains it equally well.
-  Once the prompt lists every identifier, this is testable, and it will be reported either way.
+| withheld fact | eligibility-flip | indeterminate | difference |
+|---|---|---|---:|
+| `p1.immigration_status` | 0.000 (0/13) | 0.340 (17/50) | −0.340 |
+| **`p1.employment_income`** | **0.774 (41/53)** | **0.000 (0/1)** | **+0.774** |
+| `p1.is_higher_ed_student` | 0.071 (1/14) | 0.079 (3/38) | −0.008 |
+| `dependent_care_cost` | 0.000 (0/4) | 0.147 (5/34) | −0.147 |
+| `housing_cost` | 0.750 (6/8) | 1.000 (28/28) | −0.250 |
+| `p1.age` | 0.500 (1/2) | 0.607 (17/28) | −0.107 |
 
-The benchmark's machinery (the three metrics, the ceiling check, the baselines' mechanics,
-pair consistency's discrimination) is unaffected. What is withdrawn is every number that
-depends on the answer keys of the current split.
+*(Claude Opus 5, abstention accuracy; cell counts are the tasks it reached.)* Across the
+full split, `p1.employment_income` is **55% of the flip class** (53 of 96) and has **one
+task of 180** in the indeterminate class. So for the fact that dominates one side of
+the comparison, the other side barely exists. Aggregating across this table compares two
+different mixtures of facts and calls the difference a class effect.
 
+**Fixing it requires a design where each fact appears in both classes in balanced
+proportions.** That is a v1 item, scoped in [`docs/LIMITS.md`](docs/LIMITS.md) §44 and not
+built.
+
+### The pre-registered result, and the disclosed deviation
+
+The decision rule was fixed before the deciding run
+([`docs/CORRECTION_DRAFT.md`](docs/CORRECTION_DRAFT.md)). **Reported exactly as it
+dictates:** on Claude Opus 5 the flip class exceeds the indeterminate class, **0.521
+(49/94) against 0.391 (70/179), difference +0.130, 95% CI [+0.007, +0.250], Fisher exact
+p = 0.041**. On GPT-5.6 Sol it does not: −0.012, CI [−0.130, +0.098], p = 0.890. By the
+letter of the rule, that is the "reproduces on one model" branch.
+
+**We are not publishing that conclusion, and this paragraph is why.** Stratifying by
+withheld fact — a check required by a standing rule that predates the experiment — reverses
+the sign: pooled difference **−0.154**, flip worse in five strata of six, and **−0.198,
+CI [−0.316, −0.038]** with the dominant fact removed. The deviation is disclosed rather than
+silent because pre-registration forbids undisclosed deviation, not deviation. The full
+justification — the sign reverses rather than a magnitude shrinking; the rule's own
+precondition (the full 1,200-task split) was not met; p = 0.041 across two models is fragile
+to a single reclassified task; and the deviation runs *against* the more publishable
+conclusion — is written out in [`docs/LIMITS.md`](docs/LIMITS.md) §43.
+
+### What survives, across two labs
+
+| | Claude Opus 5 | GPT-5.6 Sol |
+|---|---|---|
+| abstention accuracy | 0.624 (260/417) [0.576, 0.669] | **0.791** (330/417) [0.750, 0.828] |
+| exact-match (determinate) | 0.629 (288/458) [0.584, 0.672] | 0.633 (290/458) [0.588, 0.676] |
+| named the fact in exact form | **154/154 (100%)** | 220/236 (93.2%) |
+| named a fact never withheld | **0 (0%)** | 18 (7.6%) |
+| truncated responses | 0 / 1,013 | 1 / 1,228 |
+
+1. **GPT-5.6 Sol is better calibrated about when it cannot answer** — 0.791 against 0.624,
+   intervals disjoint.
+2. **Claude Opus 5 is better at saying *which* fact is missing** — perfect compliance with
+   the requested identifier format, and it never invents a missing fact. GPT-5.6 Sol
+   confabulates one in 7.6% of its abstentions, mostly on tasks where nothing was missing.
+3. **Those two abilities are independent.** The model that always names the fact correctly
+   is the worse judge of whether a fact is missing at all. A benchmark that measured only
+   format compliance would rank these models the opposite way round.
+
+These are cross-lab results on a corpus whose premises are all stated, and they do not
+depend on the retracted claim.
 ## Pair-consistency: both degenerate strategies fail, and they fail differently
 
 Matched pairs of households identical except for whether p1 declares a qualifying
@@ -452,12 +505,14 @@ information", and it is what the data supports.
   backed only by the engine agreeing with itself is the circularity this project exists to
   avoid.
 
-**Read [`docs/LIMITS.md`](docs/LIMITS.md) before citing any number here.** 27 sections,
+**Read [`docs/LIMITS.md`](docs/LIMITS.md) before citing any number here.** 44 sections,
 written as the work happened rather than retrofitted, stating what is *not* validated at
-least as carefully as what is — including three sections retracting our own errors.
+least as carefully as what is — including several sections retracting our own errors, of
+which §43–§44 retract this project's headline claim.
 
 **Reproducing it:** every model response is cached in `cache/responses/dev/` and committed,
-so the scored artifact can be re-derived without spending anything. The full run cost $59.66.
+so the scored artifact can be re-derived without spending anything. The runs on the
+corrected corpus cost $32.92 (GPT-5.6 Sol) and $49.06 (Claude Opus 5).
 
 ### The metric measures judgment, not arithmetic (scripted upper bound)
 

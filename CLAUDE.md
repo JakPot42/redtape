@@ -159,6 +159,47 @@ GENERATOR before concluding anything about the model**: every fact the generator
 every value the schema permits, every answer the labelling calls correct. That is a specific
 place to look, and it has paid four times (instances 6, 9, 10 and 12).
 
+### Pre-registration forbids UNDISCLOSED deviation, not deviation **[decided]**
+
+**Decided 2026-09-21, executing the Branch B correction.** A rule fixed in advance exists to
+stop the analysis being chosen after the result is known. It does not oblige you to publish
+a conclusion you have since learned is wrong. The obligation it creates is *disclosure*:
+report the pre-registered result **exactly as the rule dictates**, then report the deviation
+as a labelled post-hoc analysis, say which conclusion it supports, and write out the
+justification so a reader can disagree with it.
+
+Silently substituting the better analysis is the violation. Reporting both, and being
+explicit about which one the conclusion rests on, is not.
+
+The instance: `docs/CORRECTION_DRAFT.md` fixed the rule "the flip class exceeds the
+indeterminate class by a margin that survives the n's collected". On Opus 5 it did -
++0.130, CI [+0.007, +0.250], p = 0.041 - which by the letter is Branch A. Stratifying by
+withheld fact reverses the sign (Mantel-Haenszel −0.154; flip worse in five strata of six).
+We published Branch B, with the Branch A number stated first and in full.
+
+**Five things made the deviation defensible, and all five were written down before acting:**
+
+1. **The sign reverses; a magnitude is not being trimmed.** Adjusting +0.130 down to +0.05
+   would be the suspicious move. Turning it to −0.154 is a different finding, not a weaker
+   one.
+2. **The rule's own precondition was not met.** It specified the full 1,200-task split; the
+   run stopped at 877. A rule cannot be applied literally in one clause and waived in
+   another.
+3. **The pre-registered result is fragile on its own terms.** One flip task reclassified
+   moves p from 0.041 to 0.072, and two models were tested, so a single p just under 0.05 is
+   about what chance delivers.
+4. **The check was mandated by a standing rule that predates the experiment** - "every green
+   signal must be checked for what it is NOT measuring". It was not invented to escape the
+   result; skipping it would have been the deviation.
+5. **The deviation runs AGAINST the flattering conclusion.** Branch A is the interesting
+   headline: an effect, in one lab's model, worth writing about. Branch B retracts the
+   project's flagship claim. The motivated reasoning pre-registration guards against pushes
+   the other way, so the guard is not the thing being circumvented.
+
+**Test for the next time:** if the post-hoc analysis had made the result *more* publishable,
+would you still run it, and would you still believe it? If the honest answer is no, the
+deviation is not disclosure - it is the thing pre-registration exists to stop.
+
 ### A gate must not read the answer key **[decided]**
 
 **A gate decides whether a response is a scoreable attempt. That question must be answerable

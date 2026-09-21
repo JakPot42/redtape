@@ -2319,3 +2319,73 @@ produces Opus's low abstention.
 
 (GPT's figures here differ from those recorded in §40 - 0.660 against 0.780 - because those
 were measured under the gate that read the answer key, now corrected per §42.)
+
+## 44. The class/fact confound, and what a design that could test the claim would need
+
+**Status: scoped 2026-09-21, NOT built.** This is the v1 item that §43 makes unavoidable.
+
+### 44.1 The defect is in the generator, not the scorer or the corpus
+
+`generator.withhold` picks a fact to remove, and the determinability prober then labels what
+that removal did. Because a given fact can only produce certain classes — removing
+`housing_cost` moves a SNAP *amount*, removing `p1.employment_income` can move an
+*eligibility category* — each fact is effectively routed to the stream where it can produce
+the class being generated. Nothing chooses this; it falls out of asking for N tasks of each
+class from a fixed fact vocabulary.
+
+The result is that **class and withheld fact are entangled by construction**:
+
+*(full 1,200-task dev split: 96 flip, 180 indeterminate.)*
+
+| | share of eligibility-flip | share of indeterminate |
+|---|---:|---:|
+| `p1.employment_income` | **55% (53/96)** | **0.6% (1/180)** |
+| `p1.is_higher_ed_student` | 15% (14/96) | 21% (38/180) |
+| `p1.immigration_status` | 15% (14/96) | 28% (50/180) |
+| `housing_cost` | 9% (9/96) | 16% (29/180) |
+| `dependent_care_cost` | 4% (4/96) | 19% (34/180) |
+| `p1.age` | 2% (2/96) | 16% (28/180) |
+
+Every published comparison between the flip and indeterminate classes — including the
+original 0.396/0.050 — is therefore a comparison between two different mixtures of facts.
+**The original result is plausibly this same confound**: it was measured on a corpus built
+by the same generator, and the flip class was additionally inflated by the zero-hours
+student defect (§36), which concentrated it further on a single mechanism.
+
+### 44.2 Why this is worse than an ordinary confound
+
+Usually a confound can be adjusted for after the fact. Here it cannot, in the direction that
+matters: for `p1.employment_income`, the fact that dominates the flip class, the
+indeterminate cell contains **one task**. There is no comparison to make within the stratum
+that carries most of the weight, so no reweighting recovers the class effect. The design
+does not under-power the question; it **cannot pose it**.
+
+### 44.3 What a design that could answer it needs
+
+1. **Each withheld fact must appear in both classes, in comparable numbers.** The unit of
+   analysis becomes the (fact, class) cell, and the target is a balanced factorial rather
+   than N per class. Facts that cannot produce both classes are excluded from the
+   comparison — not silently routed into whichever one they can reach.
+2. **Achieving that means varying the household, not the fact.** Whether removing
+   `p1.employment_income` flips a category or moves an amount depends on where the household
+   sits relative to the eligibility threshold — near it, the same removal flips; far from
+   it, it moves an amount. So the generator must search households *per fact* for both
+   outcomes, which is a per-fact sweep against the oracle rather than one global sweep.
+3. **Report the stratified estimate as the headline**, with the aggregate shown only
+   alongside it. A pooled number over unbalanced cells is exactly what produced §43.
+4. **Power has to be planned per cell, not per class.** Six facts × two classes at n=50 is
+   600 T1b tasks, roughly triple the current T1b count, which is a real cost decision rather
+   than a free regeneration.
+5. **The balance itself needs a test**, in the style of §32's standing rule: an assertion
+   that fails the build when any fact's share of one class exceeds its share of the other by
+   more than a stated factor. Had that test existed, the 56%-against-0.6% split would have
+   failed the build in 2026-08 and none of this would have been published.
+
+### 44.4 What this does NOT invalidate
+
+The three metrics, the ceiling check, the baselines, the corrected corpus, and the
+abstention scorer are unaffected — they do not depend on the class contrast. The surviving
+cross-model findings in §43.3 (GPT-5.6 Sol better calibrated, Opus 5 perfect on fact-format
+and zero confabulation, the two independent) are comparisons **between models on identical
+tasks**, so the fact mixture is held constant by construction and the confound does not
+reach them.
