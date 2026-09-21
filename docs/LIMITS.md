@@ -1980,3 +1980,58 @@ the old one.
 Two cells are thin and should not be read as facts about those cells:
 `p1.employment_income` has 1 indeterminate task and `p1.age` has 2 flips, because the
 generator routes each fact through the stream where it can actually produce that class.
+
+## 39. The SNAP five-year bar: a real fact the case files omit and the engine ignores
+
+**Status: OPEN corpus gap, found 2026-09-21 by reading what GPT-5.6 Sol asked for. The model
+was more correct than the benchmark.**
+
+Of the 16 `other:` escapes in the completed GPT-5.6 Sol run (§38), **13 ask the same
+question in different words**: how long the lawful permanent resident has held that status.
+Examples, verbatim: *"other: p1 SNAP five-year-bar status"*, *"other: p1 duration in
+qualified immigration status"*, *"other: p2 date lawful permanent residence began"*.
+
+**The model is right, and it is asking for something the benchmark cannot score.**
+
+- **The fact is real.** Most qualified non-citizens must complete a five-year waiting period
+  before federal SNAP eligibility (8 U.S.C. §1613; the exceptions include refugees, asylees,
+  children and veterans). For an LPR adult it is genuinely load-bearing.
+- **Our case files do not state it.** The narrative gives immigration status and SSN status;
+  it says nothing about when the status began. The generator has no such field.
+- **The engine does not read it.** `years_since_us_entry` exists in `policyengine-us` and
+  defaults to 5, but SNAP's status test never consults it (LIMITS §16). So the answer key is
+  computed as though the bar does not exist.
+
+So the escape is correctly not credited — `score_abstention` credits the *withheld* fact, and
+this fact was never withheld because it is never present. But the reason it cannot be
+credited is that **our corpus is silent on a premise that the law makes decisive**, not that
+the model was wrong. That is the same class of defect as §36, one layer out: §36 was about
+premises the *engine* reads at a default; this is about a premise the engine ignores and the
+law does not.
+
+**Why `tests/test_unstated_premises.py` cannot catch it.** That test asks the engine which
+inputs it read, and the engine never reads this one. A fact the oracle is blind to is
+invisible to a tracer over the oracle. The test closes "the key depends on something unstated";
+it cannot close "the law depends on something the key ignores". Those are different holes and
+this one needs a different instrument — the rules table, which is exactly what it is for
+(SPEC.md §6, and the reason every citation gets read before the rule is written).
+
+**Options, none taken yet (a decision, and it interacts with scope):**
+
+1. **State it.** Add a duration-of-status fact to the generator and narrative ("has held
+   lawful permanent resident status since 2016"), so the case file is complete even though
+   the engine ignores it. Cheapest, and it removes the ambiguity from the corpus — but the
+   answer key still would not reflect the bar, so a model that reasoned *from* the stated
+   date would be scored wrong for being right.
+2. **Exclude the shape.** Generate LPR adults only where the bar cannot bite, which in
+   practice means refugees, asylees, entrants and citizens. Narrows the immigration fact
+   space that §16 was just re-widened to cover.
+3. **Record it as a scope limit and score around it.** State in LIMITS and the README that
+   SNAP answers for LPR adults assume the five-year bar is satisfied, and keep the tasks.
+   Honest, and it leaves a known-wrong cell in the corpus.
+
+Option 3 is what the corpus does *today*, implicitly and undocumented; this section makes it
+explicit until a decision is taken. Whichever is chosen, it belongs in the same pass as any
+future work on the rules table, and it is a reminder that the benchmark's ground truth is
+only as complete as the engine beneath it — the standing risk recorded in CLAUDE.md,
+"Oracle freshness is a structural risk", arriving from a direction nobody had checked.

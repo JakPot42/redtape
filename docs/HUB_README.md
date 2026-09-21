@@ -20,8 +20,19 @@
 > stated in the case file: relationships and filing structure, weekly hours, Social Security
 > status, and heating and cooling costs. A test fails if any scored answer rests on a fact the
 > case file does not state, and the defects were found by tracing every input the engine reads
-> rather than by inspection. **No model has been run on the corrected corpus yet**, so this
-> version carries no model results at all.
+> rather than by inspection.
+>
+> **First result on the corrected corpus: the finding does not reproduce.** GPT-5.6 Sol,
+> 1,198 of 1,200 tasks. Abstention accuracy on the eligibility-flip class (a missing fact that
+> moves a *category*) was **0.688**; on the indeterminate class (one that moves a *quantity*)
+> it was **0.689**. Difference −0.001, 95% CI [−0.118, +0.109], Fisher exact p = 1.000 —
+> against the withdrawn claim of 0.396 vs 0.050. The two classes are indistinguishable.
+>
+> A second model, Claude Opus 5 on the same corrected corpus, is pending and decides between
+> the two branches of a correction that was **written before the results**
+> (`docs/CORRECTION_DRAFT.md`): either the effect is specific to one model, or the original
+> was an artifact and is retracted outright. Until that run exists, the honest state is
+> **not reproduced** — not refuted, and not holding.
 >
 > Nothing here is a PolicyEngine defect. The statutes were read (IRC §32(c)(1)(E) and §32(m),
 > §24(h)(7) as amended by PL 119-21, 7 CFR 273.5(b)); the engine matches them. Each wrong key
