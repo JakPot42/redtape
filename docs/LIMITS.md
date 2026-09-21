@@ -1805,3 +1805,75 @@ classifies statuses that cannot have been billed (401/403/429/400/404/422 and a 
 that never opened) and `Budget.release_unbilled` returns those reservations; a timeout stays
 chargeable, because billing is genuinely unknown there. Results files now record
 `provider_refusals_unbilled`. Tested through `live_agent` with a provider that refuses.
+
+### The uncomfortable version, stated plainly
+
+**The finding this project was built on may not survive.** The published 0.050 on the
+indeterminate class — the denominator of the eight-fold gap — was measured under three
+conditions, each of which could independently have produced it as an artifact:
+
+1. **A third of the corpus rested on unstated premises.** Two-adult households were keyed as
+   married couples, undocumented filers were keyed with a citizen's SSN, and students with
+   stated earnings were keyed at zero hours (§36). A model reasoning correctly about a
+   missing amount was competing against a key that was itself wrong on those tasks.
+2. **The scorer ignored the named fact.** It compared programs only, so an abstention was
+   credited or denied without reference to whether the model had identified the right hole
+   (§36). It also rejected correct abstentions outright until §27.
+3. **The flip class was inflated by a default.** Students whose "ineligibility" came from
+   `weekly_hours = 0` were counted as eligibility flips. With hours stated, a student working
+   20+ hours is exempt (7 CFR 273.5(b)(5)) and does not flip; the measured flip rate fell to
+   about 5%. So the *numerator* class of the ratio was partly an artifact too.
+
+Any one of these could move 0.050. Together they are enough that **"the gap was real" is not
+currently the most likely explanation**. The first measurement on a corrected corpus found
+1.11x where the original found 7.9x.
+
+What would settle it is one experiment: **Opus 5 on the corrected corpus**, same scorer, same
+tasks. If the gap returns for Opus and not for GPT-5.6 Sol, it is a model property and the
+original finding stands, narrowed to one model. If it returns for neither, the original was an
+artifact of the corpus and scorer, and it is retracted at the top of the README, on the Hub
+listing, and anywhere else it was claimed. The correction is drafted in advance
+(`docs/CORRECTION_DRAFT.md`) so it is not written under the temptation of a result we prefer.
+
+Until that run exists, the honest state is **"not reproduced"** — not "refuted", and
+certainly not "holds".
+
+### Fact-format compliance is a clean methodological result
+
+Separate from the model finding, and it survives whatever the Opus run says: **the closed
+vocabulary works.** 51 of 53 `cannot_determine` entries named the withheld identifier exactly
+or its coupled half, with **zero near-misses and zero invented identifiers**. The two
+exceptions were needless abstentions on incomplete-determinate tasks, i.e. model judgement,
+not format failure.
+
+That matters because exact identifier matching is only fair if the model is told the
+identifiers. Before the change, GPT-5.6 Sol wrote `p1.college_enrollment` for
+`p1.is_higher_ed_student` and Opus wrote `p1.housing_costs` for `housing_cost`; both are
+right in meaning and unscoreable. Rendering the vocabulary from the schema removed that
+class of failure entirely rather than papering over it with fuzzy matching, which would have
+made the scorer's judgement unauditable.
+
+### The employment_income confound is retired
+
+The README used to explain the per-fact table by "income has an obvious slot in a case file".
+The competing explanation was that `p1.employment_income` was the prompt's only example
+identifier. The prompt now lists every identifier and its example names none of them, so the
+question is answerable. Per-fact abstention, GPT-5.6 Sol, corrected corpus, partial run
+(cells are 1-11 tasks; abstention is only REQUIRED in the first two columns):
+
+| withheld fact | flip | indeterminate | incomplete-determinate | all T1b |
+|---|---|---|---|---|
+| `p1.is_higher_ed_student` | 1.000 (1/1) | 0.800 (4/5) | 0.970 (32/33) | 0.949 (37/39) |
+| `housing_cost` | 1.000 (2/2) | 1.000 (3/3) | 0.833 (5/6) | 0.909 (10/11) |
+| `dependent_care_cost` | 0.000 (0/1) | 0.500 (2/4) | 1.000 (7/7) | 0.750 (9/12) |
+| `p1.immigration_status` | 0.667 (2/3) | 0.600 (3/5) | 1.000 (3/3) | 0.727 (8/11) |
+| `p1.employment_income` | 0.636 (7/11) | — | 1.000 (1/1) | 0.667 (8/12) |
+| `p1.age` | — | 0.000 (0/3) | 0.889 (8/9) | 0.667 (8/12) |
+
+**Employment income is no longer the best-noticed fact** (0.667, mid-table, against 0.709 and
+top of the table before). Immigration status went from **worst** (0.133) to 0.727. Both moves
+are in the direction the prompt-example hypothesis predicts, and **neither is established by
+this**: the corpus changed too, and it now states an SSN clause alongside immigration status,
+which is a second textual cue for exactly that fact. The cells are also tiny. What can be
+said is that the confound is gone from the *design*: every identifier is now named equally,
+so the next measurement is interpretable where the old one was not.

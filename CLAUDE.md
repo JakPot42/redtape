@@ -113,7 +113,7 @@ rates in `docs/LIMITS.md` §28 instead of the recorded totals.
 ## Every green signal must be checked for what it is NOT measuring **[decided]**
 
 This is the standing principle, and it outranks any individual check below. It has now
-been learned ten times on this project, each time from a different direction, and each
+been learned eleven times on this project, each time from a different direction, and each
 time the failure looked exactly like success right up until someone asked what the signal
 actually covered.
 
@@ -128,6 +128,7 @@ actually covered.
 | 7 | 300 tests pass on the generator | not one called `render()`, so re-widening the status set left 12% of households raising `KeyError`, and not one read `data/dev/t1.jsonl`, so the committed corpus silently went stale (LIMITS §31) |
 | 8 | CLAUDE.md required every paid run to take a hard cap "checked after every API call" | **nothing implemented it.** `run_eval.py` had no cap of any kind for two weeks, while the rule was cited as the reason overspend could not recur (LIMITS §32) |
 | 9 | Opus 5 on 1,200 tasks: 0 malformed, 0 schema-invalid, 0 scorer errors, and a clean 0.396 / 0.050 split | a third of the answer keys rested on premises no case file stated: two adults keyed as a married couple (a parent and adult child among them), students keyed at zero hours, undocumented filers keyed with a citizen's SSN. A model asking for the relationship was scored as abstaining needlessly (LIMITS §35–§36) |
+| 11 | the hard cap works: a live run reports `budget $39.84 / $40.00` and stops | **$4.48 was actually spent.** OpenRouter refused 1,045 requests with 403 after the key hit its spending limit, and `charge_failed` charged every refusal its worst case. The cap was exhausted by requests nobody billed, and the next legitimate run would have stopped early on that number (LIMITS §37) |
 | 10 | exact fact matching lands, and GPT-5.6 Sol's probe scores 0.667 on abstention | three of its abstentions named `p1.ssn_status` where `p1.immigration_status` was withheld. SSN is DERIVED from status, so it was withheld too: the model named the other half of a genuinely missing fact and the scorer called it wrong. 0.667 → **0.889** once coupled facts were accepted (LIMITS §36) |
 
 **The pattern under instances 6, 9 and 10: the scorer was NARROWER than the task's own
@@ -307,7 +308,7 @@ dispositions in LIMITS §33:
 
 **This principle is the thesis of the benchmark, applied to ourselves.** Redtape exists
 because PolicyEngine answers every question plausibly and never says "I cannot determine" —
-a system that is silently confident where it should abstain. Ten times now our own tooling
+a system that is silently confident where it should abstain. Eleven times now our own tooling
 has done the same thing to us. We do not get to ship a benchmark about undetectable
 confident wrongness while running on undetectable confident greenness.
 
