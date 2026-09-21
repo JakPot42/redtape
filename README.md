@@ -55,9 +55,11 @@ are `verifiers` and `pydantic`, and that is the whole list. (The five baselines 
 exception: they read the federal poverty line from the engine, so running them from a
 checkout needs `pip install -e ".[dev,generate]"`.)
 
-**Status: ALL MODEL RESULTS WITHDRAWN (2026-09-19). The dev and held-out splits are being
-regenerated.** The published Opus 5 numbers were measured on a corpus whose answer keys rest
-on premises the case files never state, and in several cases get the law wrong:
+**Status: the previously published Opus 5 results are WITHDRAWN (2026-09-19). Both splits
+were rebuilt on 2026-09-20, and one model has been measured on the rebuilt corpus since
+(GPT-5.6 Sol; see the notice above and `docs/LIMITS.md` §38).** The withdrawn Opus 5 numbers
+were measured on a corpus whose answer keys rest on premises the case files never state, and
+in several cases get the law wrong:
 
 - **Two adults are keyed as a married couple filing jointly**: 393 of 1,200 dev tasks, 163
   of them adults 18+ years apart (a parent and adult child keyed as spouses). The narratives
@@ -89,12 +91,23 @@ The obvious objection is that "knows when it cannot answer" is just arithmetic c
 wearing a different hat. The withdrawn Opus 5 result was offered as the answer to that
 objection; until the regenerated split is measured, the objection stands unanswered.
 
-## Results: withdrawn, pending the regenerated split
+## Results: one model measured, the finding not reproduced, a second model pending
 
-There is no current model result. The previous headline ("it notices a missing *category*,
-not a missing *quantity*": Opus 5 abstention 0.396 on eligibility flips vs 0.050 on amount
-changes) was measured on the contaminated corpus described above. It may survive
-regeneration. It has not been re-measured, so it is not claimed.
+The previous headline ("it notices a missing *category*, not a missing *quantity*": Opus 5
+abstention 0.396 on eligibility flips vs 0.050 on amount changes) was measured on the
+contaminated corpus described above and is withdrawn.
+
+**On the rebuilt corpus it does not reproduce.** GPT-5.6 Sol, 1,198 of 1,200 tasks:
+abstention **0.688** on the eligibility-flip class against **0.689** on the indeterminate
+class — difference −0.001, 95% CI [−0.118, +0.109], Fisher exact p = 1.000, where the
+withdrawn claim was a ratio of 7.9×. Exact-match 0.629, abstention overall 0.767, pair
+consistency 0.655. Full numbers, intervals and failure counts: `docs/LIMITS.md` §38.
+
+One model cannot separate "the original was an artifact of the corpus and scorer" from "the
+effect is specific to Opus 5". Claude Opus 5 on the same rebuilt corpus is the deciding run,
+and the correction is written in advance for both outcomes
+([`docs/CORRECTION_DRAFT.md`](docs/CORRECTION_DRAFT.md)) so the wording is not chosen after
+seeing which way it goes.
 
 Two further reasons it cannot stand as written, both found while fixing the scorer:
 
