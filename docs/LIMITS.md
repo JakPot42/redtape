@@ -2079,3 +2079,73 @@ property of the corpus or of one model.
 decision rule in `docs/CORRECTION_DRAFT.md` → merge `lpr-five-year-bar` → regenerate both
 splits once → re-run whatever the corrected numbers then require, priced and approved
 separately.
+
+## 41. Opus 5 moves to OpenRouter, reversing an earlier decision
+
+**Status: decided 2026-09-21. `claude-opus-5-openrouter` routes Opus 5 through OpenRouter
+with routing pinned to Anthropic, exactly as `gpt-5.6-sol` is pinned to OpenAI. The direct
+`claude-opus-5` entry stays in the registry for provenance and is no longer the run path.**
+
+§32 kept Opus on the native Messages API deliberately, and gave a reason: the committed
+responses were keyed under that path, and re-routing would have re-billed ~$60 of cached
+work. **That reason expired.** The corrected corpus and the closed fact vocabulary changed
+`SYSTEM_PROMPT`, so every one of those responses is already a cache miss (§38,
+`test_no_committed_response_is_served_for_the_changed_prompt`). Nothing is left to preserve,
+and the decision is reversed rather than inherited.
+
+What the change buys is a cleaner deciding comparison. Both models now traverse **one
+provider layer**: the same request builder, the same `max_retries=0` policy, the same
+translation of "reasoning effort high", the same stop-reason normalisation, and the same
+provider-reported cost. Previously the two models differed in model *and* in transport, and
+the transport difference had no reason to exist.
+
+Two properties were verified rather than assumed, on the first real request and the 20-task
+probe: every response reported `served_by: Anthropic` (the pin holds), and the price matches
+the direct API at $5 / $25 per million (read from `/api/v1/models`, 2026-09-21).
+
+A note on cost accounting, which this makes stronger rather than weaker: OpenRouter reports
+the billed cost of each request, and the ledger already agreed with the provider's own total
+to the cent ($5.315012 against $5.3149, §37). Both models are now measured on that same
+externally-checkable basis.
+
+## 42. The anti-hack gate treats a sincere all-zero answer as a hack
+
+**Status: FOUND 2026-09-21 in the Opus probe. The GPT-5.6 Sol verdict in §38 does NOT depend
+on it (checked, below). The gate is unchanged pending a decision.**
+
+One of 20 probe tasks failed the gate with no parse failure. The reply was well-formed and
+sincere: SNAP ineligible, benefit 0, EITC 0, CTC 0, no abstention. The answer key says SNAP
+eligible at $232, so the answer was **wrong** - but it was not degenerate, and the gate is
+supposed to catch "not an attempt", not "wrong in a particular shape".
+
+`score_antihack`'s `all_amounts_zero` flag fires when every answered amount is zero **and the
+truth is not all zero**. Two consequences:
+
+1. **The gate reads the answer key.** It is described as a structural check on the response,
+   but it consults ground truth, so it fires only on *wrong* all-zero answers. A correct
+   all-zero answer passes. That makes it a wrongness test wearing a structural label.
+2. **It zeroes every component, including abstention.** On a determinate task the model
+   correctly did not abstain, which is what `abstention_correct` measures; the gate scores
+   that 0 anyway. The same error is counted twice, in two different headlines.
+
+This is the §36/§40 pattern again - the scorer narrower than the task's own definition of a
+correct answer - and it is the fourth instance (CLAUDE.md, instances 6, 9, 10 and this one).
+
+**Sensitivity check, GPT-5.6 Sol, 1,198 cached replies re-scored with the flag disabled
+($0):**
+
+| | gate failures | flip | indeterminate | difference | Fisher p |
+|---|---:|---|---|---|---|
+| as shipped | 36 | 0.688 (66/96) | 0.689 (124/180) | −0.001, CI [−0.118, +0.109] | 1.000 |
+| without the flag | 8 | 0.698 (67/96) | 0.706 (127/180) | −0.008, CI [−0.123, +0.101] | 0.891 |
+
+Exact-match is identical either way (489/778), because a gated answer was already wrong on
+amounts. Incomplete-determinate rises most (0.917 → 0.965), which is exactly the population
+the flag mis-scores: tasks where answering was correct and the answer happened to be all
+zeros. **The §38 verdict is unchanged: the classes are not separated under either scoring.**
+
+Options, none taken yet: drop the flag and rely on the trivial baselines (which is what they
+are for - `never_eligible` scores 0.123 exact-match and 0.083 abstention, so the strategy is
+already visibly bad in aggregate); keep it but stop it zeroing the abstention component; or
+keep it and report gated tasks as their own category rather than as failures. The decision
+should be made before the Opus run is published, and applied to both models identically.

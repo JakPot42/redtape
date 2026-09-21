@@ -39,52 +39,57 @@ def fisher(a, b, c, d):
     return sum(pr(x) for x in range(lo, hi + 1) if pr(x) <= obs * (1 + 1e-9))
 
 
-res = json.load(open(sys.argv[1], encoding="utf-8"))
-rows = {r["household_id"]: r for r in
-        (json.loads(ln) for ln in open("data/dev/t1.jsonl", encoding="utf-8") if ln.strip())}
+def main() -> None:
+    res = json.load(open(sys.argv[1], encoding="utf-8"))
+    rows = {r["household_id"]: r for r in
+            (json.loads(ln) for ln in open("data/dev/t1.jsonl", encoding="utf-8") if ln.strip())}
 
-cls = collections.defaultdict(lambda: [0, 0])
-det = [0, 0]
-for rec in res["per_task"]:
-    src = rows.get(rec["household_id"])
-    if src is None:
-        continue
-    if src["determinability"] == "determinate":
-        det[0] += rec["exact_match"]
-        det[1] += 1
-        continue
-    name = "flip" if src.get("is_eligibility_flip") else src["determinability"]
-    cls[name][0] += int(bool(rec["abstention_correct"]))
-    cls[name][1] += 1
+    cls = collections.defaultdict(lambda: [0, 0])
+    det = [0, 0]
+    for rec in res["per_task"]:
+        src = rows.get(rec["household_id"])
+        if src is None:
+            continue
+        if src["determinability"] == "determinate":
+            det[0] += rec["exact_match"]
+            det[1] += 1
+            continue
+        name = "flip" if src.get("is_eligibility_flip") else src["determinability"]
+        cls[name][0] += int(bool(rec["abstention_correct"]))
+        cls[name][1] += 1
+
+    
+    def line(label, k, n):
+        lo, hi = wilson(k, n)
+        print(f"  {label:<34}{k:>5}/{n:<6}{k / n:>8.3f}   95% CI [{lo:.3f}, {hi:.3f}]")
+
+    
+    print("HEADLINES (Wilson 95% intervals)")
+    line("T1 exact-match (determinate)", *det)
+    t1b = [sum(v[0] for v in cls.values()), sum(v[1] for v in cls.values())]
+    line("T1b abstention (all)", *t1b)
+    pc = res["pair_consistency"]
+    print(f"  {'pair-consistency':<34}{'':>5} {pc.get('n_pairs'):<6}{pc['value']:>8.3f}")
+    print()
+    print("ABSTENTION BY CLASS")
+    for name in ("flip", "indeterminate", "incomplete_determinate"):
+        line(name, *cls[name])
+
+    f_k, f_n = cls["flip"]
+    i_k, i_n = cls["indeterminate"]
+    lo, hi = newcombe(f_k, f_n, i_k, i_n)
+    p = fisher(f_k, f_n - f_k, i_k, i_n - i_k)
+    print()
+    print("DECISION RULE: does the flip class EXCEED the indeterminate class?")
+    print(f"  flip {f_k}/{f_n} = {f_k / f_n:.3f}   indeterminate {i_k}/{i_n} = {i_k / i_n:.3f}")
+    print(f"  difference {f_k / f_n - i_k / i_n:+.3f}   95% CI [{lo:+.3f}, {hi:+.3f}]"
+          f"   Fisher exact p = {p:.3f}")
+    print(f"  ratio {(f_k / f_n) / (i_k / i_n):.2f}x        (withdrawn Opus number: 7.9x)")
+    verdict = ("EXCEEDS - the interval excludes zero" if lo > 0 else
+               "BELOW - the interval excludes zero in the other direction" if hi < 0 else
+               "NO - the interval spans zero; the classes are not separated at these n")
+    print(f"  verdict: {verdict}")
 
 
-def line(label, k, n):
-    lo, hi = wilson(k, n)
-    print(f"  {label:<34}{k:>5}/{n:<6}{k / n:>8.3f}   95% CI [{lo:.3f}, {hi:.3f}]")
-
-
-print("HEADLINES (Wilson 95% intervals)")
-line("T1 exact-match (determinate)", *det)
-t1b = [sum(v[0] for v in cls.values()), sum(v[1] for v in cls.values())]
-line("T1b abstention (all)", *t1b)
-pc = res["pair_consistency"]
-print(f"  {'pair-consistency':<34}{'':>5} {pc.get('n_pairs'):<6}{pc['value']:>8.3f}")
-print()
-print("ABSTENTION BY CLASS")
-for name in ("flip", "indeterminate", "incomplete_determinate"):
-    line(name, *cls[name])
-
-f_k, f_n = cls["flip"]
-i_k, i_n = cls["indeterminate"]
-lo, hi = newcombe(f_k, f_n, i_k, i_n)
-p = fisher(f_k, f_n - f_k, i_k, i_n - i_k)
-print()
-print("DECISION RULE: does the flip class EXCEED the indeterminate class?")
-print(f"  flip {f_k}/{f_n} = {f_k / f_n:.3f}   indeterminate {i_k}/{i_n} = {i_k / i_n:.3f}")
-print(f"  difference {f_k / f_n - i_k / i_n:+.3f}   95% CI [{lo:+.3f}, {hi:+.3f}]"
-      f"   Fisher exact p = {p:.3f}")
-print(f"  ratio {(f_k / f_n) / (i_k / i_n):.2f}x        (withdrawn Opus number: 7.9x)")
-verdict = ("EXCEEDS - the interval excludes zero" if lo > 0 else
-           "BELOW - the interval excludes zero in the other direction" if hi < 0 else
-           "NO - the interval spans zero; the classes are not separated at these n")
-print(f"  verdict: {verdict}")
+if __name__ == "__main__":
+    main()

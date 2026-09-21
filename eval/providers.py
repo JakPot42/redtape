@@ -89,6 +89,9 @@ MAX_TOKENS = 16_000
 _ANTHROPIC_PARAMS = {"max_tokens": MAX_TOKENS, "thinking": {"type": "adaptive"},
                      "output_config": {"effort": "high"}}
 
+_OPENROUTER_ANTHROPIC_ROUTING = {"only": ["anthropic"], "allow_fallbacks": False,
+                                 "require_parameters": True, "data_collection": "deny"}
+
 # Pinned routing. Without `only` + `allow_fallbacks: False`, OpenRouter may serve the same
 # model id from a different upstream (e.g. Azure) request to request, which would mix two
 # serving stacks into one reported number. `require_parameters` refuses a provider that
@@ -113,6 +116,22 @@ MODELS: dict[str, ModelConfig] = {
         params={"max_tokens": MAX_TOKENS, "reasoning": {"effort": "high"},
                 "provider": _OPENROUTER_OPENAI_ROUTING},
         price_in=2.00, price_out=10.00, max_output_tokens=MAX_TOKENS,
+    ),
+    # Opus 5 through OpenRouter, routing pinned to Anthropic exactly as gpt-5.6-sol is pinned
+    # to OpenAI. Added 2026-09-21 (LIMITS §41): the reason to use the native Messages API was
+    # cache compatibility with the first Opus run, and that run is superseded - the new prompt
+    # re-keys everything - so nothing is left to preserve. Routing both models through one
+    # provider layer removes a variable from the deciding comparison: same request builder,
+    # same retry policy (none), same reasoning-effort translation, same provider-reported
+    # cost, which already matched our ledger to the cent. $5/$25 per M, read from
+    # /api/v1/models on 2026-09-21 - identical to the direct API's price.
+    "claude-opus-5-openrouter": ModelConfig(
+        key="claude-opus-5-openrouter", provider="openrouter",
+        api_model="anthropic/claude-opus-5",
+        cache_model="openrouter:anthropic/claude-opus-5",
+        params={"max_tokens": MAX_TOKENS, "reasoning": {"effort": "high"},
+                "provider": _OPENROUTER_ANTHROPIC_ROUTING},
+        price_in=5.00, price_out=25.00, max_output_tokens=MAX_TOKENS,
     ),
 }
 
