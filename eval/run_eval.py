@@ -27,6 +27,7 @@ import json
 import os
 import random
 import sys
+import time
 from pathlib import Path
 
 from eval.baselines import BASELINES, PAIR_DIAGNOSTICS
@@ -41,6 +42,7 @@ from eval.cache import (
 from eval.budget import Budget, BudgetExhausted, NoBudget
 from eval.preflight import check_headroom, estimate_run_cost
 from eval.providers import credential_env, get_model, is_unbilled_error, make_provider
+from eval.ratelimit import RateLimiter, is_rate_limit, retry_delay
 from eval.tools import UNKNOWN, calculate, tool_schema
 from redtape.config import load_dotenv
 
@@ -478,7 +480,8 @@ def task_cache_key(task, cfg, system, tools) -> str:
 
 
 def live_agent(condition: str, model: str = MODEL, max_tool_turns: int = 6,
-               system_prompt: str | None = None, budget: Budget | None = None):
+               system_prompt: str | None = None, budget: Budget | None = None,
+               rpm: float | None = None, rate_limit_retries: int = 6):
     """A real model client, for any registered model. Credentials come from the environment.
 
     The provider is built LAZILY, on the first cache miss. Re-scoring a fully cached run
@@ -495,6 +498,10 @@ def live_agent(condition: str, model: str = MODEL, max_tool_turns: int = 6,
     cfg, SYSTEM_PROMPT, tools = request_identity(condition, model, system_prompt)
     allow_unknown = condition == "tool_equipped_unknowns"
     state = {"provider": None}
+    # Shared by every worker thread: the provider's limit is per account, not per thread.
+    # `rpm` is NOT part of the cache key - pacing cannot change a response, and putting it
+    # in `params` would re-key 1,200 paid responses for a scheduling decision.
+    limiter = RateLimiter(rpm if rpm is not None else cfg.rpm)
 
     def provider():
         if state["provider"] is None:
@@ -529,18 +536,28 @@ def live_agent(condition: str, model: str = MODEL, max_tool_turns: int = 6,
 
         for _ in range(max_tool_turns):
             request_text = SYSTEM_PROMPT + json.dumps(messages, default=str)
-            reserved = budget.reserve(request_text)     # raises BudgetExhausted; nothing sent
-            try:
-                turn = p.complete(SYSTEM_PROMPT, messages, tools)
-            except BaseException as exc:
-                # A refusal (401/403/429, or a connection that never opened) generated
-                # nothing and billed nothing, so its reservation is released. Anything else
-                # keeps the conservative charge, because billing is unknown.
-                if is_unbilled_error(exc):
-                    budget.release_unbilled(reserved)
-                else:
-                    budget.charge_failed(reserved)
-                raise
+            # Retry ONLY a rate-limit refusal, and only because it billed nothing. Each
+            # attempt reserves again through the budget, so the cap counts every request
+            # that is sent - which is why this loop is here and not in the SDK, where a
+            # retry would be a billed attempt the budget never saw (eval/ratelimit.py).
+            for attempt in range(rate_limit_retries + 1):
+                limiter.acquire()
+                reserved = budget.reserve(request_text)  # raises BudgetExhausted; nothing sent
+                try:
+                    turn = p.complete(SYSTEM_PROMPT, messages, tools)
+                    break
+                except BaseException as exc:
+                    # A refusal (401/403/429, or a connection that never opened) generated
+                    # nothing and billed nothing, so its reservation is released. Anything
+                    # else keeps the conservative charge, because billing is unknown.
+                    if is_unbilled_error(exc):
+                        budget.release_unbilled(reserved)
+                    else:
+                        budget.charge_failed(reserved)
+                    if is_rate_limit(exc) and attempt < rate_limit_retries:
+                        time.sleep(retry_delay(exc, attempt))
+                        continue
+                    raise
             actual = max(cost_usd(cfg.key, turn.usage), turn.reported_cost_usd or 0.0)
             budget.settle(reserved, actual)
 
@@ -713,6 +730,9 @@ def main():
     ap.add_argument("--workers", type=int, default=1,
                     help="concurrent API requests during cache pre-warm; scoring is "
                          "always sequential")
+    ap.add_argument("--rpm", type=float, default=None,
+                    help="requests per minute, shared across workers. Overrides the "
+                         "model's registered default; 0 disables pacing.")
     ap.add_argument("--max-usd", type=float, default=None,
                     help="HARD spending cap for a live run. Required whenever any request "
                          "would be billed; no default. Enforced before every request.")
@@ -810,7 +830,11 @@ def main():
             if not check_headroom(cfg, estimate=estimate, cap=budget.cap, basis=basis):
                 return 2
 
-        agent = live_agent("tool_less", args.model, budget=budget)
+        rpm = args.rpm if args.rpm is not None else cfg.rpm
+        if budget is not None and rpm:
+            print(f"  pacing at {rpm:g} req/min across {max(1, args.workers)} worker(s); "
+                  f"~{len(misses) / rpm:.0f} min for {len(misses)} uncached")
+        agent = live_agent("tool_less", args.model, budget=budget, rpm=args.rpm)
         LEDGER.reset()
         # Always pre-warm, even with one worker: it is where the cap can stop the run
         # cleanly, leaving whatever was bought in the cache.

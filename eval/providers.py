@@ -76,6 +76,12 @@ class ModelConfig:
     price_in: float          # USD per million input tokens
     price_out: float         # USD per million output tokens (reasoning billed as output)
     max_output_tokens: int   # upper bound used for worst-case budget reservation
+    # Requests per minute this ACCOUNT may send for this model; None = no known limit.
+    # DELIBERATELY NOT in `params`: pacing cannot change a response, and putting it in the
+    # cache key would re-key paid responses over a scheduling decision. It is a property of
+    # the account and its tier rather than of the model, so it is a default that --rpm
+    # overrides, and the retry in ratelimit.py is what makes a wrong value recoverable.
+    rpm: float | None = None
 
 
 # max_tokens raised 8,000 -> 16,000 on 2026-09-20, for BOTH models, before either ran on the
@@ -132,6 +138,13 @@ MODELS: dict[str, ModelConfig] = {
         params={"max_tokens": MAX_TOKENS, "reasoning": {"effort": "high"},
                 "provider": _OPENROUTER_ANTHROPIC_ROUTING},
         price_in=5.00, price_out=25.00, max_output_tokens=MAX_TOKENS,
+        # 2026-09-21: 1,014 of the first 1,050 requests at 8 workers came back 429,
+        # "new accounts are limited to 20 requests per minute for this model". Set to 18,
+        # under the stated 20, because the limiter's clock and the provider's do not agree
+        # on where a minute starts. Nothing was mis-billed - 429 is unbilled - but the run
+        # could not proceed. gpt-5.6-sol ran 8-wide against no such limit, which is why
+        # this is a per-model field and not a global constant.
+        rpm=18,
     ),
 }
 
