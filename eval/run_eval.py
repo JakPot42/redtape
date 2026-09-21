@@ -39,6 +39,7 @@ from eval.cache import (
     put as cache_put,
 )
 from eval.budget import Budget, BudgetExhausted, NoBudget
+from eval.preflight import check_headroom, estimate_run_cost
 from eval.providers import credential_env, get_model, is_unbilled_error, make_provider
 from eval.tools import UNKNOWN, calculate, tool_schema
 from redtape.config import load_dotenv
@@ -795,6 +796,19 @@ def main():
             budget = Budget(args.max_usd, price_in=cfg.price_in, price_out=cfg.price_out,
                             max_output_tokens=cfg.max_output_tokens)
             print(f"  HARD CAP ${budget.cap:.2f}, enforced before every request")
+
+            # Our cap says what we are willing to spend; it cannot know what the provider
+            # will still let us spend. Measured from responses already cached for this exact
+            # request identity, so it is this model on this corpus, not a guess (preflight.py).
+            observed = []
+            for t in tasks:
+                hit = cache_get(task_cache_key(t, cfg, system, tools), partition(t.data.seed))
+                if hit:
+                    observed.append(max(cost_usd(cfg.key, hit["usage"]),
+                                        hit.get("reported_cost_usd") or 0.0))
+            estimate, basis = estimate_run_cost(observed, len(misses), worst)
+            if not check_headroom(cfg, estimate=estimate, cap=budget.cap, basis=basis):
+                return 2
 
         agent = live_agent("tool_less", args.model, budget=budget)
         LEDGER.reset()

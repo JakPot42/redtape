@@ -86,6 +86,20 @@ out to cost.
 Partial results are acceptable — the response cache makes a capped run resumable, and
 `--cached-only` scores whatever was fetched. An overspend is not recoverable.
 
+**Our cap is not the only ceiling, and it is not the one that has actually stopped runs.**
+A provider's per-key spending limit is CUMULATIVE USAGE on that key, not a per-run
+allowance, so a run can be fully funded by its own cap and still be unable to finish. This
+has now happened twice: 1,045 requests refused with 403 mid-run (LIMITS), and — caught
+before spending anything — a $70 limit raised for a ~$52 Opus run that already had $39.14 of
+GPT spend against it, leaving $30.86 and a run that would have died 59% through.
+`eval/preflight.py` now reads the provider's remaining balance and refuses to start when it
+is below the run's estimated cost, where the estimate is the mean cost of responses already
+cached for that exact request identity rather than the worst case (which is ~6x a real run
+and would refuse everything). It is not a safety control — the cap is — so it warns and
+proceeds when the provider exposes no spend endpoint or cannot be reached; the failure it
+prevents is a wasted partial run, not an overspend. **When asking for a limit to be raised,
+name the figure to raise it TO, including spend already on the key.**
+
 ### 2. Never launch a paid run in the same turn that estimates it
 
 Print the estimate, print the cap, then **stop and wait** for explicit confirmation of a
@@ -170,6 +184,14 @@ Obligations:
   "Always answer zero" is caught by the trivial baselines, which is what they are for:
   `never_eligible` scores 0.123 exact-match and 0.083 abstention, visibly hopeless in
   aggregate, without any single response having to be judged a hack.
+- **When auditing a check for key-independence, READ ITS EXCEPTIONS FIRST. An exception
+  clause is the usual place the dependency hides.** `abstained_on_everything` survived
+  review because its *rule* was clean - abstaining on everything is degenerate - and the
+  rule is not what needed the key. The carve-out did: "...unless everything genuinely is
+  deciding". That exception is correct, which is why nobody questioned it, and satisfying it
+  requires knowing which programs are deciding, which is the answer. The first audit found
+  one offender; reading the exceptions found the second. Expect the general case: a
+  dependency introduced to make a check *fairer* is camouflaged by being a good idea.
 
 **The general form.** A passing check reports on the region it covers and says nothing
 whatsoever about the region it does not — but it is *read* as a statement about the whole.
