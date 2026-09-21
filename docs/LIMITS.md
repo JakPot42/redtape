@@ -2035,3 +2035,47 @@ explicit until a decision is taken. Whichever is chosen, it belongs in the same 
 future work on the rules table, and it is a reminder that the benchmark's ground truth is
 only as complete as the engine beneath it — the standing risk recorded in CLAUDE.md,
 "Oracle freshness is a structural risk", arriving from a direction nobody had checked.
+
+## 40. Why the five-year-bar fix waits for the cross-model comparison
+
+**Status: decided 2026-09-21. `lpr-five-year-bar` (branch `925e195`) stays unmerged until
+Claude Opus 5 has run on the CURRENT corpus. Then it is merged and both splits are
+regenerated once.**
+
+§39 found a real gap: the SNAP five-year bar (8 U.S.C. 1613) turns on how long a qualified
+non-citizen has held status, our case files do not state it, and the engine never reads it.
+The fix is built and tested. It is deliberately **not** applied yet, and the ordering is
+recorded here so it is a decision rather than an accident of scheduling.
+
+**1. The fix changes every prompt.** `status_since` joins the closed fact vocabulary, so
+`SYSTEM_PROMPT` changes, so every response-cache key changes. The 1,198 cached GPT-5.6 Sol
+responses — $32.9163 of paid work — would stop matching, and the completed §38 run could no
+longer be compared with anything measured afterwards.
+
+**2. The deciding experiment requires identical tasks.** The open question is whether the
+withdrawn 0.396/0.050 split was an artifact of the old corpus and scorer, or an effect
+specific to one model. Only a same-corpus, same-scorer, different-model comparison answers
+it. Regenerating between the two runs would confound exactly the variable the experiment
+isolates, and would leave us having paid twice for an answer to a different question.
+
+**3. The current keys are unstated, not wrong.** This is what makes waiting safe rather than
+merely convenient. `years_since_us_entry` defaults to **5** in `policyengine-us`, and SNAP's
+status test never consults it, so every answer key in the current corpus already means
+"the bar is satisfied". The fix does not correct a wrong number; it states out loud a premise
+the key already assumes. Nothing in the corpus becomes more correct by regenerating first.
+
+**4. Both models face identical silence.** GPT-5.6 Sol was not told the duration, and Opus 5
+will not be either. Whatever the omission costs a model, it costs both the same way, so the
+comparison between them is unaffected. What the omission does affect is the *absolute*
+abstention numbers, which is why §39 stays open and the fix is queued rather than dropped.
+
+Measured on the GPT run, tasks containing an LPR adult versus the rest: abstention
+**0.660** [0.517, 0.778] against **0.780** [0.735, 0.819]; exact-match 0.616 against 0.630.
+The intervals overlap, so the cost of the silence is suggested and not established. The same
+subset will be reported for Opus, which is the cheapest available check on whether it is a
+property of the corpus or of one model.
+
+**Order, fixed in advance:** Opus 5 on the current corpus at an $85 cap → report against the
+decision rule in `docs/CORRECTION_DRAFT.md` → merge `lpr-five-year-bar` → regenerate both
+splits once → re-run whatever the corrected numbers then require, priced and approved
+separately.
