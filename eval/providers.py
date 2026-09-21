@@ -230,6 +230,29 @@ def make_provider(cfg: ModelConfig):
     raise ValueError(f"unknown provider {cfg.provider!r}")
 
 
+def is_unbilled_error(exc: BaseException) -> bool:
+    """True when the provider REFUSED the request, so nothing was generated or billed.
+
+    Added 2026-09-20 after a real run: OpenRouter hit the key's spending limit and returned
+    403 for 1,045 requests. Each was charged its worst-case reservation (`Budget.charge_failed`
+    is deliberately conservative when billing is UNKNOWN), so the cap read $39.84 of $40
+    while actual spend was $4.48. A cap that is exhausted by unbilled refusals stops the next
+    legitimate run early, which is a different failure from overspending but still a wrong
+    number driving a decision.
+
+    Only statuses that mean "never reached generation" count: authentication, permission,
+    rate limit, bad request, and transport errors raised before a response existed. A timeout
+    or a 5xx mid-stream stays chargeable, because billing is genuinely unknown there.
+    """
+    status = getattr(exc, "status_code", None)
+    if status in (400, 401, 402, 403, 404, 422, 429):
+        return True
+    # APITimeoutError is deliberately NOT here: a timeout can land after the provider has
+    # generated and billed, so billing is unknown and the reservation stands.
+    name = type(exc).__name__
+    return name in ("APIConnectionError", "ConnectError", "ConnectTimeout") and status is None
+
+
 def credential_env(cfg: ModelConfig) -> tuple[str, ...]:
     if cfg.provider == "anthropic":
         return AnthropicProvider.env_keys

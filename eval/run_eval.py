@@ -39,7 +39,7 @@ from eval.cache import (
     put as cache_put,
 )
 from eval.budget import Budget, BudgetExhausted, NoBudget
-from eval.providers import credential_env, get_model, make_provider
+from eval.providers import credential_env, get_model, is_unbilled_error, make_provider
 from eval.tools import UNKNOWN, calculate, tool_schema
 from redtape.config import load_dotenv
 
@@ -531,8 +531,14 @@ def live_agent(condition: str, model: str = MODEL, max_tool_turns: int = 6,
             reserved = budget.reserve(request_text)     # raises BudgetExhausted; nothing sent
             try:
                 turn = p.complete(SYSTEM_PROMPT, messages, tools)
-            except BaseException:
-                budget.charge_failed(reserved)
+            except BaseException as exc:
+                # A refusal (401/403/429, or a connection that never opened) generated
+                # nothing and billed nothing, so its reservation is released. Anything else
+                # keeps the conservative charge, because billing is unknown.
+                if is_unbilled_error(exc):
+                    budget.release_unbilled(reserved)
+                else:
+                    budget.charge_failed(reserved)
                 raise
             actual = max(cost_usd(cfg.key, turn.usage), turn.reported_cost_usd or 0.0)
             budget.settle(reserved, actual)
@@ -803,7 +809,8 @@ def main():
                               "api_model": cfg.api_model, "params": cfg.params}}
         if budget is not None:
             extra["budget"] = {"cap_usd": budget.cap, "spent_usd": round(budget.spent, 4),
-                               "refused_requests": budget.refused}
+                               "refused_requests": budget.refused,
+                               "provider_refusals_unbilled": budget.refused_unbilled}
         try:
             run(tasks, agent, model=cfg.key,
                 split=split_name, condition="tool_less",

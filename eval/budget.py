@@ -48,6 +48,7 @@ class Budget:
         self.spent = 0.0
         self.in_flight = 0.0
         self.refused = 0
+        self.refused_unbilled = 0
         self._lock = threading.Lock()
 
     def worst_case(self, request_text: str) -> float:
@@ -71,8 +72,22 @@ class Budget:
             self.in_flight -= reserved
             self.spent += actual_usd
 
+    def release_unbilled(self, reserved: float) -> None:
+        """A request the provider REFUSED: nothing was generated, so nothing was billed and
+        the reservation is returned.
+
+        Used only for statuses that cannot have been billed (`providers.is_unbilled_error`).
+        A real run hit 1,045 such refusals - OpenRouter 403 after the key's spending limit -
+        and every one was charged its worst case, so the cap read $39.84 of $40 against
+        $4.48 actually spent. A cap exhausted by unbilled refusals is not an overspend, but
+        it stops the next legitimate run early on a number that is wrong.
+        """
+        with self._lock:
+            self.in_flight -= reserved
+            self.refused_unbilled += 1
+
     def charge_failed(self, reserved: float) -> None:
-        """A request that raised. It is charged at its full worst case, NOT refunded.
+        """A request that raised where billing is UNKNOWN. Charged at its full worst case.
 
         We cannot tell from an exception whether the provider billed - a timeout can land
         after the generation completed. Refunding would under-count exactly when we do not

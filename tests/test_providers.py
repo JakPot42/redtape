@@ -289,3 +289,66 @@ def test_cached_rescore_counts_each_hit_once_through_the_cli(tmp_path):
     usage = out["run"]["usage"]
     assert usage["cached"]["n"] == 10
     assert usage["billed"]["n"] == 0
+
+
+# ------------------------------------------------------------------ unbilled refusals
+
+
+class _Refused(Exception):
+    """Shaped like an SDK status error."""
+    def __init__(self, status): self.status_code = status
+
+
+class _Conn(Exception):
+    pass
+
+
+_Conn.__name__ = "APIConnectionError"
+
+
+def test_provider_refusals_are_recognised_as_unbilled():
+    from eval.providers import is_unbilled_error
+
+    for status in (401, 403, 429, 400):
+        assert is_unbilled_error(_Refused(status)), status
+    assert is_unbilled_error(_Conn())
+    # Billing is UNKNOWN for these, so the conservative charge stands.
+    for status in (500, 502, 529):
+        assert not is_unbilled_error(_Refused(status)), status
+
+    class APITimeoutError(Exception):
+        pass
+
+    assert not is_unbilled_error(APITimeoutError())
+
+
+def test_a_refused_request_does_not_consume_the_cap(monkeypatch, tmp_path):
+    """The real failure this came from: OpenRouter refused 1,045 requests with 403 after the
+    key hit its spending limit, every one was charged its worst case, and the cap read
+    $39.84 of $40 against $4.48 actually spent. A cap exhausted by unbilled refusals stops
+    the NEXT run early."""
+    import eval.cache as cache_mod
+    import eval.run_eval as run_eval
+    from eval.budget import Budget
+    from eval.providers import get_model
+
+    class RefusingProvider:
+        def user_message(self, text):
+            return {"role": "user", "content": text}
+
+        def complete(self, system, messages, tools):
+            raise _Refused(403)
+
+    monkeypatch.setattr(cache_mod, "CACHE_DIR", tmp_path)
+    monkeypatch.setattr(run_eval, "make_provider", lambda cfg: RefusingProvider())
+    cfg = get_model("gpt-5.6-sol")
+    budget = Budget(40.0, price_in=cfg.price_in, price_out=cfg.price_out,
+                    max_output_tokens=cfg.max_output_tokens)
+    agent = run_eval.live_agent("tool_less", "gpt-5.6-sol", budget=budget)
+    task = run_eval.load_tasks(str(DEV), limit=1)[0]
+    for _ in range(50):
+        with pytest.raises(_Refused):
+            agent(task)
+    assert budget.spent == 0.0
+    assert budget.in_flight == 0.0
+    assert budget.refused_unbilled == 50

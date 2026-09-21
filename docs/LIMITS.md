@@ -1720,3 +1720,88 @@ The ceiling holds under exact fact matching, so the metric is reachable. `always
 falling to 0.000 is intended: it abstains without naming the withheld fact, so it no longer
 earns credit it did not reason for. The pair diagnostics stay discriminating and asymmetric
 (0.480 vs 0.370, was 0.495 vs 0.380).
+
+## 37. First run on the corrected corpus: the category/quantity split does NOT reproduce
+
+**Status: PARTIAL run, 155 of 1,200 tasks, 2026-09-20. The headline finding of this project
+does not reproduce on GPT-5.6 Sol on the corrected corpus. Two things changed at once, so
+this does not yet say which.**
+
+### What was run
+
+GPT-5.6 Sol, corrected dev split, `max_tokens` 16,000, hard cap $40. The run stopped when
+**OpenRouter refused further requests: 403 "Key limit exceeded (total limit)"** after 155
+billed requests and **$4.4770**. Our cap did not bind. The harness fell back to
+`--cached-only` scoring, which is what it is for: 155 tasks scored, 0 incomplete pairs, no
+pair-consistency (0 complete pairs in the fetched subset).
+
+**The 155 are not a random sample.** They are the tasks the pre-warm reached first, in split
+order. Every number below is over that subset, and the class n's are 18-59.
+
+### Fact-format compliance (checked BEFORE the headlines)
+
+53 `cannot_determine` entries across 30 replies:
+
+| what the model wrote | n | credited? |
+|---|---:|---|
+| the withheld identifier, exactly | 40 | yes |
+| `p1.ssn_status` where `p1.immigration_status` was withheld | 10 | yes - coupled (§36) |
+| `p1.student_full_time` where `p1.is_higher_ed_student` was withheld | 1 | yes - coupled |
+| `p1.declared_benefits` on an incomplete-determinate task | 1 | no - a needless abstention |
+| `other: p2 date lawful permanent residence` | 1 | no - a needless abstention |
+
+**51 of 53 named the withheld fact or its coupled half.** No near-misses, no free text, no
+invented identifiers: the closed vocabulary in the prompt works. The two that did not are
+both needless abstentions on incomplete-determinate tasks, which is a model judgement, not a
+format failure. The `other:` one asks for an LPR's date of entry - a real five-year-bar fact
+that the engine's SNAP path does not read, so it cannot change the key (LIMITS §16).
+
+**Truncation: 0 of 155** (`stop: end` for every response). At `max_tokens` 8,000 the 20-task
+probe had 1. Raising it to 16,000 removed the mechanism, at a cost: mean output rose from
+1,953 to 2,702 tokens, so $0.0213 -> $0.0289 per task.
+
+Also: 2 schema-invalid of 155 (gate 0.974), 0 scorer errors.
+
+### The headline
+
+| | GPT-5.6 Sol, corrected corpus (n=155) | Opus 5, superseded corpus (n=1,200) |
+|---|---:|---:|
+| exact-match, determinate | 0.724 (42/58) | 0.514 |
+| abstention, all T1b | 0.825 (80/97) | 0.438 |
+| **eligibility-flip (a category)** | **0.667 (12/18)** | **0.396** |
+| **indeterminate (a quantity)** | **0.600 (12/20)** | **0.050** |
+| incomplete-determinate (answer anyway) | 0.949 (56/59) | 0.951 |
+| ratio, category : quantity | **1.11x** | **7.9x** |
+
+**The eight-fold gap is gone.** On this model, on this corpus, noticing a missing fact whose
+absence moves a *quantity* is almost as reliable as noticing one that moves a *category*:
+0.600 against 0.667, well inside the noise at these n's.
+
+### What this does and does not establish
+
+**It does not yet say the original finding was wrong.** Two variables moved together:
+
+1. **The model.** Opus 5 -> GPT-5.6 Sol, a different lab.
+2. **The corpus.** The old corpus's answer keys rested on unstated premises, and the
+   indeterminate class was where a model that reasoned carefully about a missing amount was
+   most likely to be scored wrong anyway. 0.050 was measured under a scorer that also
+   ignored the named fact and a key that assumed marriages nobody stated.
+
+Opus 5 on the corrected corpus is the missing arm, and it is the one that separates these:
+same corpus, same scorer, different model. It is blocked on a dead Anthropic key.
+
+**The honest reading today:** the 8x gap is a property of one model measured on a defective
+corpus, and it has not been reproduced. Nothing in the README claims it any more (withdrawn
+2026-09-19), and it must not be reinstated on the strength of the old numbers.
+
+### A harness defect this run exposed
+
+`Budget.charge_failed` charged every failed request its worst case, including the 1,045
+requests OpenRouter **refused** with 403 and never billed. The cap therefore read
+**$39.84 of $40** while actual spend was **$4.48**. Nothing was overspent - the error is in
+the conservative direction - but a cap exhausted by unbilled refusals would stop the next
+legitimate run early on a number that is wrong. Fixed: `providers.is_unbilled_error`
+classifies statuses that cannot have been billed (401/403/429/400/404/422 and a connection
+that never opened) and `Budget.release_unbilled` returns those reservations; a timeout stays
+chargeable, because billing is genuinely unknown there. Results files now record
+`provider_refusals_unbilled`. Tested through `live_agent` with a provider that refuses.

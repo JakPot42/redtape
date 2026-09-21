@@ -1,0 +1,3064 @@
+{
+  "schema_version": "2",
+  "t1_exact_match_determinate": {
+    "value": 0.7241379310344828,
+    "n": 58,
+    "definition": "Fraction of DETERMINATE tasks answered all-correct: every scored amount within tolerance, SNAP eligibility exact, every period label exact. Gate failures (unparseable or degenerate responses) count as incorrect, never as excluded."
+  },
+  "t1b_abstention_accuracy": {
+    "value": 0.8247422680412371,
+    "n": 97,
+    "by_class": {
+      "indeterminate": {
+        "value": 0.631578947368421,
+        "n": 38
+      },
+      "incomplete_determinate": {
+        "value": 0.9491525423728814,
+        "n": 59
+      }
+    },
+    "definition": "Fraction of T1b tasks (indeterminate + incomplete-determinate) whose abstention decision is fully correct: abstaining on exactly the deciding scored programs when the withheld fact decides one, and not abstaining when it decides none. Gate failures count as incorrect."
+  },
+  "pair_consistency": {
+    "value": null,
+    "n_pairs": 0,
+    "n_pairs_where_truth_differs": 0,
+    "n_pairs_incomplete": 0,
+    "both_members_exact_match": null,
+    "definition": "Fraction of matched disability pairs where the model's answers differ on exactly the scored fields on which ground truth differs. Both members must be present and pass the gate; a pair with a missing or gated member counts as inconsistent.",
+    "pairs": []
+  },
+  "composite": {
+    "value": 0.8653709677419354,
+    "n": 155,
+    "note": "Weighted sum (amounts 0.325, eligibility 0.215, periods 0.110, abstention 0.350) behind a pass/fail gate. Reported for completeness. It is NOT the headline: quote the three headline fields instead."
+  },
+  "diagnostics": {
+    "n_tasks": 155,
+    "scorer_error_count": 0,
+    "publishable": true,
+    "gate_pass_rate": 0.9741935483870968,
+    "parse_failures": {
+      "schema_invalid": 2
+    },
+    "class_mix": {
+      "determinate": {
+        "n": 58,
+        "fraction": 0.3741935483870968
+      },
+      "incomplete_determinate": {
+        "n": 59,
+        "fraction": 0.38064516129032255
+      },
+      "indeterminate": {
+        "n": 38,
+        "fraction": 0.24516129032258063
+      }
+    },
+    "n_eligibility_flip": 18
+  },
+  "run": {
+    "model": "gpt-5.6-sol",
+    "split": "t1",
+    "condition": "tool_less",
+    "policyengine_us": "1.821.4",
+    "python": "3.13.15",
+    "timestamp": "2026-09-21T00:05:43+00:00",
+    "provider": {
+      "key": "gpt-5.6-sol",
+      "provider": "openrouter",
+      "api_model": "openai/gpt-5.6-sol",
+      "params": {
+        "max_tokens": 16000,
+        "reasoning": {
+          "effort": "high"
+        },
+        "provider": {
+          "only": [
+            "openai"
+          ],
+          "allow_fallbacks": false,
+          "require_parameters": true,
+          "data_collection": "deny"
+        }
+      }
+    },
+    "budget": {
+      "cap_usd": 40.0,
+      "spent_usd": 39.8356,
+      "refused_requests": 834
+    },
+    "usage": {
+      "billed": {
+        "n": 155,
+        "input_tokens": 143847,
+        "output_tokens": 418728,
+        "usd": 4.477036
+      },
+      "cached": {
+        "n": 0,
+        "input_tokens": 0,
+        "output_tokens": 0,
+        "usd": 0.0
+      },
+      "usd_actually_spent": 4.477,
+      "usd_if_uncached": 4.477,
+      "stop_reasons": {
+        "end": 155
+      },
+      "served_by": {
+        "OpenAI": 155
+      }
+    },
+    "redacted": true,
+    "redaction_note": "Seed and all seed-derived identifiers removed. Tasks are identified by task_hash, the library's content hash of the task's wire data."
+  },
+  "per_task": [
+    {
+      "task_hash": "9a79b8f77d77a676b112ea2f9c83b646d149f8244ce2ab33983cac744d5bbeb9",
+      "determinability": "incomplete_determinate",
+      "gate_passed": true,
+      "exact_match": false,
+      "abstention_correct": true,
+      "composite": 0.8916666666666666,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 0.6666666666666666,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "",
+      "withheld_fact": "p1.is_higher_ed_student",
+      "is_eligibility_flip": false
+    },
+    {
+      "task_hash": "09c751ce89084afd386ae41203b32bcc3498d787b7a6a1c6fbaffae0934bfed6",
+      "determinability": "indeterminate",
+      "gate_passed": true,
+      "exact_match": false,
+      "abstention_correct": true,
+      "composite": 0.785,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 1.0,
+        "eligibility": 0.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "",
+      "withheld_fact": "p1.employment_income",
+      "is_eligibility_flip": true
+    },
+    {
+      "task_hash": "df3a4474596ba6f4bd7a25c0fadb683dd30251d5247eaddd04121be37f1ce48c",
+      "determinability": "determinate",
+      "gate_passed": true,
+      "exact_match": true,
+      "abstention_correct": true,
+      "composite": 1.0,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 1.0,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "",
+      "withheld_fact": "",
+      "is_eligibility_flip": false
+    },
+    {
+      "task_hash": "3b4f25b69f6466e604bb09bd6ef78cd9a6f9b5637125683a334415a3a7c18d71",
+      "determinability": "incomplete_determinate",
+      "gate_passed": true,
+      "exact_match": true,
+      "abstention_correct": true,
+      "composite": 1.0,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 1.0,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "",
+      "withheld_fact": "p1.age",
+      "is_eligibility_flip": false
+    },
+    {
+      "task_hash": "f19cdb209b5548e1c7e97190d876f1bd85248c04f74a4f7c0e2b18b249633f02",
+      "determinability": "incomplete_determinate",
+      "gate_passed": true,
+      "exact_match": true,
+      "abstention_correct": true,
+      "composite": 1.0,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 1.0,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "",
+      "withheld_fact": "p1.is_higher_ed_student",
+      "is_eligibility_flip": false
+    },
+    {
+      "task_hash": "6f5b77ad2b698edbc9cf30531dbfc13a8acfeda5b47b65b42608f6df938ffcff",
+      "determinability": "incomplete_determinate",
+      "gate_passed": true,
+      "exact_match": false,
+      "abstention_correct": false,
+      "composite": 0.435,
+      "rewards": {
+        "abstention": 0.0,
+        "amounts": 1.0,
+        "eligibility": 0.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "",
+      "withheld_fact": "housing_cost",
+      "is_eligibility_flip": false
+    },
+    {
+      "task_hash": "d57c157f04643f9fd2f7bc70db3e8d718486b451171a4cd87411dd61b1ebdc07",
+      "determinability": "determinate",
+      "gate_passed": true,
+      "exact_match": true,
+      "abstention_correct": true,
+      "composite": 1.0,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 1.0,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "",
+      "withheld_fact": "",
+      "is_eligibility_flip": false
+    },
+    {
+      "task_hash": "6d88f036e92ba1ee0cfb9e5087e7783685f982a2ca30cf4c578f144616dddd4e",
+      "determinability": "determinate",
+      "gate_passed": true,
+      "exact_match": true,
+      "abstention_correct": true,
+      "composite": 1.0,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 1.0,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "",
+      "withheld_fact": "",
+      "is_eligibility_flip": false
+    },
+    {
+      "task_hash": "2f6a766d7550c775de17474a720f48e1663c29a7ff3c36ee6558d7a0adf88aec",
+      "determinability": "incomplete_determinate",
+      "gate_passed": true,
+      "exact_match": false,
+      "abstention_correct": false,
+      "composite": 0.435,
+      "rewards": {
+        "abstention": 0.0,
+        "amounts": 1.0,
+        "eligibility": 0.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "",
+      "withheld_fact": "p1.is_higher_ed_student",
+      "is_eligibility_flip": false
+    },
+    {
+      "task_hash": "ad9fbd9e2123221370a317526fef23e6e9f919f41bb35577ca467a3547ffa392",
+      "determinability": "indeterminate",
+      "gate_passed": true,
+      "exact_match": true,
+      "abstention_correct": false,
+      "composite": 0.825,
+      "rewards": {
+        "abstention": 0.5,
+        "amounts": 1.0,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "",
+      "withheld_fact": "dependent_care_cost",
+      "is_eligibility_flip": false
+    },
+    {
+      "task_hash": "28cb806ec8e2341b4f68c20cb09c09dd5a56a9f177cdb8e19ad5102b9cc6fae5",
+      "determinability": "determinate",
+      "gate_passed": true,
+      "exact_match": true,
+      "abstention_correct": true,
+      "composite": 1.0,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 1.0,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "",
+      "withheld_fact": "",
+      "is_eligibility_flip": false
+    },
+    {
+      "task_hash": "ca515c0aa21d7ea49bfdc86e7876d3b914b6ccd0f0f087f9dd3728edf61e492e",
+      "determinability": "indeterminate",
+      "gate_passed": true,
+      "exact_match": false,
+      "abstention_correct": true,
+      "composite": 0.6766666666666666,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 0.6666666666666666,
+        "eligibility": 0.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "",
+      "withheld_fact": "p1.employment_income",
+      "is_eligibility_flip": true
+    },
+    {
+      "task_hash": "ae73329109385768572a144ae96a590bbcfcc8bc05a843be7d9240d2ac6f8a45",
+      "determinability": "incomplete_determinate",
+      "gate_passed": true,
+      "exact_match": true,
+      "abstention_correct": true,
+      "composite": 1.0,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 1.0,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "",
+      "withheld_fact": "p1.is_higher_ed_student",
+      "is_eligibility_flip": false
+    },
+    {
+      "task_hash": "40ccb7c67e2e4ee0459481601f251c40a5c0e81f63a0849a8dd1e859d087a429",
+      "determinability": "incomplete_determinate",
+      "gate_passed": true,
+      "exact_match": true,
+      "abstention_correct": true,
+      "composite": 1.0,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 1.0,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "",
+      "withheld_fact": "p1.age",
+      "is_eligibility_flip": false
+    },
+    {
+      "task_hash": "a2d32015f8bb11d6c7e3db9811cee5a3d1b595e1f8a9641ff1dee29e08cd4ed9",
+      "determinability": "determinate",
+      "gate_passed": true,
+      "exact_match": true,
+      "abstention_correct": true,
+      "composite": 1.0,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 1.0,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "",
+      "withheld_fact": "",
+      "is_eligibility_flip": false
+    },
+    {
+      "task_hash": "796ace46e9dfb36d5a6137764c949904cdd929699b2ad7955b94ed7057a730c7",
+      "determinability": "determinate",
+      "gate_passed": true,
+      "exact_match": false,
+      "abstention_correct": true,
+      "composite": 0.5683333333333334,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 0.3333333333333333,
+        "eligibility": 0.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "",
+      "withheld_fact": "",
+      "is_eligibility_flip": false
+    },
+    {
+      "task_hash": "5d10489128b96503d987f6b1e63156ba4a69f7e360bfd261f5ef419a4618f14d",
+      "determinability": "incomplete_determinate",
+      "gate_passed": true,
+      "exact_match": true,
+      "abstention_correct": true,
+      "composite": 1.0,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 1.0,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "",
+      "withheld_fact": "p1.is_higher_ed_student",
+      "is_eligibility_flip": false
+    },
+    {
+      "task_hash": "2c31c9aa88459728202eb234cfffbc127d5a5ee5af4972e9d8f134602880af39",
+      "determinability": "incomplete_determinate",
+      "gate_passed": true,
+      "exact_match": true,
+      "abstention_correct": true,
+      "composite": 1.0,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 1.0,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "",
+      "withheld_fact": "p1.immigration_status",
+      "is_eligibility_flip": false
+    },
+    {
+      "task_hash": "ddda38b1f261f5b2bf948ab9a3edac68b1c0fee1033de4ab6a49693f0190a3f8",
+      "determinability": "determinate",
+      "gate_passed": true,
+      "exact_match": true,
+      "abstention_correct": true,
+      "composite": 1.0,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 1.0,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "",
+      "withheld_fact": "",
+      "is_eligibility_flip": false
+    },
+    {
+      "task_hash": "1416b60af1c8434f0dae75efc3079afc3afbd542f871ff456b46d716b5071507",
+      "determinability": "indeterminate",
+      "gate_passed": true,
+      "exact_match": false,
+      "abstention_correct": false,
+      "composite": 0.6625,
+      "rewards": {
+        "abstention": 0.5,
+        "amounts": 0.5,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "",
+      "withheld_fact": "dependent_care_cost",
+      "is_eligibility_flip": false
+    },
+    {
+      "task_hash": "4a6fbbe8b90729d3bc42a7dccf54167404ef5861e408a94863c8fabdce322804",
+      "determinability": "incomplete_determinate",
+      "gate_passed": true,
+      "exact_match": false,
+      "abstention_correct": true,
+      "composite": 0.8916666666666666,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 0.6666666666666666,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "",
+      "withheld_fact": "p1.is_higher_ed_student",
+      "is_eligibility_flip": false
+    },
+    {
+      "task_hash": "5844f033bd67a265ee0ef7845f98a23693ba7716c91e89ee639bf9abc2223dd4",
+      "determinability": "indeterminate",
+      "gate_passed": false,
+      "exact_match": false,
+      "abstention_correct": false,
+      "composite": 0.0,
+      "rewards": {
+        "abstention": 0.0,
+        "amounts": 0.0,
+        "eligibility": 0.0,
+        "periods": 0.0
+      },
+      "parse_failure": "schema_invalid",
+      "scorer_error": "",
+      "pair_role": "",
+      "withheld_fact": "p1.employment_income",
+      "is_eligibility_flip": true
+    },
+    {
+      "task_hash": "9628ffa69796c1272974ff20e1329b05664ae64df3e5b948fe0e40972ee08757",
+      "determinability": "determinate",
+      "gate_passed": true,
+      "exact_match": false,
+      "abstention_correct": true,
+      "composite": 0.8916666666666666,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 0.6666666666666666,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "",
+      "withheld_fact": "",
+      "is_eligibility_flip": false
+    },
+    {
+      "task_hash": "32614b9fec6dce0da2bd40688d4e57bc734c25adcd936cc39b1bbf9c8f1046e6",
+      "determinability": "determinate",
+      "gate_passed": true,
+      "exact_match": false,
+      "abstention_correct": true,
+      "composite": 0.7833333333333333,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 0.3333333333333333,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "",
+      "withheld_fact": "",
+      "is_eligibility_flip": false
+    },
+    {
+      "task_hash": "0d6632afa647ec905754c39fb9cf866e7fa2a7e1a7bf7e2c7b297f3850e256a7",
+      "determinability": "indeterminate",
+      "gate_passed": true,
+      "exact_match": false,
+      "abstention_correct": true,
+      "composite": 0.8375,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 0.5,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "",
+      "withheld_fact": "p1.is_higher_ed_student",
+      "is_eligibility_flip": false
+    },
+    {
+      "task_hash": "a736f01d5caeba4a730fd321b1639158b2fa6c8a1a27c38d083e5824d4384e32",
+      "determinability": "indeterminate",
+      "gate_passed": true,
+      "exact_match": true,
+      "abstention_correct": true,
+      "composite": 1.0,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 1.0,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "",
+      "withheld_fact": "housing_cost",
+      "is_eligibility_flip": false
+    },
+    {
+      "task_hash": "5ecbbefe2298268558da2ca5cc934f257810126f492a4c518f0fd5d377199e0c",
+      "determinability": "determinate",
+      "gate_passed": true,
+      "exact_match": true,
+      "abstention_correct": true,
+      "composite": 1.0,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 1.0,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "",
+      "withheld_fact": "",
+      "is_eligibility_flip": false
+    },
+    {
+      "task_hash": "3639834f3996605c06cd22e1a35127d4e4cccbd69fb0b5634620ced00187feff",
+      "determinability": "indeterminate",
+      "gate_passed": true,
+      "exact_match": false,
+      "abstention_correct": true,
+      "composite": 0.785,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 1.0,
+        "eligibility": 0.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "",
+      "withheld_fact": "p1.immigration_status",
+      "is_eligibility_flip": true
+    },
+    {
+      "task_hash": "53ca0ef79fd4526f9d032b2b0f00eb41a250a9e2a96b7574adc31fa98b56d3d8",
+      "determinability": "incomplete_determinate",
+      "gate_passed": true,
+      "exact_match": true,
+      "abstention_correct": true,
+      "composite": 1.0,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 1.0,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "",
+      "withheld_fact": "p1.is_higher_ed_student",
+      "is_eligibility_flip": false
+    },
+    {
+      "task_hash": "c7c01c56e496a283bceab73bcaaa43a835c2d896a9d363078e4489e845ab97f1",
+      "determinability": "indeterminate",
+      "gate_passed": true,
+      "exact_match": false,
+      "abstention_correct": false,
+      "composite": 0.32666666666666666,
+      "rewards": {
+        "abstention": 0.0,
+        "amounts": 0.6666666666666666,
+        "eligibility": 0.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "",
+      "withheld_fact": "dependent_care_cost",
+      "is_eligibility_flip": true
+    },
+    {
+      "task_hash": "88c85ac22f55725d2aade599ae42e385758e72faa52f518a99eaecb2dd6ce9b8",
+      "determinability": "determinate",
+      "gate_passed": true,
+      "exact_match": false,
+      "abstention_correct": true,
+      "composite": 0.6749999999999999,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 0.0,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "",
+      "withheld_fact": "",
+      "is_eligibility_flip": false
+    },
+    {
+      "task_hash": "59d2a1a9aa696d2a6b2eb72f5cb9a2c21c9136b9bd7edd1aa83945d130a363ec",
+      "determinability": "determinate",
+      "gate_passed": true,
+      "exact_match": true,
+      "abstention_correct": true,
+      "composite": 1.0,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 1.0,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "",
+      "withheld_fact": "",
+      "is_eligibility_flip": false
+    },
+    {
+      "task_hash": "c07e4b0fac89da3b37b948505044c94541e7e3687b9de1fd539544f2e3176cb1",
+      "determinability": "indeterminate",
+      "gate_passed": true,
+      "exact_match": false,
+      "abstention_correct": true,
+      "composite": 0.785,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 1.0,
+        "eligibility": 0.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "",
+      "withheld_fact": "p1.is_higher_ed_student",
+      "is_eligibility_flip": true
+    },
+    {
+      "task_hash": "27b2c073dc2098d9bf6de3825521b435241be324443fb600da4071c09da17fa0",
+      "determinability": "indeterminate",
+      "gate_passed": true,
+      "exact_match": false,
+      "abstention_correct": false,
+      "composite": 0.43333333333333335,
+      "rewards": {
+        "abstention": 0.0,
+        "amounts": 0.3333333333333333,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "",
+      "withheld_fact": "p1.age",
+      "is_eligibility_flip": false
+    },
+    {
+      "task_hash": "64df071870419fa74c93773d65d45e52134ec20803c3e147b4c163162a5a9627",
+      "determinability": "determinate",
+      "gate_passed": true,
+      "exact_match": true,
+      "abstention_correct": true,
+      "composite": 1.0,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 1.0,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "",
+      "withheld_fact": "",
+      "is_eligibility_flip": false
+    },
+    {
+      "task_hash": "ab786784057cecfc9e9b21f83cd19f8e49058748cd6ea56441d5717d728caebe",
+      "determinability": "indeterminate",
+      "gate_passed": true,
+      "exact_match": false,
+      "abstention_correct": true,
+      "composite": 0.6224999999999999,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 0.5,
+        "eligibility": 0.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "",
+      "withheld_fact": "housing_cost",
+      "is_eligibility_flip": true
+    },
+    {
+      "task_hash": "280eba81e7c2bfdbbc3fc959776ef9996e715b8c6de1446f061802eac41a6424",
+      "determinability": "incomplete_determinate",
+      "gate_passed": true,
+      "exact_match": true,
+      "abstention_correct": true,
+      "composite": 1.0,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 1.0,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "",
+      "withheld_fact": "p1.is_higher_ed_student",
+      "is_eligibility_flip": false
+    },
+    {
+      "task_hash": "0ee0b11b4fdc0d6aabae651a4a91d94dd821fb102d7182677b7f84f2b95f4325",
+      "determinability": "indeterminate",
+      "gate_passed": true,
+      "exact_match": false,
+      "abstention_correct": true,
+      "composite": 0.785,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 1.0,
+        "eligibility": 0.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "",
+      "withheld_fact": "p1.immigration_status",
+      "is_eligibility_flip": true
+    },
+    {
+      "task_hash": "6f5394736cf8271a659312b3e0f1e76e42a02ccc0675692e7d04864689130275",
+      "determinability": "determinate",
+      "gate_passed": true,
+      "exact_match": true,
+      "abstention_correct": true,
+      "composite": 1.0,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 1.0,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "",
+      "withheld_fact": "",
+      "is_eligibility_flip": false
+    },
+    {
+      "task_hash": "964a12f3c19f983c1dd5c2fa1dffa86e5d21dde9b676c2afefaa0a1597f17c38",
+      "determinability": "determinate",
+      "gate_passed": true,
+      "exact_match": true,
+      "abstention_correct": true,
+      "composite": 1.0,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 1.0,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "",
+      "withheld_fact": "",
+      "is_eligibility_flip": false
+    },
+    {
+      "task_hash": "685a9294da040a63c0d0b428d3de84799aea9411c8870974ac1e8dba18824023",
+      "determinability": "incomplete_determinate",
+      "gate_passed": true,
+      "exact_match": true,
+      "abstention_correct": true,
+      "composite": 1.0,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 1.0,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "",
+      "withheld_fact": "p1.is_higher_ed_student",
+      "is_eligibility_flip": false
+    },
+    {
+      "task_hash": "90f6eccf6eaeac911f94cdd346516872bfe55fc46fbd7e2ae0ac094fd24ea9fa",
+      "determinability": "indeterminate",
+      "gate_passed": true,
+      "exact_match": false,
+      "abstention_correct": true,
+      "composite": 0.785,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 1.0,
+        "eligibility": 0.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "",
+      "withheld_fact": "p1.employment_income",
+      "is_eligibility_flip": true
+    },
+    {
+      "task_hash": "80941e5209039db9c2fc16b657e8ead3994f3b3523f5efe54f4bb66220cad76a",
+      "determinability": "determinate",
+      "gate_passed": true,
+      "exact_match": false,
+      "abstention_correct": true,
+      "composite": 0.8916666666666666,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 0.6666666666666666,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "",
+      "withheld_fact": "",
+      "is_eligibility_flip": false
+    },
+    {
+      "task_hash": "2d861092592c1db03fd40d6900861026b07271065e9dcc498c5623ff838311c7",
+      "determinability": "indeterminate",
+      "gate_passed": true,
+      "exact_match": false,
+      "abstention_correct": false,
+      "composite": 0.5416666666666666,
+      "rewards": {
+        "abstention": 0.0,
+        "amounts": 0.6666666666666666,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "",
+      "withheld_fact": "p1.age",
+      "is_eligibility_flip": false
+    },
+    {
+      "task_hash": "23e6b164cc5aac283769579a81e2a81a7fb9db2ae9f1e590bbc51733a5d88dd6",
+      "determinability": "incomplete_determinate",
+      "gate_passed": true,
+      "exact_match": false,
+      "abstention_correct": true,
+      "composite": 0.8916666666666666,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 0.6666666666666666,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "",
+      "withheld_fact": "p1.is_higher_ed_student",
+      "is_eligibility_flip": false
+    },
+    {
+      "task_hash": "74444346c90b525f24b9092c288b55d1267d16c18cef0df1921c4a6e1bd2f95a",
+      "determinability": "incomplete_determinate",
+      "gate_passed": true,
+      "exact_match": true,
+      "abstention_correct": true,
+      "composite": 1.0,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 1.0,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "",
+      "withheld_fact": "housing_cost",
+      "is_eligibility_flip": false
+    },
+    {
+      "task_hash": "a81e5afcb1940b9eec5473d89d6302b186b4ce76c7018454a08b42220b892e15",
+      "determinability": "determinate",
+      "gate_passed": true,
+      "exact_match": false,
+      "abstention_correct": true,
+      "composite": 0.8916666666666666,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 0.6666666666666666,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "",
+      "withheld_fact": "",
+      "is_eligibility_flip": false
+    },
+    {
+      "task_hash": "c9296d7c3dc74b3009554738530ef4618180f45bef2469666fb3aca33dc6b540",
+      "determinability": "determinate",
+      "gate_passed": true,
+      "exact_match": true,
+      "abstention_correct": true,
+      "composite": 1.0,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 1.0,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "",
+      "withheld_fact": "",
+      "is_eligibility_flip": false
+    },
+    {
+      "task_hash": "3295837e22b90214213746defc695686c4f420dd1760ecd3370049cdd09a17c1",
+      "determinability": "incomplete_determinate",
+      "gate_passed": true,
+      "exact_match": true,
+      "abstention_correct": true,
+      "composite": 1.0,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 1.0,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "",
+      "withheld_fact": "p1.is_higher_ed_student",
+      "is_eligibility_flip": false
+    },
+    {
+      "task_hash": "73726d8ae82889a9d638318c6b34c1e15f122085a583f7aba5638debc9c440bc",
+      "determinability": "incomplete_determinate",
+      "gate_passed": true,
+      "exact_match": true,
+      "abstention_correct": true,
+      "composite": 1.0,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 1.0,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "",
+      "withheld_fact": "dependent_care_cost",
+      "is_eligibility_flip": false
+    },
+    {
+      "task_hash": "21c874fc64d94c1edd54d8be344e6ded7af24a33920cec5a3317cd1d01bc4241",
+      "determinability": "determinate",
+      "gate_passed": true,
+      "exact_match": false,
+      "abstention_correct": true,
+      "composite": 0.8916666666666666,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 0.6666666666666666,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "",
+      "withheld_fact": "",
+      "is_eligibility_flip": false
+    },
+    {
+      "task_hash": "60dfae888dab64d679be5cdd0d9a8e8509c537c0ded3252b503d2cba163f5942",
+      "determinability": "indeterminate",
+      "gate_passed": true,
+      "exact_match": false,
+      "abstention_correct": true,
+      "composite": 0.6766666666666666,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 0.6666666666666666,
+        "eligibility": 0.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "",
+      "withheld_fact": "p1.employment_income",
+      "is_eligibility_flip": true
+    },
+    {
+      "task_hash": "e36b9aa048103465518605f2d3dc8f63b9cea785938156af87ae743d6e830b07",
+      "determinability": "incomplete_determinate",
+      "gate_passed": true,
+      "exact_match": true,
+      "abstention_correct": true,
+      "composite": 1.0,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 1.0,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "",
+      "withheld_fact": "p1.is_higher_ed_student",
+      "is_eligibility_flip": false
+    },
+    {
+      "task_hash": "8498a970d15a7822edd45230122aed907331bea9b4ef6c6655f3c59003febbdb",
+      "determinability": "incomplete_determinate",
+      "gate_passed": true,
+      "exact_match": true,
+      "abstention_correct": true,
+      "composite": 1.0,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 1.0,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "",
+      "withheld_fact": "p1.age",
+      "is_eligibility_flip": false
+    },
+    {
+      "task_hash": "181ec90331d7e65a5c9fa88355ded3af2c12283f2ac5b536480d116743119466",
+      "determinability": "determinate",
+      "gate_passed": true,
+      "exact_match": true,
+      "abstention_correct": true,
+      "composite": 1.0,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 1.0,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "",
+      "withheld_fact": "",
+      "is_eligibility_flip": false
+    },
+    {
+      "task_hash": "caeed145852e2f951d9dfac55f03e6f6e3405e122120f309a30fe6a1df685f67",
+      "determinability": "determinate",
+      "gate_passed": true,
+      "exact_match": true,
+      "abstention_correct": true,
+      "composite": 1.0,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 1.0,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "",
+      "withheld_fact": "",
+      "is_eligibility_flip": false
+    },
+    {
+      "task_hash": "7330337d1ab42bf21d8b04de6a94a4f5c97b62ec20f0841705e18a6a31f16991",
+      "determinability": "indeterminate",
+      "gate_passed": true,
+      "exact_match": false,
+      "abstention_correct": true,
+      "composite": 0.6749999999999999,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 0.0,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "",
+      "withheld_fact": "p1.is_higher_ed_student",
+      "is_eligibility_flip": false
+    },
+    {
+      "task_hash": "526098653fe75136d2626b1cff8df58bb56fb8bcaba09c511554b2dfa85d417b",
+      "determinability": "indeterminate",
+      "gate_passed": true,
+      "exact_match": true,
+      "abstention_correct": true,
+      "composite": 1.0,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 1.0,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "",
+      "withheld_fact": "p1.immigration_status",
+      "is_eligibility_flip": false
+    },
+    {
+      "task_hash": "bc79074a08c0eb2ed2433cea78f79dca1374c6926d726ae6553918fab2a813dc",
+      "determinability": "determinate",
+      "gate_passed": true,
+      "exact_match": true,
+      "abstention_correct": true,
+      "composite": 1.0,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 1.0,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "",
+      "withheld_fact": "",
+      "is_eligibility_flip": false
+    },
+    {
+      "task_hash": "1f9ff0c4fcebd90f34aadb46195390cd43f904bfa5e428fd23796075d38ccf33",
+      "determinability": "incomplete_determinate",
+      "gate_passed": true,
+      "exact_match": true,
+      "abstention_correct": true,
+      "composite": 1.0,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 1.0,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "",
+      "withheld_fact": "dependent_care_cost",
+      "is_eligibility_flip": false
+    },
+    {
+      "task_hash": "3be1c62316ebc8760c4ec12ec477643f633439a20ae9003270f477458b8edabb",
+      "determinability": "incomplete_determinate",
+      "gate_passed": true,
+      "exact_match": true,
+      "abstention_correct": true,
+      "composite": 1.0,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 1.0,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "",
+      "withheld_fact": "p1.is_higher_ed_student",
+      "is_eligibility_flip": false
+    },
+    {
+      "task_hash": "bb9d2bc050920f26ed253c5d0f4bb4cf66128f6c00892dd3f438f455d3aa0c5c",
+      "determinability": "incomplete_determinate",
+      "gate_passed": true,
+      "exact_match": true,
+      "abstention_correct": true,
+      "composite": 1.0,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 1.0,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "",
+      "withheld_fact": "p1.employment_income",
+      "is_eligibility_flip": false
+    },
+    {
+      "task_hash": "fa7864b894825f4bcb4d741b9254a6d9e5fe3567ba83545250c7e6b19a00d5f3",
+      "determinability": "determinate",
+      "gate_passed": true,
+      "exact_match": true,
+      "abstention_correct": true,
+      "composite": 1.0,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 1.0,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "",
+      "withheld_fact": "",
+      "is_eligibility_flip": false
+    },
+    {
+      "task_hash": "083e6d691e18f4d36fe1eb9da770e6f5d2b362b29b4a0a49b206ce05e494c59b",
+      "determinability": "determinate",
+      "gate_passed": true,
+      "exact_match": true,
+      "abstention_correct": true,
+      "composite": 1.0,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 1.0,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "",
+      "withheld_fact": "",
+      "is_eligibility_flip": false
+    },
+    {
+      "task_hash": "f26285013d672befcc4acbeef3cf05cb7bb98c5ae724b56b5fc03a350f95b385",
+      "determinability": "incomplete_determinate",
+      "gate_passed": true,
+      "exact_match": false,
+      "abstention_correct": true,
+      "composite": 0.8916666666666666,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 0.6666666666666666,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "",
+      "withheld_fact": "p1.is_higher_ed_student",
+      "is_eligibility_flip": false
+    },
+    {
+      "task_hash": "1139db6be0a206c4c05ed3ff8155d3b479bfcf4d28ef48c9d4c612b9a4d908d0",
+      "determinability": "indeterminate",
+      "gate_passed": true,
+      "exact_match": false,
+      "abstention_correct": true,
+      "composite": 0.8375,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 0.5,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "",
+      "withheld_fact": "housing_cost",
+      "is_eligibility_flip": false
+    },
+    {
+      "task_hash": "5114a2b4e5fc065ca958194647c45cbe67642949442b5627b8aebdfcd42bb0ff",
+      "determinability": "determinate",
+      "gate_passed": true,
+      "exact_match": true,
+      "abstention_correct": true,
+      "composite": 1.0,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 1.0,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "",
+      "withheld_fact": "",
+      "is_eligibility_flip": false
+    },
+    {
+      "task_hash": "118f71a459fe447dea091339eef3b3ceba4974ddea6d30845583aff24d620995",
+      "determinability": "indeterminate",
+      "gate_passed": false,
+      "exact_match": false,
+      "abstention_correct": false,
+      "composite": 0.0,
+      "rewards": {
+        "abstention": 0.0,
+        "amounts": 0.0,
+        "eligibility": 0.0,
+        "periods": 0.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "",
+      "withheld_fact": "p1.immigration_status",
+      "is_eligibility_flip": false
+    },
+    {
+      "task_hash": "b7b500e244871944f940250b920770559194d19be33d712d71118c46b5fc44bf",
+      "determinability": "incomplete_determinate",
+      "gate_passed": true,
+      "exact_match": false,
+      "abstention_correct": true,
+      "composite": 0.8916666666666666,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 0.6666666666666666,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "",
+      "withheld_fact": "p1.is_higher_ed_student",
+      "is_eligibility_flip": false
+    },
+    {
+      "task_hash": "25915bd7f9e23b69eac31fcbcf44e86ba87f0a40f2da5054f8c1cce2f3959c2b",
+      "determinability": "incomplete_determinate",
+      "gate_passed": true,
+      "exact_match": true,
+      "abstention_correct": true,
+      "composite": 1.0,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 1.0,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "",
+      "withheld_fact": "dependent_care_cost",
+      "is_eligibility_flip": false
+    },
+    {
+      "task_hash": "bfcc07ca453391c3343391b69635854b500ad1d935a6a27c449843f149092644",
+      "determinability": "determinate",
+      "gate_passed": true,
+      "exact_match": true,
+      "abstention_correct": true,
+      "composite": 1.0,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 1.0,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "",
+      "withheld_fact": "",
+      "is_eligibility_flip": false
+    },
+    {
+      "task_hash": "d10455204a04f78b3cff1fa11eddb05aa5fe726758ad273b2a6793828288c9ec",
+      "determinability": "determinate",
+      "gate_passed": true,
+      "exact_match": true,
+      "abstention_correct": true,
+      "composite": 1.0,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 1.0,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "",
+      "withheld_fact": "",
+      "is_eligibility_flip": false
+    },
+    {
+      "task_hash": "dcffd1eeb76a470c0ef6d44ac0fa21546cbcf0462abf8821a4b23459b847f20a",
+      "determinability": "incomplete_determinate",
+      "gate_passed": true,
+      "exact_match": true,
+      "abstention_correct": true,
+      "composite": 1.0,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 1.0,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "",
+      "withheld_fact": "p1.is_higher_ed_student",
+      "is_eligibility_flip": false
+    },
+    {
+      "task_hash": "7d785f53180ff64e053d5040d6035d5df9eeb8b69103d9e79084c11fe1add91e",
+      "determinability": "incomplete_determinate",
+      "gate_passed": true,
+      "exact_match": true,
+      "abstention_correct": true,
+      "composite": 1.0,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 1.0,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "",
+      "withheld_fact": "p1.age",
+      "is_eligibility_flip": false
+    },
+    {
+      "task_hash": "f8c5b6a52eedff13c80bf3a85bec76f0a0bf889daf72b01d5d1d0e4e6df13d7d",
+      "determinability": "determinate",
+      "gate_passed": true,
+      "exact_match": true,
+      "abstention_correct": true,
+      "composite": 1.0,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 1.0,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "",
+      "withheld_fact": "",
+      "is_eligibility_flip": false
+    },
+    {
+      "task_hash": "0b9f9c5b4a4c93beaf5844be4e7384331819312c19bee1ca5b6243c0dafed17e",
+      "determinability": "indeterminate",
+      "gate_passed": true,
+      "exact_match": false,
+      "abstention_correct": true,
+      "composite": 0.6224999999999999,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 0.5,
+        "eligibility": 0.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "",
+      "withheld_fact": "housing_cost",
+      "is_eligibility_flip": true
+    },
+    {
+      "task_hash": "5d6369160c464ae6fa5f9749e9c184f8ef87aed36d648b4b45e67f916ca81269",
+      "determinability": "incomplete_determinate",
+      "gate_passed": true,
+      "exact_match": true,
+      "abstention_correct": true,
+      "composite": 1.0,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 1.0,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "",
+      "withheld_fact": "p1.is_higher_ed_student",
+      "is_eligibility_flip": false
+    },
+    {
+      "task_hash": "4026483da4befa4f3da8a560088c30a34811213dc210692f430fa7704c998843",
+      "determinability": "indeterminate",
+      "gate_passed": true,
+      "exact_match": false,
+      "abstention_correct": true,
+      "composite": 0.6749999999999999,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 0.0,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "",
+      "withheld_fact": "p1.immigration_status",
+      "is_eligibility_flip": false
+    },
+    {
+      "task_hash": "d2863ce9bc456c437518fb52c4d4915b795ec2264c49aa34d76e9ef59bde9aa7",
+      "determinability": "determinate",
+      "gate_passed": true,
+      "exact_match": true,
+      "abstention_correct": true,
+      "composite": 1.0,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 1.0,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "",
+      "withheld_fact": "",
+      "is_eligibility_flip": false
+    },
+    {
+      "task_hash": "e7d237a1eaf455076ff2cad5a1c6ce0af35ce4a5cc1ac3f715c8905884710ada",
+      "determinability": "determinate",
+      "gate_passed": true,
+      "exact_match": false,
+      "abstention_correct": true,
+      "composite": 0.8916666666666666,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 0.6666666666666666,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "",
+      "withheld_fact": "",
+      "is_eligibility_flip": false
+    },
+    {
+      "task_hash": "645e9ecbcbb7ae4eb1c4e7d8073ba2653cf48d5d2c7ca114d60367a6d52b3b92",
+      "determinability": "incomplete_determinate",
+      "gate_passed": true,
+      "exact_match": true,
+      "abstention_correct": true,
+      "composite": 1.0,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 1.0,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "",
+      "withheld_fact": "p1.is_higher_ed_student",
+      "is_eligibility_flip": false
+    },
+    {
+      "task_hash": "dbc8931e3fcfcf8ded9f8b0fd76a0b87714faea3a01f5cf00c303ceaa891b7ac",
+      "determinability": "indeterminate",
+      "gate_passed": true,
+      "exact_match": false,
+      "abstention_correct": true,
+      "composite": 0.785,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 1.0,
+        "eligibility": 0.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "",
+      "withheld_fact": "p1.employment_income",
+      "is_eligibility_flip": true
+    },
+    {
+      "task_hash": "37df599ff44349075501d19b824885448f01aade5dab061f0feb9a1a340d08be",
+      "determinability": "determinate",
+      "gate_passed": true,
+      "exact_match": false,
+      "abstention_correct": true,
+      "composite": 0.8916666666666666,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 0.6666666666666666,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "",
+      "withheld_fact": "",
+      "is_eligibility_flip": false
+    },
+    {
+      "task_hash": "c9ad90024c3c42112593f211b807f26a3105d6b0b4f442edccca3734f93c1fd4",
+      "determinability": "incomplete_determinate",
+      "gate_passed": false,
+      "exact_match": false,
+      "abstention_correct": false,
+      "composite": 0.0,
+      "rewards": {
+        "abstention": 0.0,
+        "amounts": 0.0,
+        "eligibility": 0.0,
+        "periods": 0.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "",
+      "withheld_fact": "p1.age",
+      "is_eligibility_flip": false
+    },
+    {
+      "task_hash": "5dfeb2aed4e37f624af94e3d6204dd6e70a03bfbcc0687417d2046c0faeded41",
+      "determinability": "incomplete_determinate",
+      "gate_passed": true,
+      "exact_match": false,
+      "abstention_correct": true,
+      "composite": 0.5683333333333334,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 0.3333333333333333,
+        "eligibility": 0.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "",
+      "withheld_fact": "p1.is_higher_ed_student",
+      "is_eligibility_flip": false
+    },
+    {
+      "task_hash": "b5abddb8bd0a563a711a5815a2934b9c9323e83b1328433cd631265518a3d573",
+      "determinability": "incomplete_determinate",
+      "gate_passed": true,
+      "exact_match": true,
+      "abstention_correct": true,
+      "composite": 1.0,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 1.0,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "",
+      "withheld_fact": "housing_cost",
+      "is_eligibility_flip": false
+    },
+    {
+      "task_hash": "148e7f591925bb688e9dfd286bf837d6992b516b637e345de7dc4c99490cbe3c",
+      "determinability": "determinate",
+      "gate_passed": true,
+      "exact_match": true,
+      "abstention_correct": true,
+      "composite": 1.0,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 1.0,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "",
+      "withheld_fact": "",
+      "is_eligibility_flip": false
+    },
+    {
+      "task_hash": "3e5d15d0e61b4a46466c11aa3365972382018b0f7c7951d76661853e83a22a3a",
+      "determinability": "determinate",
+      "gate_passed": true,
+      "exact_match": false,
+      "abstention_correct": true,
+      "composite": 0.7833333333333333,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 0.3333333333333333,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "",
+      "withheld_fact": "",
+      "is_eligibility_flip": false
+    },
+    {
+      "task_hash": "9d52b5a339a997148dfda79e64415c894875b454efa1f8d8221b7a153d1d3b24",
+      "determinability": "incomplete_determinate",
+      "gate_passed": true,
+      "exact_match": false,
+      "abstention_correct": true,
+      "composite": 0.6749999999999999,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 0.0,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "",
+      "withheld_fact": "p1.is_higher_ed_student",
+      "is_eligibility_flip": false
+    },
+    {
+      "task_hash": "4f3e8ff8feb905cceb229964cc2ff219a30f2255d20341ab79e9f46260b5ccea",
+      "determinability": "indeterminate",
+      "gate_passed": true,
+      "exact_match": false,
+      "abstention_correct": true,
+      "composite": 0.8375,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 0.5,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "",
+      "withheld_fact": "dependent_care_cost",
+      "is_eligibility_flip": false
+    },
+    {
+      "task_hash": "b2520d88c3b70c641798f4b6b88d416991a1387923d4b1d10a2b348386cd2b0c",
+      "determinability": "determinate",
+      "gate_passed": true,
+      "exact_match": true,
+      "abstention_correct": true,
+      "composite": 1.0,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 1.0,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "",
+      "withheld_fact": "",
+      "is_eligibility_flip": false
+    },
+    {
+      "task_hash": "3e23103c76fa413b2a2d25f418a8abf5712ab60533ab6820748815f3451afb88",
+      "determinability": "indeterminate",
+      "gate_passed": true,
+      "exact_match": false,
+      "abstention_correct": true,
+      "composite": 0.5683333333333334,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 0.3333333333333333,
+        "eligibility": 0.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "",
+      "withheld_fact": "p1.employment_income",
+      "is_eligibility_flip": true
+    },
+    {
+      "task_hash": "0ca022a9f73c91a52c990f9a078566cd56c5dfe10591ebe8f1ba85d64f0f6a4b",
+      "determinability": "incomplete_determinate",
+      "gate_passed": true,
+      "exact_match": true,
+      "abstention_correct": true,
+      "composite": 1.0,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 1.0,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "",
+      "withheld_fact": "p1.is_higher_ed_student",
+      "is_eligibility_flip": false
+    },
+    {
+      "task_hash": "aafa4cec57dcf01e72251885fcf8e81c4da468ef5f3604cefe7754484618100b",
+      "determinability": "incomplete_determinate",
+      "gate_passed": true,
+      "exact_match": false,
+      "abstention_correct": true,
+      "composite": 0.5683333333333334,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 0.3333333333333333,
+        "eligibility": 0.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "",
+      "withheld_fact": "p1.age",
+      "is_eligibility_flip": false
+    },
+    {
+      "task_hash": "c71ee155a81c22b60988238f930abc3536c579f4a401e559661fe490caccf4fd",
+      "determinability": "determinate",
+      "gate_passed": true,
+      "exact_match": true,
+      "abstention_correct": true,
+      "composite": 1.0,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 1.0,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "",
+      "withheld_fact": "",
+      "is_eligibility_flip": false
+    },
+    {
+      "task_hash": "02c94ea8725033fb7dbc4ee82138a7bbfdfc5108f270a93128f2465a59ab1556",
+      "determinability": "determinate",
+      "gate_passed": true,
+      "exact_match": false,
+      "abstention_correct": true,
+      "composite": 0.8916666666666666,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 0.6666666666666666,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "",
+      "withheld_fact": "",
+      "is_eligibility_flip": false
+    },
+    {
+      "task_hash": "d93b6b4c9ab71dc3016b95ecf2027f59fbb85a29f86751308f686a9bdb59d72d",
+      "determinability": "incomplete_determinate",
+      "gate_passed": true,
+      "exact_match": false,
+      "abstention_correct": true,
+      "composite": 0.7833333333333333,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 0.3333333333333333,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "",
+      "withheld_fact": "p1.is_higher_ed_student",
+      "is_eligibility_flip": false
+    },
+    {
+      "task_hash": "18fd5b78c81aad0876e43ab1e690502f82214aadfe35e6d8d477acd46fd7e993",
+      "determinability": "incomplete_determinate",
+      "gate_passed": true,
+      "exact_match": true,
+      "abstention_correct": true,
+      "composite": 1.0,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 1.0,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "",
+      "withheld_fact": "p1.immigration_status",
+      "is_eligibility_flip": false
+    },
+    {
+      "task_hash": "b88c6cc716c061ed50995a36001f531899f40e3beb5e8983fb15741cf3d016eb",
+      "determinability": "determinate",
+      "gate_passed": true,
+      "exact_match": false,
+      "abstention_correct": true,
+      "composite": 0.8916666666666666,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 0.6666666666666666,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "",
+      "withheld_fact": "",
+      "is_eligibility_flip": false
+    },
+    {
+      "task_hash": "f28e0093ab38a59c9769be8d2efa85417762ff02cf54cd224d99484708d19914",
+      "determinability": "incomplete_determinate",
+      "gate_passed": true,
+      "exact_match": true,
+      "abstention_correct": true,
+      "composite": 1.0,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 1.0,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "",
+      "withheld_fact": "dependent_care_cost",
+      "is_eligibility_flip": false
+    },
+    {
+      "task_hash": "5cc0aa2397645e3e261c5954285ef6642bc6c7c57616fc9b00a693ee6157d5e6",
+      "determinability": "indeterminate",
+      "gate_passed": true,
+      "exact_match": false,
+      "abstention_correct": true,
+      "composite": 0.785,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 1.0,
+        "eligibility": 0.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "",
+      "withheld_fact": "p1.is_higher_ed_student",
+      "is_eligibility_flip": false
+    },
+    {
+      "task_hash": "eb7767ca4ac65dbe1863c21ee4b62b51e6e137a1c309a480810998f862c391cc",
+      "determinability": "indeterminate",
+      "gate_passed": true,
+      "exact_match": false,
+      "abstention_correct": true,
+      "composite": 0.785,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 1.0,
+        "eligibility": 0.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "",
+      "withheld_fact": "p1.employment_income",
+      "is_eligibility_flip": true
+    },
+    {
+      "task_hash": "5c1b103f9e0e218850032c95d498edbb59dccd575888677c3f580b2dbd0434d9",
+      "determinability": "determinate",
+      "gate_passed": true,
+      "exact_match": false,
+      "abstention_correct": true,
+      "composite": 0.8916666666666666,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 0.6666666666666666,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "",
+      "withheld_fact": "",
+      "is_eligibility_flip": false
+    },
+    {
+      "task_hash": "8b9e5fe30cf2be7ca2bcd27a942ca8e01f57032b5241a7ef035db57b53d2f323",
+      "determinability": "determinate",
+      "gate_passed": true,
+      "exact_match": true,
+      "abstention_correct": true,
+      "composite": 1.0,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 1.0,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "",
+      "withheld_fact": "",
+      "is_eligibility_flip": false
+    },
+    {
+      "task_hash": "66818fb8fbec2dd38a734b810619159407e423056a83a99df4ca90a092edbc71",
+      "determinability": "incomplete_determinate",
+      "gate_passed": true,
+      "exact_match": false,
+      "abstention_correct": true,
+      "composite": 0.6766666666666666,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 0.6666666666666666,
+        "eligibility": 0.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "",
+      "withheld_fact": "p1.is_higher_ed_student",
+      "is_eligibility_flip": false
+    },
+    {
+      "task_hash": "d382ef30855edb77a2c5d201f1d96e3bc71a0ff3c0e6dbcd872b3bf47a5c6bcd",
+      "determinability": "incomplete_determinate",
+      "gate_passed": true,
+      "exact_match": true,
+      "abstention_correct": true,
+      "composite": 1.0,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 1.0,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "",
+      "withheld_fact": "housing_cost",
+      "is_eligibility_flip": false
+    },
+    {
+      "task_hash": "32b95b7b7a1eddb96f109a8f5d05e5c60ddec9598041dfa380085e97f31ae5bd",
+      "determinability": "determinate",
+      "gate_passed": true,
+      "exact_match": true,
+      "abstention_correct": true,
+      "composite": 1.0,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 1.0,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "",
+      "withheld_fact": "",
+      "is_eligibility_flip": false
+    },
+    {
+      "task_hash": "18221ace6ffa39ef6f7f579cb33a01149de03916b850d02763b2ee50c92358e7",
+      "determinability": "incomplete_determinate",
+      "gate_passed": true,
+      "exact_match": true,
+      "abstention_correct": true,
+      "composite": 1.0,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 1.0,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "",
+      "withheld_fact": "p1.immigration_status",
+      "is_eligibility_flip": false
+    },
+    {
+      "task_hash": "08b18e1e5bed729b65a17f7f41d0ddbefb2cf571ba0a013b649c914256c8676b",
+      "determinability": "incomplete_determinate",
+      "gate_passed": true,
+      "exact_match": true,
+      "abstention_correct": true,
+      "composite": 1.0,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 1.0,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "",
+      "withheld_fact": "p1.is_higher_ed_student",
+      "is_eligibility_flip": false
+    },
+    {
+      "task_hash": "a30962628eacc299e2bc8ada1293dfb782b7d05a85a09e762805fb0e3a283887",
+      "determinability": "incomplete_determinate",
+      "gate_passed": true,
+      "exact_match": true,
+      "abstention_correct": true,
+      "composite": 1.0,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 1.0,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "",
+      "withheld_fact": "dependent_care_cost",
+      "is_eligibility_flip": false
+    },
+    {
+      "task_hash": "04c3bfa08849e7565fc6f3eb3c6392e19253fa29c638d4d9a6aac034c4c77c5e",
+      "determinability": "determinate",
+      "gate_passed": true,
+      "exact_match": false,
+      "abstention_correct": true,
+      "composite": 0.8916666666666666,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 0.6666666666666666,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "",
+      "withheld_fact": "",
+      "is_eligibility_flip": false
+    },
+    {
+      "task_hash": "3b000d739489c9338fce3ce5671379220f231843e50e8fce752c860359e8504d",
+      "determinability": "determinate",
+      "gate_passed": true,
+      "exact_match": true,
+      "abstention_correct": true,
+      "composite": 1.0,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 1.0,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "",
+      "withheld_fact": "",
+      "is_eligibility_flip": false
+    },
+    {
+      "task_hash": "79c8812657948a2a566dc0e64c91d3e0a736389b97b1356f9c87e0aad54a9f0a",
+      "determinability": "incomplete_determinate",
+      "gate_passed": true,
+      "exact_match": true,
+      "abstention_correct": true,
+      "composite": 1.0,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 1.0,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "",
+      "withheld_fact": "p1.is_higher_ed_student",
+      "is_eligibility_flip": false
+    },
+    {
+      "task_hash": "081eb353621b617ddd26714b13e77347d29bf24ede87d43b7c526cd44c6d532f",
+      "determinability": "indeterminate",
+      "gate_passed": true,
+      "exact_match": false,
+      "abstention_correct": false,
+      "composite": 0.5416666666666666,
+      "rewards": {
+        "abstention": 0.0,
+        "amounts": 0.6666666666666666,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "",
+      "withheld_fact": "p1.age",
+      "is_eligibility_flip": false
+    },
+    {
+      "task_hash": "a819d723b00f08bc67aee6eb11dc99aeac8bb05521bf0d2c74935bc91d596e8e",
+      "determinability": "determinate",
+      "gate_passed": true,
+      "exact_match": true,
+      "abstention_correct": true,
+      "composite": 1.0,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 1.0,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "",
+      "withheld_fact": "",
+      "is_eligibility_flip": false
+    },
+    {
+      "task_hash": "44b6e11a1249a949a0c785a6f9d8a55fe734a80de989a3336dfc7f134ab0b7be",
+      "determinability": "indeterminate",
+      "gate_passed": true,
+      "exact_match": false,
+      "abstention_correct": true,
+      "composite": 0.8375,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 0.5,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "",
+      "withheld_fact": "housing_cost",
+      "is_eligibility_flip": false
+    },
+    {
+      "task_hash": "0fef8d51682892c1402fa22e7df4f5166568c6cc46e584d360c7086cd800fd7c",
+      "determinability": "indeterminate",
+      "gate_passed": true,
+      "exact_match": true,
+      "abstention_correct": true,
+      "composite": 1.0,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 1.0,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "",
+      "withheld_fact": "p1.is_higher_ed_student",
+      "is_eligibility_flip": false
+    },
+    {
+      "task_hash": "c4ac66b6e7cd427bf56a501d88b452d6f8c4063b198b0ac3b1d4bd17694d10cc",
+      "determinability": "indeterminate",
+      "gate_passed": true,
+      "exact_match": false,
+      "abstention_correct": false,
+      "composite": 0.5,
+      "rewards": {
+        "abstention": 0.5,
+        "amounts": 0.0,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "",
+      "withheld_fact": "p1.immigration_status",
+      "is_eligibility_flip": false
+    },
+    {
+      "task_hash": "7c3d20ed0d1ef692b9451fbcae193551351c60ec3d9dcb0935bfb4ba572a4c57",
+      "determinability": "determinate",
+      "gate_passed": true,
+      "exact_match": true,
+      "abstention_correct": true,
+      "composite": 1.0,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 1.0,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "",
+      "withheld_fact": "",
+      "is_eligibility_flip": false
+    },
+    {
+      "task_hash": "863757404fdf5b72f0f81f10621bbea06ddc70e2cbe8d4d6f394899ccbaf50eb",
+      "determinability": "determinate",
+      "gate_passed": true,
+      "exact_match": false,
+      "abstention_correct": true,
+      "composite": 0.8916666666666666,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 0.6666666666666666,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "",
+      "withheld_fact": "",
+      "is_eligibility_flip": false
+    },
+    {
+      "task_hash": "c60ddb99a4056f4e956ce22008cea6b409259e2d7dfe792d72ee82edbe8a1c31",
+      "determinability": "incomplete_determinate",
+      "gate_passed": true,
+      "exact_match": true,
+      "abstention_correct": true,
+      "composite": 1.0,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 1.0,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "",
+      "withheld_fact": "p1.is_higher_ed_student",
+      "is_eligibility_flip": false
+    },
+    {
+      "task_hash": "885c66e272939834c88b5db09d5606c6c1b54918af3e50b9fc4ecc198c964062",
+      "determinability": "indeterminate",
+      "gate_passed": true,
+      "exact_match": false,
+      "abstention_correct": false,
+      "composite": 0.11,
+      "rewards": {
+        "abstention": 0.0,
+        "amounts": 0.0,
+        "eligibility": 0.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "",
+      "withheld_fact": "p1.employment_income",
+      "is_eligibility_flip": true
+    },
+    {
+      "task_hash": "6d645c0b7db523c62706ed428208ac2bff9f40be0d9dfed2bd438f6731991aa6",
+      "determinability": "determinate",
+      "gate_passed": true,
+      "exact_match": true,
+      "abstention_correct": true,
+      "composite": 1.0,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 1.0,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "",
+      "withheld_fact": "",
+      "is_eligibility_flip": false
+    },
+    {
+      "task_hash": "870869b81936b41adcc96352338bd1d66078fe1146a83a6a0bf72fcb57c22251",
+      "determinability": "incomplete_determinate",
+      "gate_passed": true,
+      "exact_match": true,
+      "abstention_correct": true,
+      "composite": 1.0,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 1.0,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "",
+      "withheld_fact": "p1.age",
+      "is_eligibility_flip": false
+    },
+    {
+      "task_hash": "81e42d3029da287d5374bf3d69a1eb5262b43c1746bb283795d32758aa49e392",
+      "determinability": "incomplete_determinate",
+      "gate_passed": true,
+      "exact_match": true,
+      "abstention_correct": true,
+      "composite": 1.0,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 1.0,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "",
+      "withheld_fact": "p1.is_higher_ed_student",
+      "is_eligibility_flip": false
+    },
+    {
+      "task_hash": "fac83e39a286c8365d96196cdd716a78730067aa3208621ed42b8fd3fe9bc67f",
+      "determinability": "incomplete_determinate",
+      "gate_passed": true,
+      "exact_match": true,
+      "abstention_correct": true,
+      "composite": 1.0,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 1.0,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "",
+      "withheld_fact": "housing_cost",
+      "is_eligibility_flip": false
+    },
+    {
+      "task_hash": "9ed2098e3aaee120ad11d879f9feab733b0cd680d48b8d6f0ac2695b315db945",
+      "determinability": "determinate",
+      "gate_passed": true,
+      "exact_match": true,
+      "abstention_correct": true,
+      "composite": 1.0,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 1.0,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "",
+      "withheld_fact": "",
+      "is_eligibility_flip": false
+    },
+    {
+      "task_hash": "484839fc699900b5ddf6955181a4dc99f5566f646f4086165020379565db8dcf",
+      "determinability": "determinate",
+      "gate_passed": true,
+      "exact_match": true,
+      "abstention_correct": true,
+      "composite": 1.0,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 1.0,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "",
+      "withheld_fact": "",
+      "is_eligibility_flip": false
+    },
+    {
+      "task_hash": "419ca297a58536ad6202bbc0000f7352107a108463d14f7806c6c7326f9c5bbc",
+      "determinability": "incomplete_determinate",
+      "gate_passed": true,
+      "exact_match": false,
+      "abstention_correct": true,
+      "composite": 0.8916666666666666,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 0.6666666666666666,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "",
+      "withheld_fact": "p1.is_higher_ed_student",
+      "is_eligibility_flip": false
+    },
+    {
+      "task_hash": "f98f6d2f4fa139153caae26a1362727a554907ad49f829a10da4e7362c35fa95",
+      "determinability": "incomplete_determinate",
+      "gate_passed": true,
+      "exact_match": true,
+      "abstention_correct": true,
+      "composite": 1.0,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 1.0,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "",
+      "withheld_fact": "dependent_care_cost",
+      "is_eligibility_flip": false
+    },
+    {
+      "task_hash": "23446d65e2a2091ce951a44e6ae832389f9b2dca5e76a4138a9955864ad23fc6",
+      "determinability": "determinate",
+      "gate_passed": true,
+      "exact_match": true,
+      "abstention_correct": true,
+      "composite": 1.0,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 1.0,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "",
+      "withheld_fact": "",
+      "is_eligibility_flip": false
+    },
+    {
+      "task_hash": "244096eff81f73935e8e60cadc3618a1c6d8f00479ef9280e0da352d97f52bb7",
+      "determinability": "indeterminate",
+      "gate_passed": true,
+      "exact_match": false,
+      "abstention_correct": false,
+      "composite": 0.5416666666666666,
+      "rewards": {
+        "abstention": 0.0,
+        "amounts": 0.6666666666666666,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "",
+      "withheld_fact": "p1.employment_income",
+      "is_eligibility_flip": true
+    },
+    {
+      "task_hash": "79b48c1a70e3140fd7ff3f4b5bd7f64e94ec5697292f9f8ebd26d7e60f2de449",
+      "determinability": "incomplete_determinate",
+      "gate_passed": true,
+      "exact_match": false,
+      "abstention_correct": true,
+      "composite": 0.8916666666666666,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 0.6666666666666666,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "",
+      "withheld_fact": "p1.is_higher_ed_student",
+      "is_eligibility_flip": false
+    },
+    {
+      "task_hash": "2a9e61fa821e9a052dde5aa25f16e07fd42131aa24e15dd0e6f1e3a1aae5510a",
+      "determinability": "incomplete_determinate",
+      "gate_passed": true,
+      "exact_match": false,
+      "abstention_correct": true,
+      "composite": 0.8916666666666666,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 0.6666666666666666,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "",
+      "withheld_fact": "p1.age",
+      "is_eligibility_flip": false
+    },
+    {
+      "task_hash": "bc28ff6377de63258b7952ae775f513f7801ceb77612b7fddc65426355f04b3a",
+      "determinability": "determinate",
+      "gate_passed": true,
+      "exact_match": true,
+      "abstention_correct": true,
+      "composite": 1.0,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 1.0,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "",
+      "withheld_fact": "",
+      "is_eligibility_flip": false
+    },
+    {
+      "task_hash": "0289a0964c98396d381c022c5233e663b686352b2ac57c7c1fa022ca2cc4d414",
+      "determinability": "determinate",
+      "gate_passed": true,
+      "exact_match": true,
+      "abstention_correct": true,
+      "composite": 1.0,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 1.0,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "",
+      "withheld_fact": "",
+      "is_eligibility_flip": false
+    },
+    {
+      "task_hash": "42f24daf2498ecd92ffd4c9db8facb5b62d7f49a0f5c6ac3165d403d9bc198ba",
+      "determinability": "incomplete_determinate",
+      "gate_passed": true,
+      "exact_match": true,
+      "abstention_correct": true,
+      "composite": 1.0,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 1.0,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "",
+      "withheld_fact": "p1.is_higher_ed_student",
+      "is_eligibility_flip": false
+    },
+    {
+      "task_hash": "394352b0d4438e45e2663ec5475114d94a892c67171308c32a7db49f312d4061",
+      "determinability": "indeterminate",
+      "gate_passed": true,
+      "exact_match": true,
+      "abstention_correct": false,
+      "composite": 0.825,
+      "rewards": {
+        "abstention": 0.5,
+        "amounts": 1.0,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "",
+      "withheld_fact": "p1.immigration_status",
+      "is_eligibility_flip": true
+    },
+    {
+      "task_hash": "992c402759f8f57664b1d3740d046509113dcdda3ef0d286480f4d2ceb675319",
+      "determinability": "determinate",
+      "gate_passed": true,
+      "exact_match": true,
+      "abstention_correct": true,
+      "composite": 1.0,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 1.0,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "",
+      "withheld_fact": "",
+      "is_eligibility_flip": false
+    },
+    {
+      "task_hash": "5b0d07df4e26b25b4e28ceb5ddd3e8195feb29575c96256bd6b1a22b9f24c17e",
+      "determinability": "incomplete_determinate",
+      "gate_passed": true,
+      "exact_match": true,
+      "abstention_correct": true,
+      "composite": 1.0,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 1.0,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "",
+      "withheld_fact": "dependent_care_cost",
+      "is_eligibility_flip": false
+    },
+    {
+      "task_hash": "ac40c810a4684ae8ba77e827f449bd0415e9fb9a992fa0b7cc994f1a19a9ebc8",
+      "determinability": "incomplete_determinate",
+      "gate_passed": true,
+      "exact_match": true,
+      "abstention_correct": true,
+      "composite": 1.0,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 1.0,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "",
+      "withheld_fact": "p1.is_higher_ed_student",
+      "is_eligibility_flip": false
+    },
+    {
+      "task_hash": "ff9edc7d9b104d2acd3bff109bfec57eac4df0bff375a8c55115b3e84a2f0825",
+      "determinability": "indeterminate",
+      "gate_passed": false,
+      "exact_match": false,
+      "abstention_correct": false,
+      "composite": 0.0,
+      "rewards": {
+        "abstention": 0.0,
+        "amounts": 0.0,
+        "eligibility": 0.0,
+        "periods": 0.0
+      },
+      "parse_failure": "schema_invalid",
+      "scorer_error": "",
+      "pair_role": "",
+      "withheld_fact": "p1.employment_income",
+      "is_eligibility_flip": true
+    },
+    {
+      "task_hash": "34026e13ec37e92e9d5d30d1ac5cdf34d7c81ced1bf5f2fec68eb69cf2eaaeb0",
+      "determinability": "determinate",
+      "gate_passed": true,
+      "exact_match": true,
+      "abstention_correct": true,
+      "composite": 1.0,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 1.0,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "",
+      "withheld_fact": "",
+      "is_eligibility_flip": false
+    },
+    {
+      "task_hash": "0ac2c56c4e260c637412c75fffcea3e5b261d6d9fa615f1e94ca45d99aa24880",
+      "determinability": "determinate",
+      "gate_passed": true,
+      "exact_match": true,
+      "abstention_correct": true,
+      "composite": 1.0,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 1.0,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "",
+      "withheld_fact": "",
+      "is_eligibility_flip": false
+    },
+    {
+      "task_hash": "91b42b5cbd2a6aeeac341196f26dda86a26782349f010eff486c37ab29b3ef05",
+      "determinability": "indeterminate",
+      "gate_passed": true,
+      "exact_match": true,
+      "abstention_correct": false,
+      "composite": 0.65,
+      "rewards": {
+        "abstention": 0.0,
+        "amounts": 1.0,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "",
+      "withheld_fact": "p1.is_higher_ed_student",
+      "is_eligibility_flip": false
+    },
+    {
+      "task_hash": "870d81856e2f318cb17552f66ba24bc4e9db80d8ee626a69ab155365ec31b736",
+      "determinability": "incomplete_determinate",
+      "gate_passed": true,
+      "exact_match": true,
+      "abstention_correct": true,
+      "composite": 1.0,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 1.0,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "",
+      "withheld_fact": "housing_cost",
+      "is_eligibility_flip": false
+    },
+    {
+      "task_hash": "4a2464531e92c4b0e4667ed0c492c0904f2dd84a37ad91cc55b3f910c9560fa1",
+      "determinability": "determinate",
+      "gate_passed": true,
+      "exact_match": false,
+      "abstention_correct": true,
+      "composite": 0.6749999999999999,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 0.0,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "",
+      "withheld_fact": "",
+      "is_eligibility_flip": false
+    },
+    {
+      "task_hash": "44738d2067a637d8a537a303a0964da0307640555694048185e4def6df0c3aeb",
+      "determinability": "indeterminate",
+      "gate_passed": true,
+      "exact_match": false,
+      "abstention_correct": true,
+      "composite": 0.785,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 1.0,
+        "eligibility": 0.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "",
+      "withheld_fact": "p1.immigration_status",
+      "is_eligibility_flip": false
+    },
+    {
+      "task_hash": "334d0b0033a5314d8da3bf823ce39649d19a75ed5d1263595100d1b0b2cbbafa",
+      "determinability": "incomplete_determinate",
+      "gate_passed": true,
+      "exact_match": true,
+      "abstention_correct": true,
+      "composite": 1.0,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 1.0,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "",
+      "withheld_fact": "p1.is_higher_ed_student",
+      "is_eligibility_flip": false
+    },
+    {
+      "task_hash": "cdfe4d9e34add2c22420a932f2d6058234fab15d254ac65bb2359c8376a096c6",
+      "determinability": "indeterminate",
+      "gate_passed": true,
+      "exact_match": false,
+      "abstention_correct": true,
+      "composite": 0.6749999999999999,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 0.0,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "",
+      "withheld_fact": "dependent_care_cost",
+      "is_eligibility_flip": false
+    },
+    {
+      "task_hash": "3ad831ce527bb2cd4c8c891ff64dfda74439668050d17205e59eb23c909c572a",
+      "determinability": "determinate",
+      "gate_passed": true,
+      "exact_match": true,
+      "abstention_correct": true,
+      "composite": 1.0,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 1.0,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "",
+      "withheld_fact": "",
+      "is_eligibility_flip": false
+    },
+    {
+      "task_hash": "143256facd3e592c4ac4ee5a18b09201117b0490df107dcfca1fcb8dea3c651c",
+      "determinability": "determinate",
+      "gate_passed": true,
+      "exact_match": true,
+      "abstention_correct": true,
+      "composite": 1.0,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 1.0,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "",
+      "withheld_fact": "",
+      "is_eligibility_flip": false
+    },
+    {
+      "task_hash": "0be0ccdd482140552f7b8620089b4f668974cf9843906a0896f526dd44030c8d",
+      "determinability": "incomplete_determinate",
+      "gate_passed": true,
+      "exact_match": true,
+      "abstention_correct": true,
+      "composite": 1.0,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 1.0,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "",
+      "withheld_fact": "p1.is_higher_ed_student",
+      "is_eligibility_flip": false
+    },
+    {
+      "task_hash": "b74d5006402f37fde214c0873c6385f3fd4c1badf56dfbb5f1798cc3d71655cd",
+      "determinability": "incomplete_determinate",
+      "gate_passed": true,
+      "exact_match": true,
+      "abstention_correct": true,
+      "composite": 1.0,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 1.0,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "",
+      "withheld_fact": "p1.age",
+      "is_eligibility_flip": false
+    },
+    {
+      "task_hash": "eea9180fa8e2031a10d71ee08f5821ac4f0b52e28e587f033627f6c7cbc42552",
+      "determinability": "determinate",
+      "gate_passed": true,
+      "exact_match": true,
+      "abstention_correct": true,
+      "composite": 1.0,
+      "rewards": {
+        "abstention": 1.0,
+        "amounts": 1.0,
+        "eligibility": 1.0,
+        "periods": 1.0
+      },
+      "parse_failure": "none",
+      "scorer_error": "",
+      "pair_role": "",
+      "withheld_fact": "",
+      "is_eligibility_flip": false
+    }
+  ]
+}
