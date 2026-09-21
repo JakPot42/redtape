@@ -801,8 +801,21 @@ def main():
         # Always pre-warm, even with one worker: it is where the cap can stop the run
         # cleanly, leaving whatever was bought in the cache.
         prewarm(tasks, agent, workers=max(1, args.workers), log_every=args.progress_every)
+        # Score what was actually fetched, whatever stopped the fetching: the cap, a provider
+        # refusal, or a transport failure. This used to key off `budget.exhausted` alone, and
+        # survived a real run of 1,045 provider 403s only BY ACCIDENT - each refusal was
+        # charged its worst case, so the cap "exhausted" and triggered this fallback. Once
+        # refusals stopped consuming the cap (correctly), the same run died with an unhandled
+        # provider error and wrote no results at all. The condition is now the one that
+        # matters: is anything still uncached?
         if budget is not None and budget.exhausted:
-            print(f"  STOPPED AT CAP ({budget.line()}); scoring only what was fetched")
+            print(f"  STOPPED AT CAP ({budget.line()})")
+        still_missing = [t for t in tasks
+                         if cache_get(task_cache_key(t, cfg, system, tools),
+                                      partition(t.data.seed)) is None]
+        if still_missing:
+            print(f"  !! {len(still_missing)} of {len(tasks)} tasks were never fetched "
+                  f"(cap, provider refusal or transport error); scoring only what was")
             tasks = cached_subset(tasks, args.model)
 
         extra = {"provider": {"key": cfg.key, "provider": cfg.provider,

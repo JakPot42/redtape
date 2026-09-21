@@ -173,6 +173,9 @@ class OpenAICompatProvider:
     def __init__(self, cfg: ModelConfig):
         import openai
         base_url, key_env = self.ENDPOINTS[cfg.provider]
+        # Overridable so a test can point at a closed port and reproduce "provider
+        # unreachable" without a network call. Never used in a real run.
+        base_url = os.environ.get(f"{cfg.provider.upper()}_BASE_URL", base_url)
         self.env_keys = (key_env,)
         self.cfg = cfg
         # max_retries=0: a retry inside the SDK is a second billed attempt the budget never

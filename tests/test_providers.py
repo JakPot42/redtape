@@ -352,3 +352,37 @@ def test_a_refused_request_does_not_consume_the_cap(monkeypatch, tmp_path):
     assert budget.spent == 0.0
     assert budget.in_flight == 0.0
     assert budget.refused_unbilled == 50
+
+
+def test_a_run_that_cannot_fetch_still_scores_what_it_has(tmp_path):
+    """A partial run must score the fetched tasks and say how many were missed.
+
+    This path has broken twice. It first survived 1,045 provider 403s only BY ACCIDENT:
+    every refusal was charged its worst case, the cap "exhausted", and that triggered the
+    cached-only fallback. Once refusals correctly stopped consuming the cap, the same run
+    died with an unhandled provider error and wrote no results at all. The condition is now
+    "is anything still uncached", which does not depend on the cap.
+
+    The provider is made unreachable by pointing it at a closed port, so no network call and
+    no billing can occur."""
+    from eval.run_eval import load_tasks
+
+    cache_dir, out_dir = tmp_path / "cache", tmp_path / "results"
+    planted = load_tasks(str(DEV), limit=6)
+    _plant(cache_dir, planted, model="gpt-5.6-sol")
+    env = {"PATH": "/usr/bin:/bin", "HOME": str(Path.home()),
+           "REDTAPE_CACHE_DIR": str(cache_dir),
+           "OPENROUTER_API_KEY": "test-not-used",
+           "OPENROUTER_BASE_URL": "http://127.0.0.1:9/v1"}
+    r = subprocess.run(
+        [sys.executable, "-m", "eval.run_eval", "live", "--model", "gpt-5.6-sol",
+         "--split", str(DEV), "--limit", "12", "--max-usd", "5.00",
+         "--results", str(out_dir)],
+        cwd=ROOT, env=env, capture_output=True, text=True, timeout=900)
+    assert r.returncode == 0, r.stdout[-3000:] + r.stderr[-3000:]
+    assert "were never fetched" in r.stdout, r.stdout[-2000:]
+    out = json.loads((out_dir / "t1.live.gpt-5.6-sol.tool_less.json").read_text())
+    assert out["diagnostics"]["n_tasks"] == 6
+    # Unreachable is unbilled: the cap must be untouched.
+    assert out["run"]["budget"]["spent_usd"] == 0.0
+    assert out["run"]["budget"]["provider_refusals_unbilled"] == 6
