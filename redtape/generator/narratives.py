@@ -13,7 +13,7 @@ from __future__ import annotations
 
 import random
 
-from redtape.schemas import Household, Person
+from redtape.schemas import CORPUS_TAX_YEAR, Household, Person
 
 _MONTHS = {
     "01": "January", "02": "February", "03": "March", "04": "April",
@@ -88,6 +88,30 @@ CLAIM_SENTENCE = (
 # premise stated rather than assumed.
 CHILD_CARE_SENTENCE = "Adequate child care is available for the children."
 
+# The connector each status phrase takes before its start year. Noun phrases read "since
+# 2006"; verb phrases read "in 2006". Listed explicitly because inferring it produced
+# "was granted asylum since 1999".
+_STATUS_CONNECTOR = {
+    "was admitted as a refugee": "in",
+    "was granted asylum": "in",
+    "granted Cuban/Haitian entrant status": "in",
+    "was granted withholding of removal": "in",
+    "was admitted as a conditional entrant": "in",
+    "was paroled into the United States for at least one year": "in",
+}
+
+
+def status_clause(phrase: str, since: int | None, age: int | None) -> str:
+    """`phrase` plus the year the status began, or "since birth" for a person whose status
+    dates from the year they were born (a newborn "green card holder since 2025" is
+    accurate and reads as an error)."""
+    if since is None:
+        return phrase
+    if age is not None and since == CORPUS_TAX_YEAR - age:
+        return f"{phrase} since birth"
+    return f"{phrase} {_STATUS_CONNECTOR.get(phrase, 'since')} {since}"
+
+
 _OPENERS = [
     "Case file {hid}. The household applied for benefits in {state} for {month} {year}.",
     "Application {hid}, {state}, benefit month {month} {year}.",
@@ -130,7 +154,11 @@ def _person_sentence(rng: random.Random, p: Person, is_first: bool) -> str:
         bits.append(rng.choice(["has no earnings", "is not working", "reports no wages"]))
 
     if p.immigration_status is not None:
-        bits.append(rng.choice(_STATUS_PHRASE[p.immigration_status.value]))
+        # The year the status began is stated because the SNAP five-year bar (8 U.S.C. 1613)
+        # turns on it and the engine does not model it, so a case file that omitted it would
+        # leave the answer key resting on a fact nobody stated (docs/LIMITS.md 39).
+        bits.append(status_clause(rng.choice(_STATUS_PHRASE[p.immigration_status.value]),
+                                  p.status_since, p.age))
         # Derived from status, so silent exactly when the status is withheld.
         bits.append(rng.choice(_SSN_PHRASE[p.ssn_status]))
 

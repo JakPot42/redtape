@@ -208,6 +208,40 @@ with `uv sync --frozen` so a lockfile disagreement fails rather than silently re
 It is currently green at **242 passed, 0 skipped** — the skip count is quoted deliberately,
 because an earlier green run was "202 passed, 5 skipped" and the skips were invisible.
 
+## Two kinds of checking, and why only one of them could find the five-year bar
+
+`tests/test_unstated_premises.py` is the strongest guard in this repo: it runs the engine
+with its tracer on, collects every input the computation read, and fails if any of them was
+taken at a default the case file never states. That is how the answer-key defects in
+`docs/LIMITS.md` §36 were found — two adults keyed as married, students keyed at zero hours,
+undocumented filers keyed with a citizen's SSN.
+
+It could never have found the SNAP five-year bar (§39), and the reason is structural.
+
+**Tracing what the engine read is vouching.** It asks the system under test which facts it
+consulted, and checks that each was stated. Everything it can see is, by construction,
+something the engine already thinks matters. It closes the question *"does the answer key
+depend on something nobody stated?"*
+
+**The five-year bar is a fact the law requires and the engine never reads.** 8 U.S.C. §1613
+makes the duration of a qualified non-citizen's status decisive for SNAP; `policyengine-us`
+does not model it, so the variable is never consulted, so it never appears in any trace. No
+amount of tracing the oracle can surface a fact the oracle is blind to. Finding it needs the
+other direction: start from the statute, ask what it requires, and check the corpus states
+it. It surfaced here because a model asked for it thirteen times.
+
+So the two checks close different holes, and a benchmark needs both:
+
+| check | direction | closes |
+|---|---|---|
+| `test_unstated_premises.py` | from the engine outward | the key depends on something unstated |
+| reading the statute (`docs/PRIMARY_SOURCES_2026-09.md`, the rules table) | from the law inward | the law depends on something the key ignores |
+
+This is the completeness argument operating inside the benchmark rather than as a slogan
+about it: a system can be sound — every step it takes is justified — and still incomplete,
+because the steps it never takes are invisible from the inside. The engine is sound about
+what it models. Only an outside source says what it should have modelled.
+
 ## Why the oracle needs continuous external checking
 
 The methodological claim of this project is that a benchmark built on a policy engine is

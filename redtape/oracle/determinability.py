@@ -62,8 +62,12 @@ SWEEPS: dict[str, tuple[Any, ...]] = {
     # ACL 25-92) and the engine models that correctly, so REFUGEE/ASYLEE and the other
     # previously-excluded statuses carry a correct answer key here and are swept again
     # (docs/LIMITS.md 16).
+    # (status, status_since). The start year travels with the status: it is stated only
+    # when the status is, and a swept status needs a start year the oracle can set. 2012 is
+    # far enough back that the five-year bar cannot apply for any swept value.
     "immigration_status": tuple(
-        s for s in ImmigrationStatus if s.value in SAFE_IMMIGRATION_STATUSES
+        (s, None if s.value in ("CITIZEN", "UNDOCUMENTED") else 2012)
+        for s in ImmigrationStatus if s.value in SAFE_IMMIGRATION_STATUSES
     ),
     "dependent_care_cost": (0.0, 600.0, 2_400.0, 6_000.0, 12_000.0),
     # Only p1.* facts are withheld and p1 is always an adult parent now, so child ages are
@@ -82,6 +86,7 @@ SWEEPS: dict[str, tuple[Any, ...]] = {
 # Facts whose sweep value is a tuple spanning several fields (see generator.withhold).
 _COUPLED = {
     "employment_income": ("employment_income", "weekly_hours"),
+    "immigration_status": ("immigration_status", "status_since"),
     "is_higher_ed_student": ("is_higher_ed_student", "student_full_time"),
 }
 

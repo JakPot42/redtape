@@ -87,6 +87,11 @@ def build_situation(hh: Household) -> dict:
             "employment_income": {year: p.employment_income},
             "weekly_hours_worked_before_lsr": {year: p.weekly_hours},
             "immigration_status": {year: p.immigration_status.value},
+            # Stated in the narrative and set here even though SNAP's status test never
+            # reads it: the corpus should not depend on the engine's blind spot staying
+            # blind (docs/LIMITS.md 39). years_since_us_entry defaults to 5.
+            **({"years_since_us_entry": {year: hh.tax_year - p.status_since}}
+               if p.status_since is not None else {}),
             # SSN from the stated status mapping (schemas.SSN_BY_STATUS). The engine
             # default was CITIZEN for everyone, crediting undocumented filers with EITC/CTC.
             "ssn_card_type": {year: _SSN_CARD[p.ssn_status]},

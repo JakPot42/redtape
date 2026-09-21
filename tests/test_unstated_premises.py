@@ -36,6 +36,7 @@ import pytest
 pytest.importorskip("policyengine_us")
 
 from redtape.config import DEV_SEED  # noqa: E402
+from redtape.schemas import FIVE_YEAR_BAR  # noqa: E402
 from redtape.generator.households import generate  # noqa: E402
 from redtape.generator.narratives import render  # noqa: E402
 from redtape.oracle.policyengine_oracle import build_situation  # noqa: E402
@@ -153,6 +154,11 @@ def _evidence(var: str, value, hh, narr: str, pid: str | None) -> bool:
         return _any(_NO_EARNINGS, line)
     if var == "immigration_status":
         return _any(STATUS_MEANING[p.immigration_status.value], line)
+    if var == "years_since_us_entry":
+        # Set from the stated start year; the narrative says "since <year>", "in <year>",
+        # or "since birth" (docs/LIMITS.md 39).
+        return (f"since {p.status_since}" in line or f"in {p.status_since}" in line
+                or ("since birth" in line and p.status_since == hh.tax_year - p.age))
     if var in ("ssn_card_type", "has_tin"):
         return _ssn_stated(p.ssn_status, line)
     if var == "is_disabled":
@@ -218,7 +224,7 @@ def _none_like(v) -> bool:
 
 SHAPES = ("single_no_children", "single_parent", "married_with_children",
           "student_under_20h", "student_20h_plus", "undocumented_adult",
-          "mixed_status_couple")
+          "mixed_status_couple", "lpr_adult")
 
 
 def _representative(n_scan: int = 400):
@@ -237,6 +243,9 @@ def _representative(n_scan: int = 400):
             "undocumented_adult": any(p.ssn_status == "itin" for p in a),
             "mixed_status_couple": hh.household_type == "married_couple"
             and len({p.ssn_status == "itin" for p in a}) == 2,
+            "lpr_adult": any(p.immigration_status is not None
+                             and p.immigration_status.value == "LEGAL_PERMANENT_RESIDENT"
+                             for p in a),
         }
         for k, h in hit.items():
             if h and want[k] is None:
@@ -306,6 +315,23 @@ def _problems(hh) -> list[str]:
         else:
             problems.append(f"{var}: UNCLASSIFIED non-none default "
                             f"{tbs.variables[var].default_value!r}")
+
+    # 3b. The SNAP five-year bar (8 U.S.C. 1613(a)): the engine does not model it, so the
+    # corpus keeps every lawful status old enough that it cannot apply, and states the year.
+    # Without this the answer key for a recently-arrived LPR adult is legally wrong - the
+    # gap GPT-5.6 Sol found by asking for the fact 13 times (docs/LIMITS.md 39).
+    for person in hh.people:
+        if person.immigration_status is None or person.age is None:
+            continue
+        if person.immigration_status.value != "LEGAL_PERMANENT_RESIDENT" or person.age < 18:
+            continue
+        if person.status_since is None:
+            problems.append(f"{person.person_id}: LPR adult with no stated status start year")
+        elif hh.tax_year - person.status_since < FIVE_YEAR_BAR:
+            problems.append(
+                f"{person.person_id}: LPR adult whose status began {person.status_since}, "
+                f"only {hh.tax_year - person.status_since} years before the tax year; the "
+                f"five-year bar would apply and the engine does not model it")
 
     # 4. engine roles == stated structure
     stated = _stated_structure(narrative)

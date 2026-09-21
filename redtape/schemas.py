@@ -192,6 +192,15 @@ class Person(Strict):
         "half-time but not full-time. None for non-students, and when student status is "
         "withheld.",
     )
+    status_since: int | None = Field(
+        default=None,
+        description="calendar year the person's lawful immigration status began. None for "
+        "citizens, for the undocumented, and when immigration_status is withheld (they are "
+        "one fact). Generated at least FIVE_YEAR_BAR years before the tax year so the SNAP "
+        "five-year bar (8 U.S.C. 1613) cannot bite - the engine does not model the bar, so "
+        "an LPR whose status began recently would carry a legally wrong answer key "
+        "(docs/LIMITS.md 39).",
+    )
 
     @property
     def ssn_status(self) -> str | None:
@@ -361,7 +370,19 @@ class Determinability(str, Enum):
 # tests/test_fact_vocabulary.py ties both tuples to the model fields.
 PERSON_FACTS = (
     "age", "employment_income", "weekly_hours", "immigration_status", "ssn_status",
-    "is_disabled", "is_higher_ed_student", "student_full_time", "declared_benefits",
+    "status_since", "is_disabled", "is_higher_ed_student", "student_full_time",
+    "declared_benefits",
+)
+
+# The SNAP five-year bar for qualified non-citizens (8 U.S.C. 1613). The engine does not
+# model it, so the corpus keeps every lawful status old enough that it cannot apply, and the
+# narrative states the year. See docs/LIMITS.md 39 for why stating it beats the alternatives.
+FIVE_YEAR_BAR = 5
+
+# Statuses that have a lawful start year to state. Citizens have none; the undocumented have
+# no lawful status at all.
+STATUSES_WITH_START_YEAR = tuple(
+    s for s in SSN_BY_STATUS if s not in ("CITIZEN", "UNDOCUMENTED")
 )
 HOUSEHOLD_FACTS = (
     "housing_cost", "dependent_care_cost", "pays_heating_cooling", "household_type",

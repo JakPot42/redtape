@@ -15,7 +15,14 @@ from __future__ import annotations
 import math
 import random
 
-from redtape.schemas import CORPUS_TAX_YEAR, Household, ImmigrationStatus, Person
+from redtape.schemas import (
+    CORPUS_TAX_YEAR,
+    FIVE_YEAR_BAR,
+    STATUSES_WITH_START_YEAR,
+    Household,
+    ImmigrationStatus,
+    Person,
+)
 
 # Coarse but defensible: enough spread to straddle the SNAP income limits and the
 # excess shelter deduction cap.
@@ -78,6 +85,14 @@ _MIN_PARENT_GAP = 16         # a child is at least this many years younger than 
 _P_STUDENT = 0.10
 _P_FULL_TIME = 0.5           # of students
 
+# The earliest and latest year a lawful status may have begun. The latest is well before the
+# five-year bar (8 U.S.C. 1613) could apply to the corpus tax year, because the engine does
+# not model the bar: an LPR whose status began recently would carry a legally wrong answer
+# key. Stating a long-held status makes the key correct rather than knowingly wrong, and
+# leaves a model no reason to ask (docs/LIMITS.md 39).
+_STATUS_START_EARLIEST = 1995
+_STATUS_START_LATEST = CORPUS_TAX_YEAR - 2 * FIVE_YEAR_BAR - 3   # 2012 for tax year 2025
+
 
 def _weighted(rng: random.Random, weighted):
     r = rng.random()
@@ -110,16 +125,44 @@ def weekly_hours(rng: random.Random, annual_income: float) -> float:
     return float(max(1, math.floor(rng.uniform(lo, hi))))
 
 
+def status_start_year(rng: random.Random, status: ImmigrationStatus,
+                      age: int | None) -> int | None:
+    """The year a lawful status began, or None for citizens and the undocumented.
+
+    ADULTS get a year at least FIVE_YEAR_BAR before the tax year, so the SNAP five-year bar
+    (8 U.S.C. 1613(a), read 2026-09-21) cannot apply. The engine does not model the bar, so
+    a recently-arrived LPR adult would carry a legally wrong answer key (docs/LIMITS.md 39).
+
+    Among the statuses this generator produces, only LEGAL_PERMANENT_RESIDENT is subject to
+    the bar at all: 1613(b)(1) exempts refugees, asylees, Cuban/Haitian entrants and
+    withheld-deportation cases outright. The rule is applied to every lawful status anyway,
+    because a uniform corpus is easier to reason about than one with a per-status exception.
+
+    CHILDREN get their birth year, the longest duration a child can have: a four-year-old
+    cannot have held status for five years and no narrative should claim otherwise.
+    (Qualified children under 18 are exempt from the bar via 8 U.S.C. 1612(a)(2)(J), which is
+    NOT read here - nothing relies on it, since the engine ignores the bar either way.)
+    """
+    if status.value not in STATUSES_WITH_START_YEAR:
+        return None
+    birth = CORPUS_TAX_YEAR - age if age is not None else _STATUS_START_EARLIEST
+    lo = max(_STATUS_START_EARLIEST, birth)
+    hi = max(lo, min(_STATUS_START_LATEST, CORPUS_TAX_YEAR))
+    return rng.randint(lo, hi)
+
+
 def _adult(rng: random.Random, pid: str, age: int) -> Person:
     lo, hi = _weighted(rng, _INCOME_BUCKETS)
     income = float(rng.randint(lo, hi)) if hi else 0.0
     student = rng.random() < _P_STUDENT
+    status = _weighted(rng, _STATUS_WEIGHTS)
     return Person(
         person_id=pid,
         age=age,
         employment_income=income,
         weekly_hours=weekly_hours(rng, income),
-        immigration_status=_weighted(rng, _STATUS_WEIGHTS),
+        immigration_status=status,
+        status_since=status_start_year(rng, status, age),
         is_disabled=rng.random() < 0.12,
         # Higher-education enrolment can flip SNAP eligibility (7 CFR 273.5), but only
         # where no 273.5(b) exemption applies - and 20+ paid hours is one. Hours are now
@@ -154,13 +197,16 @@ def generate(seed: int, index: int) -> Household:
     if oldest_child < _CHILD_AGES[0]:
         n_children = 0
     for _ in range(n_children):
+        child_age = rng.randint(_CHILD_AGES[0], oldest_child)
+        child_status = _weighted(rng, _STATUS_WEIGHTS)
         people.append(
             Person(
                 person_id=f"p{len(people) + 1}",
-                age=rng.randint(_CHILD_AGES[0], oldest_child),
+                age=child_age,
                 employment_income=0.0,
                 weekly_hours=0.0,
-                immigration_status=_weighted(rng, _STATUS_WEIGHTS),
+                immigration_status=child_status,
+                status_since=status_start_year(rng, child_status, child_age),
                 is_disabled=rng.random() < 0.05,
                 is_higher_ed_student=False,
             )
@@ -207,6 +253,10 @@ def withhold(hh: Household, fact: str) -> Household:
         update["weekly_hours"] = None
     if field == "is_higher_ed_student":
         update["student_full_time"] = None
+    if field == "immigration_status":
+        # The start year names the status it began; stating it would reveal a withheld
+        # status. SSN needs no entry - it is derived (Person.ssn_status).
+        update["status_since"] = None
 
     people = []
     for p in hh.people:

@@ -109,7 +109,7 @@ def score_periods(given: T1Answer, truth: T1Answer) -> Scored:
 # have measured which half of a pair we happen to call canonical.
 _COUPLED_FACTS = (
     {"employment_income", "weekly_hours"},
-    {"immigration_status", "ssn_status"},
+    {"immigration_status", "ssn_status", "status_since"},
     {"is_higher_ed_student", "student_full_time"},
 )
 
