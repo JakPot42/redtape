@@ -2196,3 +2196,126 @@ happened to be all zeros. Exact-match is identical, because a gated answer was a
 on amounts.
 
 The same corrected gate applies to the Opus run, which has not started.
+
+## 43. The deciding run: Opus 5 on the corrected corpus, and why the aggregate lies
+
+**Run, 2026-09-21.** `claude-opus-5-openrouter`, dev split, $70 cap approved. Spent
+**$49.06**. It did NOT stop at our cap - `refused_requests: 0` - it stopped at OpenRouter's
+per-key limit ($95 cumulative, $39.78 of it already spent by GPT), with 190 unbilled
+provider refusals correctly released. **877 of 1,200 tasks scored (73%).**
+
+### 43.1 The completed subset is not a fair sample, and that determines what can be said
+
+`prewarm` fetches in file order, so an early stop truncates the tail - and the tail is not
+class-neutral:
+
+| class | in split | completed | retention |
+|---|---:|---:|---:|
+| determinate | 780 | 458 | **58.7%** |
+| eligibility-flip | 96 | 94 | 97.9% |
+| incomplete-determinate | 144 | 144 | 100% |
+| indeterminate | 180 | 179 | 99.4% |
+| all | 1200 | 875 | 72.9% |
+
+So: **exact-match is computed on 59% of its class and pair-consistency on 42 of 200 pairs**
+(against GPT's 200) - neither is comparable to a full run. **The two classes the decision
+rule turns on are 98.9% complete (273 of 276)**, so the deciding comparison is on
+essentially all the data it needs. Every headline below is computed on the 875 tasks BOTH
+models answered, so model-to-model differences are unaffected by the truncation even where
+absolute levels are.
+
+### 43.2 Failure modes first (CLAUDE.md: a degenerate headline is a harness bug until proven otherwise)
+
+| | truncated (`stop=length`) | parse failures | gate failures | scorer errors |
+|---|---:|---:|---:|---:|
+| Opus 5 | **0 / 1,013** | 0 | 0 | 0 |
+| GPT-5.6 Sol | 1 / 1,228 | 8 schema_invalid | 8 | 0 |
+
+The 16,000-token ceiling is vindicated: at 8,000 the GPT probe truncated 5% of responses.
+
+**Fact-format compliance**, over abstentions actually made:
+
+| | abstentions | exact identifier form | named a fact that was never withheld |
+|---|---:|---:|---:|
+| Opus 5 | 154 | **154 (100%)** | **0 (0%)** |
+| GPT-5.6 Sol | 236 | 220 (93.2%) | 18 (7.6%) |
+
+Opus is strictly better at saying *which* fact is missing, and never invents one. GPT's 18
+inventions are mostly on determinate tasks (12) - abstaining needlessly *and* naming a fact
+that was not withheld.
+
+### 43.3 Headlines, on the 875 common tasks
+
+| | exact-match (determinate) | abstention (all T1b) |
+|---|---|---|
+| Opus 5 | 0.629 (288/458) [0.584, 0.672] | **0.624** (260/417) [0.576, 0.669] |
+| GPT-5.6 Sol | 0.633 (290/458) [0.588, 0.676] | **0.791** (330/417) [0.750, 0.828] |
+
+Exact-match is indistinguishable. **On abstention GPT-5.6 Sol is clearly better and the
+intervals do not overlap.** The model with perfect format compliance is the worse abstainer,
+so compliance and accuracy are measuring different things - which is the case for keeping
+both.
+
+Pair-consistency is **not reported as a comparison**: n=42 against n=200.
+
+### 43.4 The verdict, and a conflict between two rules
+
+**By the letter of the pre-registered rule** (`docs/CORRECTION_DRAFT.md`): on Opus the flip
+class exceeds the indeterminate class, 0.521 (49/94) against 0.391 (70/179), difference
+**+0.130, 95% CI [+0.007, +0.250], Fisher p = 0.041**. The interval excludes zero. On GPT it
+does not: −0.012, CI [−0.130, +0.098], p = 0.890. Read literally, that is **Branch A**.
+
+**The standing rule** (CLAUDE.md: every green signal is checked for what it is not
+measuring) says to ask what else differs between the classes. The answer destroys the
+aggregate:
+
+| withheld fact | flip | indeterminate | difference |
+|---|---|---|---:|
+| p1.immigration_status | 0.000 (0/13) | 0.340 (17/50) | −0.340 |
+| **p1.employment_income** | **0.774 (41/53)** | **0.000 (0/1)** | **+0.774** |
+| p1.is_higher_ed_student | 0.071 (1/14) | 0.079 (3/38) | −0.008 |
+| dependent_care_cost | 0.000 (0/4) | 0.147 (5/34) | −0.147 |
+| housing_cost | 0.750 (6/8) | 1.000 (28/28) | −0.250 |
+| p1.age | 0.500 (1/2) | 0.607 (17/28) | −0.107 |
+
+**Flip is worse in five strata of six.** The positive aggregate comes entirely from
+`p1.employment_income`, which is **56% of the flip class (53/94)** and whose indeterminate
+cell holds **one task**. Holding the withheld fact constant, the Mantel-Haenszel pooled
+difference is **−0.154**. Drop that one fact and the aggregate reverses to **0.195 (8/41)
+against 0.393 (70/178), −0.198, CI [−0.316, −0.038]**.
+
+This is Simpson's paradox, and the corpus built it: **class and withheld fact are
+confounded by construction.** For the fact that dominates the flip class there is
+essentially no indeterminate comparison to make, so the category-vs-quantity question
+cannot be answered by this design regardless of which model is run.
+
+The aggregate is also fragile on its own terms: reclassifying **one** flip task from correct
+to incorrect moves p from 0.041 to 0.072. And two models were tested, so a single p just
+under 0.05 is roughly what one expects by chance.
+
+**Assessment: Branch B.** Not "the effect is smaller than claimed" - the effect is
+*negative* wherever the confound is controlled, on the model that supposedly shows it. The
+original 0.396-against-0.050 was a 7.9x ratio; what survives here is 1.33x aggregate,
+reversing to 0.50x once one fact is held constant. **This is a decision for the human**,
+because it overrides a rule fixed in advance with an analysis run afterwards, which is the
+exact shape of the thing pre-registration exists to prevent. The argument for doing so is
+that the check was mandated by a standing rule that predates the experiment, it reverses a
+sign rather than nudging a magnitude, and the pre-registered rule's own precondition - the
+full 1,200-task split - was not met.
+
+### 43.5 LPR subset (§39/§40), both models
+
+| | LPR adult present | rest |
+|---|---|---|
+| Opus 5 | **0.769** (40/52) [0.639, 0.863] | 0.603 (220/365) [0.552, 0.652] |
+| GPT-5.6 Sol | 0.750 (39/52) [0.618, 0.848] | 0.799 (294/368) [0.755, 0.837] |
+
+**The gap runs in opposite directions**, and for Opus the intervals do not overlap: LPR
+tasks are *easier* for Opus and marginally harder for GPT. The cheapest available check on
+whether the five-year-bar silence is a property of the corpus or of one model therefore
+answers: **of the model.** A corpus-level defect would cost both models in the same
+direction. §39 stays open - the fact is still real and still omitted - but it is not what
+produces Opus's low abstention.
+
+(GPT's figures here differ from those recorded in §40 - 0.660 against 0.780 - because those
+were measured under the gate that read the answer key, now corrected per §42.)
