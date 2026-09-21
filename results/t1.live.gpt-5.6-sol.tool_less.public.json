@@ -6,22 +6,22 @@
     "definition": "Fraction of DETERMINATE tasks answered all-correct: every scored amount within tolerance, SNAP eligibility exact, every period label exact. Gate failures (unparseable or degenerate responses) count as incorrect, never as excluded."
   },
   "t1b_abstention_accuracy": {
-    "value": 0.7666666666666667,
+    "value": 0.7928571428571428,
     "n": 420,
     "by_class": {
       "indeterminate": {
-        "value": 0.6884057971014492,
+        "value": 0.7028985507246377,
         "n": 276
       },
       "incomplete_determinate": {
-        "value": 0.9166666666666666,
+        "value": 0.9652777777777778,
         "n": 144
       }
     },
     "definition": "Fraction of T1b tasks (indeterminate + incomplete-determinate) whose abstention decision is fully correct: abstaining on exactly the deciding scored programs when the withheld fact decides one, and not abstaining when it decides none. Gate failures count as incorrect."
   },
   "pair_consistency": {
-    "value": 0.655,
+    "value": 0.675,
     "n_pairs": 200,
     "n_pairs_where_truth_differs": 100,
     "n_pairs_incomplete": 0,
@@ -35,8 +35,12 @@
         "pair": "pair-0001"
       },
       {
-        "verdict": "gated",
+        "verdict": "inconsistent",
         "truth_pattern": [],
+        "model_pattern": [
+          "snap.benefit",
+          "snap.eligible"
+        ],
         "pair": "pair-0002"
       },
       {
@@ -201,8 +205,9 @@
         "pair": "pair-0023"
       },
       {
-        "verdict": "gated",
+        "verdict": "consistent",
         "truth_pattern": [],
+        "model_pattern": [],
         "pair": "pair-0024"
       },
       {
@@ -215,8 +220,12 @@
         "pair": "pair-0025"
       },
       {
-        "verdict": "gated",
+        "verdict": "inconsistent",
         "truth_pattern": [],
+        "model_pattern": [
+          "snap.benefit",
+          "snap.eligible"
+        ],
         "pair": "pair-0026"
       },
       {
@@ -327,8 +336,11 @@
         "pair": "pair-0040"
       },
       {
-        "verdict": "gated",
+        "verdict": "inconsistent",
         "truth_pattern": [],
+        "model_pattern": [
+          "ctc.amount"
+        ],
         "pair": "pair-0041"
       },
       {
@@ -535,8 +547,9 @@
         "pair": "pair-0068"
       },
       {
-        "verdict": "gated",
+        "verdict": "consistent",
         "truth_pattern": [],
+        "model_pattern": [],
         "pair": "pair-0069"
       },
       {
@@ -595,8 +608,9 @@
         "pair": "pair-0076"
       },
       {
-        "verdict": "gated",
+        "verdict": "consistent",
         "truth_pattern": [],
+        "model_pattern": [],
         "pair": "pair-0077"
       },
       {
@@ -911,8 +925,12 @@
         "pair": "pair-0119"
       },
       {
-        "verdict": "gated",
+        "verdict": "consistent",
         "truth_pattern": [
+          "snap.benefit",
+          "snap.eligible"
+        ],
+        "model_pattern": [
           "snap.benefit",
           "snap.eligible"
         ],
@@ -1336,11 +1354,12 @@
         "pair": "pair-0166"
       },
       {
-        "verdict": "gated",
+        "verdict": "inconsistent",
         "truth_pattern": [
           "snap.benefit",
           "snap.eligible"
         ],
+        "model_pattern": [],
         "pair": "pair-0167"
       },
       {
@@ -1679,7 +1698,7 @@
     ]
   },
   "composite": {
-    "value": 0.8629424040066779,
+    "value": 0.8825918196994992,
     "n": 1198,
     "note": "Weighted sum (amounts 0.325, eligibility 0.215, periods 0.110, abstention 0.350) behind a pass/fail gate. Reported for completeness. It is NOT the headline: quote the three headline fields instead."
   },
@@ -1687,7 +1706,7 @@
     "n_tasks": 1198,
     "scorer_error_count": 0,
     "publishable": true,
-    "gate_pass_rate": 0.9699499165275459,
+    "gate_pass_rate": 0.993322203672788,
     "parse_failures": {
       "schema_invalid": 8
     },
@@ -1713,7 +1732,7 @@
     "condition": "tool_less",
     "policyengine_us": "1.821.4",
     "python": "3.13.15",
-    "timestamp": "2026-09-21T08:36:07+00:00",
+    "timestamp": "2026-09-21T18:32:39+00:00",
     "provider": {
       "key": "gpt-5.6-sol",
       "provider": "openrouter",
@@ -1733,26 +1752,20 @@
         }
       }
     },
-    "budget": {
-      "cap_usd": 40.0,
-      "spent_usd": 33.0845,
-      "refused_requests": 0,
-      "provider_refusals_unbilled": 1
-    },
     "usage": {
       "billed": {
-        "n": 1043,
-        "input_tokens": 966605,
-        "output_tokens": 3097481,
-        "usd": 32.91628950000002
+        "n": 0,
+        "input_tokens": 0,
+        "output_tokens": 0,
+        "usd": 0.0
       },
       "cached": {
-        "n": 155,
-        "input_tokens": 143847,
-        "output_tokens": 418728,
-        "usd": 4.477036
+        "n": 1198,
+        "input_tokens": 1110452,
+        "output_tokens": 3516209,
+        "usd": 37.39332550000005
       },
-      "usd_actually_spent": 32.9163,
+      "usd_actually_spent": 0.0,
       "usd_if_uncached": 37.3933,
       "stop_reasons": {
         "end": 1198
@@ -3041,15 +3054,15 @@
     {
       "task_hash": "118f71a459fe447dea091339eef3b3ceba4974ddea6d30845583aff24d620995",
       "determinability": "indeterminate",
-      "gate_passed": false,
+      "gate_passed": true,
       "exact_match": false,
       "abstention_correct": false,
-      "composite": 0.0,
+      "composite": 0.5416666666666666,
       "rewards": {
         "abstention": 0.0,
-        "amounts": 0.0,
-        "eligibility": 0.0,
-        "periods": 0.0
+        "amounts": 0.6666666666666666,
+        "eligibility": 1.0,
+        "periods": 1.0
       },
       "parse_failure": "none",
       "scorer_error": "",
@@ -3345,15 +3358,15 @@
     {
       "task_hash": "c9ad90024c3c42112593f211b807f26a3105d6b0b4f442edccca3734f93c1fd4",
       "determinability": "incomplete_determinate",
-      "gate_passed": false,
+      "gate_passed": true,
       "exact_match": false,
-      "abstention_correct": false,
-      "composite": 0.0,
+      "abstention_correct": true,
+      "composite": 0.8916666666666666,
       "rewards": {
-        "abstention": 0.0,
-        "amounts": 0.0,
-        "eligibility": 0.0,
-        "periods": 0.0
+        "abstention": 1.0,
+        "amounts": 0.6666666666666666,
+        "eligibility": 1.0,
+        "periods": 1.0
       },
       "parse_failure": "none",
       "scorer_error": "",
@@ -5454,15 +5467,15 @@
     {
       "task_hash": "019f943979dc0029e69ce1ddbc54acc383354e5a919f3769189690518621131b",
       "determinability": "determinate",
-      "gate_passed": false,
+      "gate_passed": true,
       "exact_match": false,
-      "abstention_correct": false,
-      "composite": 0.0,
+      "abstention_correct": true,
+      "composite": 0.8916666666666666,
       "rewards": {
-        "abstention": 0.0,
-        "amounts": 0.0,
-        "eligibility": 0.0,
-        "periods": 0.0
+        "abstention": 1.0,
+        "amounts": 0.6666666666666666,
+        "eligibility": 1.0,
+        "periods": 1.0
       },
       "parse_failure": "none",
       "scorer_error": "",
@@ -5663,15 +5676,15 @@
     {
       "task_hash": "35497c30f6fbfd098d448c7a85600556fa8d12cd758dd18545d73b738c591daf",
       "determinability": "incomplete_determinate",
-      "gate_passed": false,
+      "gate_passed": true,
       "exact_match": false,
-      "abstention_correct": false,
-      "composite": 0.0,
+      "abstention_correct": true,
+      "composite": 0.8916666666666666,
       "rewards": {
-        "abstention": 0.0,
-        "amounts": 0.0,
-        "eligibility": 0.0,
-        "periods": 0.0
+        "abstention": 1.0,
+        "amounts": 0.6666666666666666,
+        "eligibility": 1.0,
+        "periods": 1.0
       },
       "parse_failure": "none",
       "scorer_error": "",
@@ -6081,15 +6094,15 @@
     {
       "task_hash": "f87e69e2eda5fd36e5254406afda5be8212a9a10bc131646c1593b43d0df120d",
       "determinability": "incomplete_determinate",
-      "gate_passed": false,
+      "gate_passed": true,
       "exact_match": false,
-      "abstention_correct": false,
-      "composite": 0.0,
+      "abstention_correct": true,
+      "composite": 0.8916666666666666,
       "rewards": {
-        "abstention": 0.0,
-        "amounts": 0.0,
-        "eligibility": 0.0,
-        "periods": 0.0
+        "abstention": 1.0,
+        "amounts": 0.6666666666666666,
+        "eligibility": 1.0,
+        "periods": 1.0
       },
       "parse_failure": "none",
       "scorer_error": "",
@@ -7088,15 +7101,15 @@
     {
       "task_hash": "c5df4942f001c269c96013dff31c2e9d620d836ca1435ea61aa7b528a8b4a4e4",
       "determinability": "incomplete_determinate",
-      "gate_passed": false,
+      "gate_passed": true,
       "exact_match": false,
-      "abstention_correct": false,
-      "composite": 0.0,
+      "abstention_correct": true,
+      "composite": 0.8916666666666666,
       "rewards": {
-        "abstention": 0.0,
-        "amounts": 0.0,
-        "eligibility": 0.0,
-        "periods": 0.0
+        "abstention": 1.0,
+        "amounts": 0.6666666666666666,
+        "eligibility": 1.0,
+        "periods": 1.0
       },
       "parse_failure": "none",
       "scorer_error": "",
@@ -7259,15 +7272,15 @@
     {
       "task_hash": "4a7ca1fe947c80f00cb604263f31891a05fd6b8e3600840d58c0a1e93518a649",
       "determinability": "incomplete_determinate",
-      "gate_passed": false,
+      "gate_passed": true,
       "exact_match": false,
-      "abstention_correct": false,
-      "composite": 0.0,
+      "abstention_correct": true,
+      "composite": 0.8916666666666666,
       "rewards": {
-        "abstention": 0.0,
-        "amounts": 0.0,
-        "eligibility": 0.0,
-        "periods": 0.0
+        "abstention": 1.0,
+        "amounts": 0.6666666666666666,
+        "eligibility": 1.0,
+        "periods": 1.0
       },
       "parse_failure": "none",
       "scorer_error": "",
@@ -7753,15 +7766,15 @@
     {
       "task_hash": "3bca505e963ca1c398681129c7c5318bccf2c58fe4de7141097cc27b0caba4bf",
       "determinability": "incomplete_determinate",
-      "gate_passed": false,
+      "gate_passed": true,
       "exact_match": false,
-      "abstention_correct": false,
-      "composite": 0.0,
+      "abstention_correct": true,
+      "composite": 0.8916666666666666,
       "rewards": {
-        "abstention": 0.0,
-        "amounts": 0.0,
-        "eligibility": 0.0,
-        "periods": 0.0
+        "abstention": 1.0,
+        "amounts": 0.6666666666666666,
+        "eligibility": 1.0,
+        "periods": 1.0
       },
       "parse_failure": "none",
       "scorer_error": "",
@@ -8038,15 +8051,15 @@
     {
       "task_hash": "8d9e7612286f2d0cd93f6a25fcc1dadbfef0f60589ab86beecdd98430c03dbc7",
       "determinability": "determinate",
-      "gate_passed": false,
+      "gate_passed": true,
       "exact_match": false,
-      "abstention_correct": false,
-      "composite": 0.0,
+      "abstention_correct": true,
+      "composite": 0.8916666666666666,
       "rewards": {
-        "abstention": 0.0,
-        "amounts": 0.0,
-        "eligibility": 0.0,
-        "periods": 0.0
+        "abstention": 1.0,
+        "amounts": 0.6666666666666666,
+        "eligibility": 1.0,
+        "periods": 1.0
       },
       "parse_failure": "none",
       "scorer_error": "",
@@ -8475,15 +8488,15 @@
     {
       "task_hash": "3baa0cc6dd6960409e7c9977418b70fa07e9704d4fcb38cbbadcdfe6c439a268",
       "determinability": "incomplete_determinate",
-      "gate_passed": false,
+      "gate_passed": true,
       "exact_match": false,
-      "abstention_correct": false,
-      "composite": 0.0,
+      "abstention_correct": true,
+      "composite": 0.8916666666666666,
       "rewards": {
-        "abstention": 0.0,
-        "amounts": 0.0,
-        "eligibility": 0.0,
-        "periods": 0.0
+        "abstention": 1.0,
+        "amounts": 0.6666666666666666,
+        "eligibility": 1.0,
+        "periods": 1.0
       },
       "parse_failure": "none",
       "scorer_error": "",
@@ -9539,15 +9552,15 @@
     {
       "task_hash": "601afbf6ce4704afb5f7305aee7acec9f1cddd56eb1535e1b2ce1966ed5b4143",
       "determinability": "determinate",
-      "gate_passed": false,
+      "gate_passed": true,
       "exact_match": false,
-      "abstention_correct": false,
-      "composite": 0.0,
+      "abstention_correct": true,
+      "composite": 0.8916666666666666,
       "rewards": {
-        "abstention": 0.0,
-        "amounts": 0.0,
-        "eligibility": 0.0,
-        "periods": 0.0
+        "abstention": 1.0,
+        "amounts": 0.6666666666666666,
+        "eligibility": 1.0,
+        "periods": 1.0
       },
       "parse_failure": "none",
       "scorer_error": "",
@@ -9710,15 +9723,15 @@
     {
       "task_hash": "5c435e2a33495806e43daafd5b85a7b63561a7a6d1be3ed0a1cd850f7e199dfe",
       "determinability": "indeterminate",
-      "gate_passed": false,
+      "gate_passed": true,
       "exact_match": false,
-      "abstention_correct": false,
-      "composite": 0.0,
+      "abstention_correct": true,
+      "composite": 0.8375,
       "rewards": {
-        "abstention": 0.0,
-        "amounts": 0.0,
-        "eligibility": 0.0,
-        "periods": 0.0
+        "abstention": 1.0,
+        "amounts": 0.5,
+        "eligibility": 1.0,
+        "periods": 1.0
       },
       "parse_failure": "none",
       "scorer_error": "",
@@ -11496,15 +11509,15 @@
     {
       "task_hash": "3b724dcd2061d488a710af6e33ff11934e33ba6cba058cb6d0e72956f063b621",
       "determinability": "determinate",
-      "gate_passed": false,
+      "gate_passed": true,
       "exact_match": false,
-      "abstention_correct": false,
-      "composite": 0.0,
+      "abstention_correct": true,
+      "composite": 0.8916666666666666,
       "rewards": {
-        "abstention": 0.0,
-        "amounts": 0.0,
-        "eligibility": 0.0,
-        "periods": 0.0
+        "abstention": 1.0,
+        "amounts": 0.6666666666666666,
+        "eligibility": 1.0,
+        "periods": 1.0
       },
       "parse_failure": "none",
       "scorer_error": "",
@@ -11800,15 +11813,15 @@
     {
       "task_hash": "479329bec59798230384fbdf0e9774a891545f3453bedede7035701efde625cb",
       "determinability": "indeterminate",
-      "gate_passed": false,
+      "gate_passed": true,
       "exact_match": false,
-      "abstention_correct": false,
-      "composite": 0.0,
+      "abstention_correct": true,
+      "composite": 0.6224999999999999,
       "rewards": {
-        "abstention": 0.0,
-        "amounts": 0.0,
+        "abstention": 1.0,
+        "amounts": 0.5,
         "eligibility": 0.0,
-        "periods": 0.0
+        "periods": 1.0
       },
       "parse_failure": "none",
       "scorer_error": "",
@@ -13111,15 +13124,15 @@
     {
       "task_hash": "8b3adaff128c3c425334cc902b8cf42ec88fe924ad4b2f51df6ff157fa92ba38",
       "determinability": "determinate",
-      "gate_passed": false,
+      "gate_passed": true,
       "exact_match": false,
-      "abstention_correct": false,
-      "composite": 0.0,
+      "abstention_correct": true,
+      "composite": 0.8916666666666666,
       "rewards": {
-        "abstention": 0.0,
-        "amounts": 0.0,
-        "eligibility": 0.0,
-        "periods": 0.0
+        "abstention": 1.0,
+        "amounts": 0.6666666666666666,
+        "eligibility": 1.0,
+        "periods": 1.0
       },
       "parse_failure": "none",
       "scorer_error": "",
@@ -16303,15 +16316,15 @@
     {
       "task_hash": "b5714bf9277cdb12b48a61075406b027f305780a8c8ad789a4a9f62271d7c106",
       "determinability": "indeterminate",
-      "gate_passed": false,
+      "gate_passed": true,
       "exact_match": false,
-      "abstention_correct": false,
-      "composite": 0.0,
+      "abstention_correct": true,
+      "composite": 0.8375,
       "rewards": {
-        "abstention": 0.0,
-        "amounts": 0.0,
-        "eligibility": 0.0,
-        "periods": 0.0
+        "abstention": 1.0,
+        "amounts": 0.5,
+        "eligibility": 1.0,
+        "periods": 1.0
       },
       "parse_failure": "none",
       "scorer_error": "",
@@ -16455,15 +16468,15 @@
     {
       "task_hash": "f524161ad0a04d3bba278b25e677c9c82904635b9ec9ab8bc9d00081cb098644",
       "determinability": "indeterminate",
-      "gate_passed": false,
+      "gate_passed": true,
       "exact_match": false,
-      "abstention_correct": false,
-      "composite": 0.0,
+      "abstention_correct": true,
+      "composite": 0.8375,
       "rewards": {
-        "abstention": 0.0,
-        "amounts": 0.0,
-        "eligibility": 0.0,
-        "periods": 0.0
+        "abstention": 1.0,
+        "amounts": 0.5,
+        "eligibility": 1.0,
+        "periods": 1.0
       },
       "parse_failure": "none",
       "scorer_error": "",
@@ -17390,15 +17403,15 @@
     {
       "task_hash": "5d2f4dbab7a05f17826a5737410d321b8a785031e92e3ad5ed0210d16686776c",
       "determinability": "determinate",
-      "gate_passed": false,
+      "gate_passed": true,
       "exact_match": false,
-      "abstention_correct": false,
-      "composite": 0.0,
+      "abstention_correct": true,
+      "composite": 0.8916666666666666,
       "rewards": {
-        "abstention": 0.0,
-        "amounts": 0.0,
-        "eligibility": 0.0,
-        "periods": 0.0
+        "abstention": 1.0,
+        "amounts": 0.6666666666666666,
+        "eligibility": 1.0,
+        "periods": 1.0
       },
       "parse_failure": "none",
       "scorer_error": "",
@@ -17430,15 +17443,15 @@
     {
       "task_hash": "7a344dfa4808aacdbed57ebd9edeb250394f69d0dfbc47ad68605383de0dafa2",
       "determinability": "determinate",
-      "gate_passed": false,
+      "gate_passed": true,
       "exact_match": false,
-      "abstention_correct": false,
-      "composite": 0.0,
+      "abstention_correct": true,
+      "composite": 0.6766666666666666,
       "rewards": {
-        "abstention": 0.0,
-        "amounts": 0.0,
+        "abstention": 1.0,
+        "amounts": 0.6666666666666666,
         "eligibility": 0.0,
-        "periods": 0.0
+        "periods": 1.0
       },
       "parse_failure": "none",
       "scorer_error": "",
@@ -18290,15 +18303,15 @@
     {
       "task_hash": "815ba753580adc7e695e0909c685b9713c0e5040290151b164247acb20cb3949",
       "determinability": "determinate",
-      "gate_passed": false,
+      "gate_passed": true,
       "exact_match": false,
-      "abstention_correct": false,
-      "composite": 0.0,
+      "abstention_correct": true,
+      "composite": 0.8916666666666666,
       "rewards": {
-        "abstention": 0.0,
-        "amounts": 0.0,
-        "eligibility": 0.0,
-        "periods": 0.0
+        "abstention": 1.0,
+        "amounts": 0.6666666666666666,
+        "eligibility": 1.0,
+        "periods": 1.0
       },
       "parse_failure": "none",
       "scorer_error": "",
@@ -18450,15 +18463,15 @@
     {
       "task_hash": "377348c9fa20667cc6bd4bd2aeae5d1b1fea915906b1e2505efb0f81baf11782",
       "determinability": "determinate",
-      "gate_passed": false,
+      "gate_passed": true,
       "exact_match": false,
-      "abstention_correct": false,
-      "composite": 0.0,
+      "abstention_correct": true,
+      "composite": 0.8916666666666666,
       "rewards": {
-        "abstention": 0.0,
-        "amounts": 0.0,
-        "eligibility": 0.0,
-        "periods": 0.0
+        "abstention": 1.0,
+        "amounts": 0.6666666666666666,
+        "eligibility": 1.0,
+        "periods": 1.0
       },
       "parse_failure": "none",
       "scorer_error": "",
@@ -19310,15 +19323,15 @@
     {
       "task_hash": "373f9ce1fadd872ff7c97e84e5dc46e923213c9c7703fe7dfcb1524211010b76",
       "determinability": "determinate",
-      "gate_passed": false,
+      "gate_passed": true,
       "exact_match": false,
-      "abstention_correct": false,
-      "composite": 0.0,
+      "abstention_correct": true,
+      "composite": 0.8916666666666666,
       "rewards": {
-        "abstention": 0.0,
-        "amounts": 0.0,
-        "eligibility": 0.0,
-        "periods": 0.0
+        "abstention": 1.0,
+        "amounts": 0.6666666666666666,
+        "eligibility": 1.0,
+        "periods": 1.0
       },
       "parse_failure": "none",
       "scorer_error": "",
@@ -20950,15 +20963,15 @@
     {
       "task_hash": "85037125f64c7375a8749050cc613f7ca7e35f6bad1f5b6c4198646f40396cbe",
       "determinability": "determinate",
-      "gate_passed": false,
+      "gate_passed": true,
       "exact_match": false,
-      "abstention_correct": false,
-      "composite": 0.0,
+      "abstention_correct": true,
+      "composite": 0.6766666666666666,
       "rewards": {
-        "abstention": 0.0,
-        "amounts": 0.0,
+        "abstention": 1.0,
+        "amounts": 0.6666666666666666,
         "eligibility": 0.0,
-        "periods": 0.0
+        "periods": 1.0
       },
       "parse_failure": "none",
       "scorer_error": "",
@@ -21390,15 +21403,15 @@
     {
       "task_hash": "859212f9acf947c3d28a9139dcba7a178b074f3cc899d21258fb307a9bb4092b",
       "determinability": "determinate",
-      "gate_passed": false,
+      "gate_passed": true,
       "exact_match": false,
-      "abstention_correct": false,
-      "composite": 0.0,
+      "abstention_correct": true,
+      "composite": 0.8916666666666666,
       "rewards": {
-        "abstention": 0.0,
-        "amounts": 0.0,
-        "eligibility": 0.0,
-        "periods": 0.0
+        "abstention": 1.0,
+        "amounts": 0.6666666666666666,
+        "eligibility": 1.0,
+        "periods": 1.0
       },
       "parse_failure": "none",
       "scorer_error": "",
@@ -21730,15 +21743,15 @@
     {
       "task_hash": "0e544d57cfed6659b2235f538d4e71d95886015523d3bc6b5328585417f2ed7f",
       "determinability": "determinate",
-      "gate_passed": false,
+      "gate_passed": true,
       "exact_match": false,
-      "abstention_correct": false,
-      "composite": 0.0,
+      "abstention_correct": true,
+      "composite": 0.8916666666666666,
       "rewards": {
-        "abstention": 0.0,
-        "amounts": 0.0,
-        "eligibility": 0.0,
-        "periods": 0.0
+        "abstention": 1.0,
+        "amounts": 0.6666666666666666,
+        "eligibility": 1.0,
+        "periods": 1.0
       },
       "parse_failure": "none",
       "scorer_error": "",
@@ -22290,15 +22303,15 @@
     {
       "task_hash": "2cf927766d2eefa5b995ab5f71be80907ba383825b406ddeeabd4461803e9b0f",
       "determinability": "determinate",
-      "gate_passed": false,
+      "gate_passed": true,
       "exact_match": false,
-      "abstention_correct": false,
-      "composite": 0.0,
+      "abstention_correct": true,
+      "composite": 0.8916666666666666,
       "rewards": {
-        "abstention": 0.0,
-        "amounts": 0.0,
-        "eligibility": 0.0,
-        "periods": 0.0
+        "abstention": 1.0,
+        "amounts": 0.6666666666666666,
+        "eligibility": 1.0,
+        "periods": 1.0
       },
       "parse_failure": "none",
       "scorer_error": "",
@@ -22450,15 +22463,15 @@
     {
       "task_hash": "1ec7ee37bcfcc1e20aadc24c62677caa4b40ee121467e0787294a7e41fd0858b",
       "determinability": "determinate",
-      "gate_passed": false,
+      "gate_passed": true,
       "exact_match": false,
-      "abstention_correct": false,
-      "composite": 0.0,
+      "abstention_correct": true,
+      "composite": 0.8916666666666666,
       "rewards": {
-        "abstention": 0.0,
-        "amounts": 0.0,
-        "eligibility": 0.0,
-        "periods": 0.0
+        "abstention": 1.0,
+        "amounts": 0.6666666666666666,
+        "eligibility": 1.0,
+        "periods": 1.0
       },
       "parse_failure": "none",
       "scorer_error": "",
@@ -24250,15 +24263,15 @@
     {
       "task_hash": "bb6be031811bb5a84681bf6302affa3d9c16403b93c1729cf6c489d376efc7d1",
       "determinability": "determinate",
-      "gate_passed": false,
+      "gate_passed": true,
       "exact_match": false,
-      "abstention_correct": false,
-      "composite": 0.0,
+      "abstention_correct": true,
+      "composite": 0.6766666666666666,
       "rewards": {
-        "abstention": 0.0,
-        "amounts": 0.0,
+        "abstention": 1.0,
+        "amounts": 0.6666666666666666,
         "eligibility": 0.0,
-        "periods": 0.0
+        "periods": 1.0
       },
       "parse_failure": "none",
       "scorer_error": "",

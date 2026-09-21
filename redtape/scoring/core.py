@@ -8,6 +8,7 @@ wrong, and it fails *toward* "the model is bad" (CLAUDE.md).
 
 from __future__ import annotations
 
+import functools
 import traceback
 from dataclasses import dataclass, field
 
@@ -28,8 +29,13 @@ class Scored:
 
 
 def _guard(fn):
-    """Any exception becomes an explicit scorer_error, never a silent zero."""
+    """Any exception becomes an explicit scorer_error, never a silent zero.
 
+    functools.wraps keeps the wrapped signature visible: the gate's rule - it is given the
+    response and nothing else - is checked by inspecting it (tests/test_env.py).
+    """
+
+    @functools.wraps(fn)
     def wrapper(*args, **kwargs) -> Scored:
         try:
             return fn(*args, **kwargs)
@@ -40,8 +46,6 @@ def _guard(fn):
                 detail={"traceback": traceback.format_exc(limit=4)},
             )
 
-    wrapper.__name__ = fn.__name__
-    wrapper.__doc__ = fn.__doc__
     return wrapper
 
 
@@ -60,7 +64,9 @@ def score_amounts(given: T1Answer, truth: T1Answer, tol: float = TOLERANCE) -> S
     only the given side can be excluded.
 
     If every scored program was abstained on, there is nothing to measure and the value is
-    0.0. That deliberately does not reward blanket abstention, which the gate catches anyway.
+    0.0. That deliberately does not reward blanket abstention, which `score_abstention` also
+    scores as wrong on determinate and incomplete-determinate tasks. (The gate used to catch
+    it too, by reading the answer key; it no longer does - LIMITS §42.)
     """
     checks = {
         "snap": (given.snap.benefit, truth.snap.benefit),
@@ -209,39 +215,34 @@ def score_exact_match(given: T1Answer, truth: T1Answer, tol: float = TOLERANCE) 
 
 
 @_guard
-def score_antihack(
-    given: T1Answer, truth: T1Answer, deciding_programs: tuple[str, ...] = ()
-) -> Scored:
+def score_antihack(given: T1Answer) -> Scored:
     """Structural gate against degenerate answers. 1.0 = pass, 0.0 = gate failed.
 
-    Not a substitute for the trivial baselines - those measure whether the benchmark is
-    gameable, this only catches an individual answer that is obviously not an attempt.
+    **A GATE MUST NOT READ THE ANSWER KEY** (CLAUDE.md, 2026-09-21). This function is not
+    given the key or the task's labels, so it cannot: the rule is enforced by the signature
+    rather than by remembering it. Correctness is what the components score; a gate decides
+    only whether a response is a scoreable attempt, and that question has to be answerable
+    from the response alone.
+
+    Two checks were removed on 2026-09-21 because both read the key (LIMITS §42):
+
+    * `all_amounts_zero` fired when every answered amount was zero AND the truth was not all
+      zero - so it fired only on WRONG all-zero answers. A model that sincerely concluded
+      "ineligible for everything" and was wrong had every component zeroed, including
+      abstention, where not abstaining had been correct: one error counted twice across two
+      headlines. A genuinely degenerate all-zero strategy is a cross-task pattern that a
+      per-task gate cannot see anyway, and `never_eligible` already exposes it in aggregate
+      (0.123 exact-match, 0.083 abstention).
+    * `abstained_on_everything` consulted `deciding_programs`, which is answer-key
+      information, and was redundant: `score_abstention` already scores blanket abstention
+      as wrong on determinate and incomplete-determinate tasks.
+
+    What remains is structural: an amount cannot be negative. `None` means the response
+    abstained on that program, which is not a negative number and is the abstention scorer's
+    business.
     """
-    # Abstaining on every scored program is CORRECT when every scored program genuinely
-    # turns on the withheld fact. It is degenerate only when nothing is deciding.
-    claimed = {c.program for c in given.cannot_determine} & set(SCORED_PROGRAMS)
-    amounts = {
-        "snap": (given.snap.benefit, truth.snap.benefit),
-        "eitc": (given.eitc.amount, truth.eitc.amount),
-        "ctc": (given.ctc.amount, truth.ctc.amount),
-    }
-    # A program the response abstained on has no meaningful amount, so its zero is not
-    # evidence of a degenerate answer. Without this exemption the gate would fail every
-    # correct abstention (whose amount fields are necessarily empty), which would make the
-    # abstention headline unmeasurable for exactly the answers it exists to measure.
-    answered = {k: v for k, v in amounts.items() if k not in claimed}
-    flags = {
-        "abstained_on_everything": (
-            claimed >= set(SCORED_PROGRAMS) and not set(deciding_programs)
-        ),
-        "all_amounts_zero": bool(answered)
-        and all(g == 0.0 for g, _ in answered.values() if g is not None)
-        and any(g is not None for g, _ in answered.values())
-        and not all(t == 0.0 for _, t in answered.values()),
-        # `None` means abstained, not negative. Comparing it would raise, and the guard
-        # would turn a correct abstention into a scorer_error.
-        "negative_amount": any(g is not None and g < 0 for g, _ in amounts.values()),
-    }
+    amounts = (given.snap.benefit, given.eitc.amount, given.ctc.amount)
+    flags = {"negative_amount": any(a is not None and a < 0 for a in amounts)}
     failed = sorted(k for k, v in flags.items() if v)
     return Scored(
         value=0.0 if failed else 1.0,

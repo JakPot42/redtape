@@ -111,7 +111,7 @@ def test_scorers_do_not_raise_on_a_null_answer(replies):
         for fn in (score_amounts, score_eligibility):
             s = fn(given, truth)
             assert s.ok, f"{fn.__name__} raised on a null answer: {s.error}"
-        s = score_antihack(given, truth, ("snap",))
+        s = score_antihack(given)
         assert s.ok, f"score_antihack raised on a null answer: {s.error}"
 
 

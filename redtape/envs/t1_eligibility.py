@@ -203,9 +203,8 @@ class T1Task(Task[T1Data, State, T1TaskConfig]):
             trace.info["gate_failure"] = f"format:{p.failure.value}"
             return False
 
-        scored = score_antihack(
-            p.answer, self.data.answer_key, tuple(self.data.deciding_programs)
-        )
+        # The gate is given the ANSWER ONLY. It must not read the key (CLAUDE.md).
+        scored = score_antihack(p.answer)
         self._record(trace, "antihack", scored)
         passed = scored.ok and scored.value == 1.0
         trace.info["_gate"] = passed
@@ -223,7 +222,8 @@ class T1Task(Task[T1Data, State, T1TaskConfig]):
 
     @metric
     async def gate_passed(self, trace: Trace) -> float:
-        """Format compliance AND degenerate-answer detection, as a pass/fail filter."""
+        """Format compliance AND structural degeneracy, as a pass/fail filter. Neither half
+        reads the answer key: correctness is what the components score."""
         return 1.0 if self._gate(trace) else 0.0
 
     @metric
@@ -232,7 +232,7 @@ class T1Task(Task[T1Data, State, T1TaskConfig]):
         p = self._parsed(trace)
         if not p.ok:
             return 0.0
-        s = score_antihack(p.answer, self.data.answer_key, tuple(self.data.deciding_programs))
+        s = score_antihack(p.answer)
         return 1.0 if (s.ok and s.value == 1.0) else 0.0
 
     # -------------------------------------------------- headline metric inputs

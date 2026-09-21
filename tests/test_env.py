@@ -143,15 +143,33 @@ def test_answering_an_incomplete_determinate_task_scores_full():
                             "housing_cost").value == 1.0
 
 
-def test_full_abstention_is_not_antihacked_when_everything_is_deciding():
-    """Abstaining on all three scored programs is correct if all three turn on the fact."""
-    given = _answer(cd=(("snap", "x"), ("eitc", "x"), ("ctc", "x")))
-    assert score_antihack(given, _answer(), ("snap", "eitc", "ctc")).value == 1.0
+def test_the_gate_cannot_read_the_answer_key():
+    """CLAUDE.md: a gate must not read the answer key. Enforced by the signature - the
+    function takes the response and nothing else - so the rule cannot be forgotten."""
+    import inspect
+
+    from redtape.scoring.core import score_antihack as fn
+
+    params = list(inspect.signature(fn).parameters)
+    assert params == ["given"], params
 
 
-def test_full_abstention_is_antihacked_when_nothing_is_deciding():
-    given = _answer(cd=(("snap", "x"), ("eitc", "x"), ("ctc", "x")))
-    assert score_antihack(given, _answer(), ()).value == 0.0
+def test_full_abstention_passes_the_gate_whatever_the_truth():
+    """Blanket abstention is scored by score_abstention (0.0 on determinate and
+    incomplete-determinate tasks), not by the gate. The gate used to fail it by consulting
+    deciding_programs, which is answer-key information (LIMITS 42)."""
+    given = _answer(cd=(("snap", "p1.age"), ("eitc", "p1.age"), ("ctc", "p1.age")))
+    assert score_antihack(given).value == 1.0
+
+
+def test_a_sincere_all_zero_answer_passes_the_gate():
+    """It may be wrong - the components say so - but it is an attempt. This fired on a real
+    Opus 5 reply: SNAP ineligible, every amount zero, key said 232 dollars (LIMITS 42)."""
+    assert score_antihack(_answer(snap=0.0, eitc=0.0, ctc=0.0)).value == 1.0
+
+
+def test_a_negative_amount_still_fails_the_gate():
+    assert score_antihack(_answer(snap=-1.0)).value == 0.0
 
 
 def test_a_raising_scorer_returns_an_explicit_error_not_a_silent_zero():

@@ -113,7 +113,7 @@ rates in `docs/LIMITS.md` §28 instead of the recorded totals.
 ## Every green signal must be checked for what it is NOT measuring **[decided]**
 
 This is the standing principle, and it outranks any individual check below. It has now
-been learned eleven times on this project, each time from a different direction, and each
+been learned twelve times on this project, each time from a different direction, and each
 time the failure looked exactly like success right up until someone asked what the signal
 actually covered.
 
@@ -128,6 +128,7 @@ actually covered.
 | 7 | 300 tests pass on the generator | not one called `render()`, so re-widening the status set left 12% of households raising `KeyError`, and not one read `data/dev/t1.jsonl`, so the committed corpus silently went stale (LIMITS §31) |
 | 8 | CLAUDE.md required every paid run to take a hard cap "checked after every API call" | **nothing implemented it.** `run_eval.py` had no cap of any kind for two weeks, while the rule was cited as the reason overspend could not recur (LIMITS §32) |
 | 9 | Opus 5 on 1,200 tasks: 0 malformed, 0 schema-invalid, 0 scorer errors, and a clean 0.396 / 0.050 split | a third of the answer keys rested on premises no case file stated: two adults keyed as a married couple (a parent and adult child among them), students keyed at zero hours, undocumented filers keyed with a citizen's SSN. A model asking for the relationship was scored as abstaining needlessly (LIMITS §35–§36) |
+| 12 | the anti-hack gate keeps degenerate answers out of the headlines | it fired on a **sincere** Opus 5 reply (SNAP ineligible, every amount zero, key said $232). `all_amounts_zero` fired only when the truth was *not* all zero, so it read the answer key and caught wrongness, not degeneracy - and zeroed abstention too, counting one error in two headlines (LIMITS §42) |
 | 11 | the hard cap works: a live run reports `budget $39.84 / $40.00` and stops | **$4.48 was actually spent.** OpenRouter refused 1,045 requests with 403 after the key hit its spending limit, and `charge_failed` charged every refusal its worst case. The cap was exhausted by requests nobody billed, and the next legitimate run would have stopped early on that number (LIMITS §37) |
 | 10 | exact fact matching lands, and GPT-5.6 Sol's probe scores 0.667 on abstention | three of its abstentions named `p1.ssn_status` where `p1.immigration_status` was withheld. SSN is DERIVED from status, so it was withheld too: the model named the other half of a genuinely missing fact and the scorer called it wrong. 0.667 → **0.889** once coupled facts were accepted (LIMITS §36) |
 
@@ -142,7 +143,33 @@ looked like a model result.
 **So when a metric is lower than the responses deserve, check the scorer against the
 GENERATOR before concluding anything about the model**: every fact the generator couples,
 every value the schema permits, every answer the labelling calls correct. That is a specific
-place to look, and it has paid three times.
+place to look, and it has paid four times (instances 6, 9, 10 and 12).
+
+### A gate must not read the answer key **[decided]**
+
+**A gate decides whether a response is a scoreable attempt. That question must be answerable
+from the response alone.** A check that fires only when the answer is *wrong* is a
+correctness check wearing an anti-hack label, and failing a gate zeroes every component at
+once - so one error is counted twice, in two different headlines.
+
+Instance 12 was exactly this. `all_amounts_zero` compared the response to the key and fired
+only when they disagreed; a model that sincerely concluded "ineligible for everything" and
+was wrong lost its abstention score too, on a determinate task where *not* abstaining had
+been correct. `abstained_on_everything` had the same defect more quietly: it consulted
+`deciding_programs`, which is answer-key information, and was redundant because
+`score_abstention` already scores blanket abstention as wrong.
+
+Obligations:
+
+- **Correctness belongs to the components.** Gates catch format failures and structural
+  degeneracy - unparseable output, a negative benefit - and nothing else.
+- **Enforce it in the signature, not in a comment.** `score_antihack(given)` receives the
+  response and nothing else, so it *cannot* read the key; `tests/test_env.py` asserts the
+  parameter list. A rule that depends on remembering it is a rule that gets forgotten.
+- **A degenerate STRATEGY is a cross-task pattern, and a per-task gate cannot see it.**
+  "Always answer zero" is caught by the trivial baselines, which is what they are for:
+  `never_eligible` scores 0.123 exact-match and 0.083 abstention, visibly hopeless in
+  aggregate, without any single response having to be judged a hack.
 
 **The general form.** A passing check reports on the region it covers and says nothing
 whatsoever about the region it does not — but it is *read* as a statement about the whole.
@@ -308,7 +335,7 @@ dispositions in LIMITS §33:
 
 **This principle is the thesis of the benchmark, applied to ourselves.** Redtape exists
 because PolicyEngine answers every question plausibly and never says "I cannot determine" —
-a system that is silently confident where it should abstain. Eleven times now our own tooling
+a system that is silently confident where it should abstain. Twelve times now our own tooling
 has done the same thing to us. We do not get to ship a benchmark about undetectable
 confident wrongness while running on undetectable confident greenness.
 

@@ -166,13 +166,12 @@ def test_exact_match_surfaces_a_scorer_error_rather_than_scoring_zero():
 
 
 def test_antihack_reports_which_check_failed():
-    given = _answer(snap=0.0, eitc=0.0, ctc=0.0)
-    r = score_antihack(given, _answer())
+    r = score_antihack(_answer(snap=-5.0))
     assert r.value == 0.0
-    assert r.detail["failed"] == ["all_amounts_zero"]
+    assert r.detail["failed"] == ["negative_amount"]
     assert r.detail["gate"] == "fail"
 
 
 def test_antihack_ignores_a_medicaid_only_abstention():
     given = _answer(cd=(("medicaid", "x"),))
-    assert score_antihack(given, _answer(), ()).value == 1.0
+    assert score_antihack(given).value == 1.0

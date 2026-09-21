@@ -2149,3 +2149,50 @@ are for - `never_eligible` scores 0.123 exact-match and 0.083 abstention, so the
 already visibly bad in aggregate); keep it but stop it zeroing the abstention component; or
 keep it and report gated tasks as their own category rather than as failures. The decision
 should be made before the Opus run is published, and applied to both models identically.
+
+### §42 resolved: the gate no longer reads the answer key, and the audit found a second offender
+
+**Decided 2026-09-21, BEFORE the Opus run, so the choice cannot be influenced by its results.**
+
+**The principle** (CLAUDE.md, "A gate must not read the answer key"): a gate decides whether
+a response is a scoreable attempt, and that question must be answerable from the response
+alone. Correctness is what the components score.
+
+**Audit of the remaining checks, as asked.** The gate had three:
+
+| check | reads the key? | disposition |
+|---|---|---|
+| `all_amounts_zero` | **yes** - fired only when the truth was not all zero | **removed** |
+| `abstained_on_everything` | **yes** - consulted `deciding_programs`, which is answer-key information | **removed**, and it was redundant: `score_abstention` already scores blanket abstention as wrong on determinate and incomplete-determinate tasks |
+| `negative_amount` | no - reads the response only | kept |
+
+Two of three read the key. The second was not in the original report: it hid behind a
+plausible rationale ("abstaining on everything is degenerate *unless* everything is
+deciding"), which is exactly the shape that survives review - the exception it carves out is
+correct, and carving it out is what required the key.
+
+**The rule is now enforced structurally, not by memory.** `score_antihack(given)` takes the
+response and nothing else, so it cannot consult the key; `test_the_gate_cannot_read_the_answer_key`
+asserts the parameter list, and `_guard` uses `functools.wraps` so the signature stays
+visible through the decorator. Three further tests pin the behaviour: blanket abstention
+passes the gate, a sincere all-zero answer passes, a negative amount still fails.
+
+**GPT-5.6 Sol re-scored from cache, $0.** The corrected gate is now PRIMARY; the as-shipped
+numbers are kept for transparency.
+
+| | gate failures | exact-match | abstention (all) | flip | indeterminate | incomplete-det. | pairs |
+|---|---:|---|---|---|---|---|---|
+| **corrected gate (primary)** | **8** | 0.629 (489/778) | **0.793** (333/420) | **0.698** (67/96) | **0.706** (127/180) | 0.965 (139/144) | 0.675 |
+| as shipped (superseded) | 36 | 0.629 (489/778) | 0.767 (322/420) | 0.688 (66/96) | 0.689 (124/180) | 0.917 (132/144) | 0.655 |
+
+**The verdict is unchanged**: flip − indeterminate = **−0.008**, 95% CI [−0.123, +0.101],
+Fisher exact p = 0.891, ratio 0.99x against the withdrawn 7.9x. The classes are not
+separated under either scoring, which is precisely why this was the right moment to fix the
+gate: the correction cannot be suspected of having been chosen to produce a result.
+
+Every number that moved, moved *up*, and the largest move is incomplete-determinate
+(0.917 → 0.965) - the class the flag mis-scored, where answering was correct and the answer
+happened to be all zeros. Exact-match is identical, because a gated answer was already wrong
+on amounts.
+
+The same corrected gate applies to the Opus run, which has not started.
