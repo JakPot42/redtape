@@ -21,9 +21,15 @@
 > A corrected corpus is built and in this repository. In it, every premise the answer key
 > depends on is stated in the case file: relationships and filing structure, weekly hours,
 > Social Security status, and heating and cooling costs. A test fails if any scored answer
-> rests on a fact the case file does not state. No model has been run on it yet.
-> The full account, including how the defect was found, is in
-> [`docs/LIMITS.md`](docs/LIMITS.md) §35–§36.
+> rests on a fact the case file does not state. The full account, including how the defect was
+> found, is in [`docs/LIMITS.md`](docs/LIMITS.md) §35–§36.
+>
+> **One model has now been measured on the corrected corpus** (GPT-5.6 Sol, 1,198 of 1,200
+> tasks): on it, the category and quantity classes are **indistinguishable**, 0.688 against
+> 0.689. That is the opposite of the withdrawn claim. A second model is required before the
+> claim is retracted or narrowed, and the correction is drafted in advance either way
+> ([`docs/CORRECTION_DRAFT.md`](docs/CORRECTION_DRAFT.md)). Numbers and intervals:
+> [`docs/LIMITS.md`](docs/LIMITS.md) §38.
 
 Verifiable training-and-evaluation environments for US public-benefits work.
 

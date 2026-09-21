@@ -1877,3 +1877,106 @@ this**: the corpus changed too, and it now states an SSN clause alongside immigr
 which is a second textual cue for exactly that fact. The cells are also tiny. What can be
 said is that the confound is gone from the *design*: every identifier is now named equally,
 so the next measurement is interpretable where the old one was not.
+
+## 38. GPT-5.6 Sol, complete run on the corrected corpus: the classes are indistinguishable
+
+**Status: complete (1,198 of 1,200 tasks), 2026-09-21. On this model the category/quantity
+split does not merely fail to reproduce - the two classes are identical to three decimal
+places. The Opus 5 arm is still required before the finding is retracted or narrowed.**
+
+1,198 tasks scored; 2 were lost to transient connection errors and are simply absent (the
+harness scores what it fetched and says how many it missed). $32.9163 billed against a $40
+cap, $0.0312 per task, `max_tokens` 16,000.
+
+### 1. Fact format and truncation
+
+| | n | share |
+|---|---:|---:|
+| named the withheld identifier EXACTLY | 298 | 65.9% |
+| named its COUPLED half (credited, §36) | 135 | 29.9% |
+| **credited total** | **433 of 452** | **95.8%** |
+| `other:` escape, not credited | 16 | 3.5% |
+| a different stated fact, not credited | 3 | 0.7% |
+
+**Zero invented identifiers, zero near-misses, zero free-text identifiers.** The closed
+vocabulary holds at scale: every one of 452 entries was either a listed identifier or the
+explicit `other:` escape, which is what the escape is for.
+
+**Truncation: 0 of 1,198** (`stop: end` on every response) at `max_tokens` 16,000, against
+1 of 20 at 8,000. The §34 mechanism is closed for this model at this limit.
+
+Also: 8 schema-invalid of 1,198 (gate 0.970), 0 scorer errors, every response served by
+OpenAI under the pinned routing.
+
+**A pattern in the 16 `other:` escapes.** Thirteen ask, in different words, for how long a
+lawful permanent resident has held that status - the SNAP five-year bar. That fact is real,
+is not stated in our case files, and **the engine's SNAP path does not read it**
+(`years_since_us_entry` exists and the status test ignores it, LIMITS §16). So the model is
+repeatedly identifying a premise that the answer key genuinely does not depend on. It is not
+credited, and it should not be, but it is the clearest signal in this run that the corpus
+still has a legal gap the engine papers over.
+
+### 2. Headlines, with intervals
+
+| | k / n | value | Wilson 95% CI |
+|---|---|---:|---|
+| T1 exact-match (determinate) | 489 / 778 | **0.629** | [0.594, 0.662] |
+| T1b abstention (all) | 322 / 420 | **0.767** | [0.724, 0.805] |
+| pair consistency | 200 pairs | **0.655** | — |
+
+### 3. Verdict against the decision rule in `docs/CORRECTION_DRAFT.md`
+
+The rule: *"reproduces" means the flip class exceeds the indeterminate class by a margin that
+survives the n's actually collected, reported with the interval, on the full 1,200-task
+split.*
+
+| class | k / n | value | Wilson 95% CI |
+|---|---|---:|---|
+| eligibility-flip (a **category**) | 66 / 96 | **0.688** | [0.589, 0.771] |
+| indeterminate (a **quantity**) | 124 / 180 | **0.689** | [0.618, 0.752] |
+| incomplete-determinate (answer anyway) | 132 / 144 | 0.917 | [0.860, 0.952] |
+
+**Difference: -0.001, 95% CI [-0.118, +0.109], Fisher exact p = 1.000. Ratio 1.00x, against
+the withdrawn 7.9x.**
+
+**Verdict: does NOT reproduce on GPT-5.6 Sol.** Not "reduced", not "weaker" - the two classes
+land on the same number, and the interval is symmetric about zero. This is as clean a
+negative as the design can produce at these n's: with 96 and 180 tasks the comparison
+resolves a difference of roughly 0.12 or larger, and the withdrawn claim was 0.346
+(0.396 vs 0.050), which would have been unmissable.
+
+**Which branch applies on GPT alone: B, provisionally.** Branch B (retraction) is the reading
+this run supports, and it is not yet executed, because one model cannot distinguish
+"the original was an artifact of the corpus and scorer" from "the effect is specific to Opus".
+
+**What Opus 5 on the corrected corpus would need to show to change it:** its flip class
+exceeding its indeterminate class with the Newcombe interval excluding zero on the same
+1,200 tasks - in practice a gap of about 0.12 or more. That would put Branch A in force
+(model-specific, old magnitudes not reinstated). Anything smaller, or an interval spanning
+zero, puts Branch B in force and the finding is retracted.
+
+### 4. Per-fact, split by class
+
+Abstention is REQUIRED only in the first two columns; in incomplete-determinate the correct
+behaviour is to ANSWER, so a high number there means "did not abstain".
+
+| withheld fact | flip | indeterminate | incomplete-determinate | all T1b |
+|---|---|---|---|---|
+| `p1.is_higher_ed_student` | 0.714 (10/14) | 0.789 (30/38) | 0.960 (72/75) | 0.882 (112/127) |
+| `p1.immigration_status` | 0.857 (12/14) | 0.700 (35/50) | 0.750 (6/8) | 0.736 (53/72) |
+| `housing_cost` | 1.000 (9/9) | 0.966 (28/29) | 0.789 (15/19) | 0.912 (52/57) |
+| `p1.age` | 0.500 (1/2) | 0.536 (15/28) | 0.909 (20/22) | 0.692 (36/52) |
+| `dependent_care_cost` | 0.500 (2/4) | 0.471 (16/34) | 0.941 (16/17) | 0.618 (34/55) |
+| `p1.employment_income` | 0.604 (32/53) | 0.000 (0/1) | 1.000 (3/3) | 0.614 (35/57) |
+
+**The withdrawn per-fact story is gone too.** On the old corpus, income was the best-noticed
+fact (0.709) and immigration status the worst (0.133), and the README explained that as
+"line item versus background premise". Here immigration status is **second best** (0.736) and
+**income is last** (0.614). The reversal is consistent with the confound the old table had -
+`p1.employment_income` was the prompt's only example identifier - but three things changed at
+once (corpus, scorer, model), so this is a fact about the new measurement, not a proof about
+the old one.
+
+Two cells are thin and should not be read as facts about those cells:
+`p1.employment_income` has 1 indeterminate task and `p1.age` has 2 flips, because the
+generator routes each fact through the stream where it can actually produce that class.
