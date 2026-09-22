@@ -2320,6 +2320,59 @@ produces Opus's low abstention.
 (GPT's figures here differ from those recorded in §40 - 0.660 against 0.780 - because those
 were measured under the gate that read the answer key, now corrected per §42.)
 
+
+### 43.6 Completed on the full split — and the pre-registered result moved
+
+**2026-09-21, later the same day.** The remaining 187 responses were bought for **$11.37**
+(estimated $9.32, so the estimate was 22% low; total Opus spend **$60.43** against the $70
+cap). **1,196 of 1,200 tasks scored**, and coverage is now uniform — determinate 99.2%, the
+other three classes 100%, every class consistent with the overall rate. **The
+pre-registered rule's precondition, the full 1,200-task split, is now met**, and the figures
+below supersede the partial ones in §43.1–§43.5.
+
+Failure modes are unchanged and clean: **1,198 of 1,198 responses stopped at `end`, zero
+truncations**, zero parse failures, zero gate failures, zero scorer errors. Fact format:
+**156 of 156 abstentions in exact identifier form, zero naming a fact that was never
+withheld.**
+
+**Three headlines, now on complete data** (and pair-consistency reportable for the first
+time, n=198 against the partial run's 42):
+
+| | Opus 5 | GPT-5.6 Sol |
+|---|---|---|
+| exact-match (determinate) | 0.621 (481/774) [0.587, 0.655] | 0.627 (485/774) [0.592, 0.660] |
+| abstention | 0.624 (262/420) [0.577, 0.669] | **0.793** (333/420) [0.752, 0.829] |
+| pair-consistency | 0.636 (n=198) | 0.675 (n=200) |
+
+**The one thing that moved, and it moved against Branch A.** The pre-registered comparison
+on Opus is now **+0.126, 95% CI [+0.004, +0.245], Fisher p = 0.056** — against +0.130,
+[+0.007, +0.250], p = 0.041 on the partial run. **The p-value crossed 0.05 in the direction
+of the null when the missing data arrived.** The interval still excludes zero, by 0.004.
+
+This is exactly the fragility §43.4 flagged in advance ("reclassifying one flip task moves p
+from 0.041 to 0.072"), now demonstrated rather than predicted: the 20 additional
+flip/indeterminate tasks were enough. Had the run completed the first time, the
+pre-registered rule would have been ambiguous on its own terms rather than cleanly Branch A,
+and the disclosed deviation would have been a smaller step. **It does not change the
+decision** — Branch B was chosen on the stratification, not on the p-value — but anyone
+re-reading §43.4 should know the number it argues against is 0.056, not 0.041.
+
+**The stratified analysis is unchanged in every respect that matters:**
+
+* flip worse in **five strata of six** (immigration_status −0.340, is_higher_ed_student
+  −0.008, dependent_care_cost −0.147, housing_cost −0.222, age −0.107; only
+  employment_income positive, at +0.774 against a single indeterminate task)
+* Mantel-Haenszel pooled difference holding fact constant: **−0.153** (was −0.154)
+* without `p1.employment_income`: **0.209 (9/43) against 0.397 (71/179), −0.187,
+  CI [−0.307, −0.029]** (was −0.198)
+
+**LPR subset**, complete: Opus **0.769** (40/52) [0.639, 0.863] on tasks with an LPR adult
+against **0.603** (222/368) [0.552, 0.652] on the rest — unchanged, intervals still
+disjoint, still the opposite direction from GPT-5.6 Sol. §39 stays open.
+
+**Nothing else changed.** The retraction, the confound, and the three surviving cross-model
+findings stand on the complete split exactly as they stood on 73% of it.
+
 ## 44. The class/fact confound, and what a design that could test the claim would need
 
 **Status: scoped 2026-09-21, NOT built.** This is the v1 item that §43 makes unavoidable.

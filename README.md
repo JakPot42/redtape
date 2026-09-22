@@ -17,11 +17,11 @@
 > original 0.396/0.050 is plausibly the same confound rather than a real effect.
 >
 > Hold the withheld fact constant and the difference reverses: the flip class does *worse*
-> in five strata of six (Mantel-Haenszel pooled difference −0.154). The aggregate that
+> in five strata of six (Mantel-Haenszel pooled difference −0.153). The aggregate that
 > appeared to support the claim on Opus 5 is Simpson's paradox.
 >
 > **What the corrected corpus does support**, across two labs' models and reported in full
-> below: GPT-5.6 Sol abstains correctly more often than Claude Opus 5 (0.791 against 0.624,
+> below: GPT-5.6 Sol abstains correctly more often than Claude Opus 5 (0.793 against 0.624,
 > intervals disjoint), while Opus 5 names the missing fact in the exact form asked for 100%
 > of the time and never names a fact that was not withheld, against GPT-5.6 Sol's 7.6%
 > confabulation rate. **Format compliance and calibration are independent.**
@@ -94,9 +94,9 @@ when it cannot answer** — which is where real filings fail.
 The obvious objection is that "knows when it cannot answer" is just arithmetic competence
 wearing a different hat. The withdrawn Opus 5 result was offered as the answer to that
 objection, and it is retracted. What the corrected corpus shows instead is that the two
-abilities come apart between models: on the same 875 tasks, Claude Opus 5 and GPT-5.6 Sol
-compute amounts equally well (0.629 against 0.633) and judge answerability very
-differently (0.624 against 0.791). That is evidence the second question is not the first
+abilities come apart between models: on the same 1,194 tasks, Claude Opus 5 and GPT-5.6 Sol
+compute amounts equally well (0.621 against 0.627) and judge answerability very
+differently (0.624 against 0.793). That is evidence the second question is not the first
 one restated — but it is a two-model observation, not a law.
 
 ## Results: the claim is retracted, and three findings survive
@@ -106,9 +106,10 @@ abstention 0.396 on eligibility flips against 0.050 on amount changes) was measu
 contaminated corpus described above. **It is retracted.**
 
 Two models have now been measured on the corrected corpus: **GPT-5.6 Sol** (1,198 of 1,200
-tasks) and **Claude Opus 5** (877 of 1,200 — the run stopped at a provider spending limit,
-not at ours). Every comparison below is computed on the **875 tasks both models answered**,
-so model-to-model differences do not depend on which tasks were reached.
+tasks) and **Claude Opus 5** (1,196 of 1,200). Every comparison below is computed on the
+**1,194 tasks both models answered**, so model-to-model differences do not depend on which
+tasks were reached. The pre-registered decision rule required the full 1,200-task split,
+and that precondition is now met.
 
 ### Why the claim cannot be tested on this design
 
@@ -118,16 +119,16 @@ class and fact are not independent:
 
 | withheld fact | eligibility-flip | indeterminate | difference |
 |---|---|---|---:|
-| `p1.immigration_status` | 0.000 (0/13) | 0.340 (17/50) | −0.340 |
+| `p1.immigration_status` | 0.000 (0/14) | 0.340 (17/50) | −0.340 |
 | **`p1.employment_income`** | **0.774 (41/53)** | **0.000 (0/1)** | **+0.774** |
 | `p1.is_higher_ed_student` | 0.071 (1/14) | 0.079 (3/38) | −0.008 |
 | `dependent_care_cost` | 0.000 (0/4) | 0.147 (5/34) | −0.147 |
-| `housing_cost` | 0.750 (6/8) | 1.000 (28/28) | −0.250 |
+| `housing_cost` | 0.778 (7/9) | 1.000 (29/29) | −0.222 |
 | `p1.age` | 0.500 (1/2) | 0.607 (17/28) | −0.107 |
 
-*(Claude Opus 5, abstention accuracy; cell counts are the tasks it reached.)* Across the
-full split, `p1.employment_income` is **55% of the flip class** (53 of 96) and has **one
-task of 180** in the indeterminate class. So for the fact that dominates one side of
+*(Claude Opus 5, abstention accuracy, full split.)* `p1.employment_income` is **55% of the
+flip class** (53 of 96) and has **one task of 180** in the indeterminate class. So for the
+fact that dominates one side of
 the comparison, the other side barely exists. Aggregating across this table compares two
 different mixtures of facts and calls the difference a class effect.
 
@@ -140,31 +141,37 @@ built.
 The decision rule was fixed before the deciding run
 ([`docs/CORRECTION_DRAFT.md`](docs/CORRECTION_DRAFT.md)). **Reported exactly as it
 dictates:** on Claude Opus 5 the flip class exceeds the indeterminate class, **0.521
-(49/94) against 0.391 (70/179), difference +0.130, 95% CI [+0.007, +0.250], Fisher exact
-p = 0.041**. On GPT-5.6 Sol it does not: −0.012, CI [−0.130, +0.098], p = 0.890. By the
-letter of the rule, that is the "reproduces on one model" branch.
+(50/96) against 0.394 (71/180), difference +0.126, 95% CI [+0.004, +0.245], Fisher exact
+p = 0.056**. On GPT-5.6 Sol it does not: −0.008, CI [−0.123, +0.101], p = 0.891. The
+interval excludes zero by 0.004 while the p-value does not clear 0.05, so by the letter of
+the rule this is ambiguous — it was cleanly "reproduces on one model" at 73% of the split,
+and completing the split moved it toward the null.
 
 **We are not publishing that conclusion, and this paragraph is why.** Stratifying by
 withheld fact — a check required by a standing rule that predates the experiment — reverses
-the sign: pooled difference **−0.154**, flip worse in five strata of six, and **−0.198,
-CI [−0.316, −0.038]** with the dominant fact removed. The deviation is disclosed rather than
+the sign: pooled difference **−0.153**, flip worse in five strata of six, and **−0.187,
+CI [−0.307, −0.029]** with the dominant fact removed. The deviation is disclosed rather than
 silent because pre-registration forbids undisclosed deviation, not deviation. The full
-justification — the sign reverses rather than a magnitude shrinking; the rule's own
-precondition (the full 1,200-task split) was not met; p = 0.041 across two models is fragile
-to a single reclassified task; and the deviation runs *against* the more publishable
-conclusion — is written out in [`docs/LIMITS.md`](docs/LIMITS.md) §43.
+justification is written out in [`docs/LIMITS.md`](docs/LIMITS.md) §43: the sign reverses
+rather than a magnitude shrinking; p = 0.056 across two models is fragile to a single
+reclassified task, which this run demonstrated rather than predicted when the last 20
+flip and indeterminate tasks moved it from 0.041; the stratification was required by a
+standing rule that predates the experiment; and the deviation runs *against* the more
+publishable conclusion, so the motivated reasoning pre-registration guards against pushes
+the other way.
 
 ### What survives, across two labs
 
 | | Claude Opus 5 | GPT-5.6 Sol |
 |---|---|---|
-| abstention accuracy | 0.624 (260/417) [0.576, 0.669] | **0.791** (330/417) [0.750, 0.828] |
-| exact-match (determinate) | 0.629 (288/458) [0.584, 0.672] | 0.633 (290/458) [0.588, 0.676] |
-| named the fact in exact form | **154/154 (100%)** | 220/236 (93.2%) |
+| abstention accuracy | 0.624 (262/420) [0.577, 0.669] | **0.793** (333/420) [0.752, 0.829] |
+| exact-match (determinate) | 0.621 (481/774) [0.587, 0.655] | 0.627 (485/774) [0.592, 0.660] |
+| pair-consistency | 0.636 (n=198) | 0.675 (n=200) |
+| named the fact in exact form | **156/156 (100%)** | 220/236 (93.2%) |
 | named a fact never withheld | **0 (0%)** | 18 (7.6%) |
-| truncated responses | 0 / 1,013 | 1 / 1,228 |
+| truncated responses | 0 / 1,198 | 1 / 1,228 |
 
-1. **GPT-5.6 Sol is better calibrated about when it cannot answer** — 0.791 against 0.624,
+1. **GPT-5.6 Sol is better calibrated about when it cannot answer** — 0.793 against 0.624,
    intervals disjoint.
 2. **Claude Opus 5 is better at saying *which* fact is missing** — perfect compliance with
    the requested identifier format, and it never invents a missing fact. GPT-5.6 Sol
@@ -512,7 +519,7 @@ which §43–§44 retract this project's headline claim.
 
 **Reproducing it:** every model response is cached in `cache/responses/dev/` and committed,
 so the scored artifact can be re-derived without spending anything. The runs on the
-corrected corpus cost $32.92 (GPT-5.6 Sol) and $49.06 (Claude Opus 5).
+corrected corpus cost $32.92 (GPT-5.6 Sol) and $60.43 (Claude Opus 5).
 
 ### The metric measures judgment, not arithmetic (scripted upper bound)
 

@@ -14,19 +14,20 @@
 > indeterminate class. The comparison was never between "category" and "quantity" — it was
 > between two different mixtures of facts. **No model run on this design can answer the
 > question**, and the original 0.396/0.050 is plausibly the same confound. Holding the fact
-> constant, the flip class does *worse* in five strata of six (pooled difference −0.154).
+> constant, the flip class does *worse* in five strata of six (pooled difference −0.153).
 >
 > A design that could test the claim needs each fact to appear in both classes in balanced
 > proportions. That is scoped in `docs/LIMITS.md` §44 and **not built**.
 >
 > **What the corrected corpus does support, across two labs' models** — both measured on the
-> same 875 tasks:
+> same 1,194 tasks, the full split:
 >
 > | | Claude Opus 5 | GPT-5.6 Sol |
 > |---|---|---|
-> | abstention accuracy | 0.624 [0.576, 0.669] | **0.791** [0.750, 0.828] |
-> | exact-match (determinate) | 0.629 [0.584, 0.672] | 0.633 [0.588, 0.676] |
-> | named the missing fact in exact form | **100%** (154/154) | 93.2% (220/236) |
+> | abstention accuracy | 0.624 [0.577, 0.669] | **0.793** [0.752, 0.829] |
+> | exact-match (determinate) | 0.621 [0.587, 0.655] | 0.627 [0.592, 0.660] |
+> | pair-consistency | 0.636 (n=198) | 0.675 (n=200) |
+> | named the missing fact in exact form | **100%** (156/156) | 93.2% (220/236) |
 > | named a fact that was never withheld | **0%** | 7.6% (18) |
 >
 > GPT-5.6 Sol is better calibrated about when it cannot answer. Claude Opus 5 is better at
@@ -47,8 +48,8 @@
 > came from an input our own oracle left unset, so the engine supplied a default.
 >
 > The pre-registered decision rule, the result reported exactly as that rule dictates
-> (+0.130, CI [+0.007, +0.250]), and the disclosed reasons for departing from it are in
-> `docs/LIMITS.md` §43.
+> (+0.126, CI [+0.004, +0.245], p = 0.056, on the full 1,200-task split the rule required),
+> and the disclosed reasons for departing from it are in `docs/LIMITS.md` §43.
 
 **Does the agent know when a required fact is missing?** Most benefit-calculation evals score
 whether the number is right. This one scores whether the agent notices it *cannot* produce a
