@@ -146,6 +146,24 @@ MODELS: dict[str, ModelConfig] = {
         # this is a per-model field and not a global constant.
         rpm=18,
     ),
+    # Opus 5.5, released 2026-09-22, added 2026-09-23. Price read from /api/v1/models the
+    # same day: $4/$20 per M, BELOW Opus 5's $5/$25, so a full run costs less than the one
+    # it is being compared against rather than more.
+    #
+    # EVERY OTHER FIELD IS DELIBERATELY IDENTICAL to claude-opus-5-openrouter: same routing
+    # pin, same reasoning effort, same token ceiling, same rpm. The question this model is
+    # being run to answer - whether GPT-5.6 Sol's abstention lead over Opus 5 (0.793 vs
+    # 0.624) is a difference between labs or between generations - is only answerable if the
+    # newer model differs from the older one in the model and in nothing else.
+    "claude-opus-5-5-openrouter": ModelConfig(
+        key="claude-opus-5-5-openrouter", provider="openrouter",
+        api_model="anthropic/claude-opus-5.5",
+        cache_model="openrouter:anthropic/claude-opus-5.5",
+        params={"max_tokens": MAX_TOKENS, "reasoning": {"effort": "high"},
+                "provider": _OPENROUTER_ANTHROPIC_ROUTING},
+        price_in=4.00, price_out=20.00, max_output_tokens=MAX_TOKENS,
+        rpm=18,
+    ),
 }
 
 
