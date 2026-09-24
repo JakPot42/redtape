@@ -26,6 +26,13 @@
 > of the time and never names a fact that was not withheld, against GPT-5.6 Sol's 7.6%
 > confabulation rate. **Format compliance and calibration are independent.**
 >
+> **A third model, Claude Opus 5.5** (1,200 of 1,200, same corpus and configuration), closed
+> most of the abstention gap: 0.745 [0.701, 0.785], up 0.121 on Opus 5 (paired 95% CI
+> [+0.084, +0.159]) and 0.048 below GPT-5.6 Sol (paired [−0.095, −0.001], McNemar p = 0.059;
+> the unpaired interval includes zero). That suggests the Opus 5 vs GPT-5.6 Sol difference was
+> mostly generational. **Whether a lab-level residual remains is unresolved.** Its exact-match
+> fell, and that drop is a temporal rule-version error, described below.
+>
 > Corpus defects found and fixed along the way (two-adult households keyed as married
 > couples, undocumented filers keyed as holding SSNs, students keyed at zero work hours) are
 > recorded in [`docs/LIMITS.md`](docs/LIMITS.md) §35–§36. The corrected corpus states every
@@ -182,6 +189,50 @@ the other way.
 
 These are cross-lab results on a corpus whose premises are all stated, and they do not
 depend on the retracted claim.
+
+### A third model: Claude Opus 5.5, and a rule-version error in both generations
+
+Claude Opus 5.5 was run on the same 1,200 tasks with every configuration field identical to
+the Opus 5 run, so the model is the only variable. The question it answers is whether the
+abstention gap between Opus 5 and GPT-5.6 Sol belongs to the labs or to the generations.
+
+| | Claude Opus 5.5 |
+|---|---|
+| abstention accuracy | 0.745 (313/420) [0.701, 0.785] |
+| exact-match (determinate) | 0.563 (439/780) [0.528, 0.597] |
+| pair-consistency | 0.705 (n=200) |
+| named the fact in exact form | 187/187 (100%) |
+| named a fact never withheld | 0 (0%) |
+| truncated responses | 0 / 1,200 |
+
+On identical tasks, Opus 5.5's abstention is **+0.121** against Opus 5 (paired 95% CI
+[+0.084, +0.159]) and **−0.048** against GPT-5.6 Sol (paired CI [−0.095, −0.001], McNemar
+p = 0.059; the unpaired Newcombe interval, [−0.104, +0.009], includes zero). All of the gain
+is on tasks where abstaining is correct; on tasks where answering is correct it stays at
+0.979. So it is not abstaining more across the board.
+
+**It closed most of the gap, which suggests the Opus 5 vs GPT-5.6 Sol difference was mostly
+generational.** Whether a lab-level residual remains is unresolved: the remaining difference
+excludes zero by 0.001 on one method and not on the other, and is read as neither.
+
+**Its exact-match fell**, to 0.563 against Opus 5's 0.621 on identical tasks (paired CI
+[−0.093, −0.018]). Before attributing that to the model we checked the scorer and the corpus.
+It is not abstention (Opus 5.5 abstained on no determinate task), not format (no period-label
+errors, one parse failure), and not eligibility. It is SNAP amounts, and only in January to
+September 2025. **89 answers sit exactly $10 above the key**: for two-person households the
+key reads $536 and Opus 5.5 reads $546. Those are the FFY2025 and FFY2026 maximum allotments,
+both taken from the externally sourced table `tests/test_parameter_drift.py` checks, so the
+key is right. **Opus 5.5 applies next fiscal year's maximums to this fiscal year's months.**
+
+Opus 5 made the same kind of error the other way round. **54 of its CTC misses are exactly
+$200 short per qualifying child**: the pre-2025 $2,000 credit, where PL 119-21 sets $2,200.
+Opus 5.5 has none of those. One model applied last year's law and the other next year's
+figures. A system that knows a rule's value but not the dates it is in force answers
+confidently and is off by exactly the size of the rule change. **This is the clearest
+evidence so far for rulebooks versioned by date.**
+
+No corrected exact-match figure is given. Removing one error after the fact is a
+decomposition, not a result. Full account: [`docs/LIMITS.md`](docs/LIMITS.md) §45.
 ## Pair-consistency: both degenerate strategies fail, and they fail differently
 
 Matched pairs of households identical except for whether p1 declares a qualifying
@@ -519,7 +570,8 @@ which §43–§44 retract this project's headline claim.
 
 **Reproducing it:** every model response is cached in `cache/responses/dev/` and committed,
 so the scored artifact can be re-derived without spending anything. The runs on the
-corrected corpus cost $32.92 (GPT-5.6 Sol) and $60.43 (Claude Opus 5).
+corrected corpus cost $32.92 (GPT-5.6 Sol), $60.43 (Claude Opus 5) and $36.22 (Claude
+Opus 5.5, including $0.50 of probe responses reused from cache).
 
 ### The metric measures judgment, not arithmetic (scripted upper bound)
 

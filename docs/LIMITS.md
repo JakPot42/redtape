@@ -2545,3 +2545,43 @@ The five-year bar (§39, §40, branch `lpr-five-year-bar`) is held for the same 
 go into a single corpus revision, applied after any further cross-model runs**, so
 comparability breaks once rather than twice. Every run on the current corpus remains
 comparable until then.
+
+## 47. The retraction reached the top of the Hub page and not its body
+
+**Status: fixed in v0.1.5, 2026-09-24.**
+
+The Branch B retraction (§43) was published as a notice at the top of the Hub page in v0.1.3
+and v0.1.4. **The body of the same page kept presenting the withdrawn numbers as current**
+for both versions:
+
+1. **"## The result"** still stated the retracted headline — Opus 5 abstaining 0.396 on
+   eligibility flips against 0.050 on amount changes, "an eight-fold gap", "discriminating,
+   on the wrong axis" — under a heading that read as the environment's current finding.
+2. **"What the metrics do"** showed the v0.1.0-corpus Opus 5 row (0.514 / 0.438 / 0.570) and
+   baseline rows from before the corpus rebuild (bdaca71). On the corrected corpus Opus 5 is
+   0.621 / 0.624 / 0.636, and every baseline row had moved.
+3. **"What makes it different"** said always-abstain "scores 0.131"; on the corrected
+   corpus it scores 0.000.
+
+A reader who skipped the notice, or who landed on a section link, read the retracted result
+as live. The repository README did not have this defect: its old results sit under
+"Superseded results: withdrawn 2026-09-19, do not cite". Found on 2026-09-24 while adding the
+Opus 5.5 results, not by any check.
+
+**The pattern: a correction applied in one place and not everywhere the claim lived.** The
+retraction was written as an *addition* — a notice at the top — rather than as an edit to
+every place the claim was made. Same shape as the standing principle, one level up: the
+notice covered the region everyone looks at, and the gap was outside it. It also meets
+CLAUDE.md's corollary for published artifacts, "if no test opens the file we would ship, the
+file is untested": nothing compared `docs/HUB_README.md` against `results/`.
+
+**Fix in v0.1.5.** Section 1 is relabelled "Superseded result (v0.1.0 corpus): retracted, do
+not cite", with a line pointing to the current results. Sections 2 and 3 were rewritten from
+the committed `results/*.public.json` files: three model rows (Opus 5, Opus 5.5, GPT-5.6 Sol)
+and the rebuilt baselines.
+
+**Rule for the next correction:** retracting or revising a number means searching every
+published artifact for the number *and its wording* (here 0.396, 0.050, "eight-fold", 0.514,
+0.131), not only rewriting the headline. **A test that fails when the Hub page's current
+sections quote a figure absent from the committed results files is intended, NOT built** —
+stated as intended per §32, not as a control in force.

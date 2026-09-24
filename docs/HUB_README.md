@@ -35,6 +35,22 @@
 > independent** — a benchmark measuring only format compliance would rank these models the
 > other way round.
 >
+> **A third model, Claude Opus 5.5** (1,200 of 1,200, same corpus and configuration), closed
+> most of the abstention gap: **0.745** [0.701, 0.785], up 0.121 on Opus 5 (paired 95% CI
+> [+0.084, +0.159]) and 0.048 below GPT-5.6 Sol (paired [−0.095, −0.001], McNemar p = 0.059;
+> the unpaired interval includes zero). That suggests the Opus 5 vs GPT-5.6 Sol difference was
+> mostly generational. **Whether a lab-level residual remains is unresolved.** It still names
+> the missing fact in exact form every time (187/187) and never invents one.
+>
+> Its exact-match fell to 0.563, and the drop is a **temporal rule-version error**: 89 SNAP
+> answers sit exactly $10 above the key because Opus 5.5 applies the FFY2026 maximum
+> allotments to FFY2025 months. Opus 5 made the same kind of error the other way round,
+> applying the pre-2025 $2,000 child tax credit where PL 119-21 sets $2,200 (exactly $200 short
+> per child, 54 times). The keys are right in both cases. A model that knows a rule's value but
+> not the dates it is in force is off by exactly the size of the rule change. It is the
+> clearest evidence so far for rulebooks versioned by date. No corrected exact-match figure is
+> claimed; the account is in `docs/LIMITS.md` §45.
+>
 > **This version ships the corrected corpus.** Every premise an answer key depends on is
 > stated in the case file — relationships and filing structure, weekly hours, Social
 > Security status, heating and cooling costs — and a test fails if that stops being true.
@@ -95,7 +111,7 @@ taskset, oracle and scoring; the baselines and test suite ship in the environmen
 - **Abstention is scored in both directions.** Every task withholds one fact, labelled into
   three classes: the fact decides the outcome (abstaining is correct), the fact is missing
   but does *not* decide it (**answering** is correct), or nothing is withheld. That middle
-  class is what stops "always abstain" from winning — it scores 0.131.
+  class is what stops "always abstain" from winning — it scores 0.000.
 - **Paired tasks.** 200 pairs differ in exactly one attribute, half of which should change
   the answer and half of which should not, so a model cannot score well by being uniformly
   cautious or uniformly confident.
@@ -105,14 +121,19 @@ taskset, oracle and scoring; the baselines and test suite ship in the environmen
 Three headlines, reported separately. The weighted composite exists but is deliberately
 **not** the headline, so retuning a weight cannot move a published number.
 
-| | exact-match (n=780) | abstention (n=420) | pair-consistency (200 pairs) |
+Corrected corpus, full dev split. Each model row is that model's own run (exact-match n is
+776, 780 and 778 respectively, from the tasks each answered); every baseline covers all 780.
+
+| | exact-match | abstention (n=420) | pair-consistency |
 |---|---:|---:|---:|
-| **Claude Opus 5** | **0.514** | **0.438** | **0.570** |
-| always_abstain | 0.000 | 0.131 | 0.000 |
-| never_abstain | 0.205 | 0.336 | 0.495 |
-| always_eligible | 0.036 | 0.343 | 0.500 |
-| never_eligible | 0.115 | 0.074 | 0.060 |
-| rules_only | 0.205 | 0.326 | 0.495 |
+| **Claude Opus 5** | **0.621** | **0.624** | **0.636** (198 pairs) |
+| **Claude Opus 5.5** | **0.563** | **0.745** | **0.705** (200 pairs) |
+| **GPT-5.6 Sol** | **0.629** | **0.793** | **0.675** (200 pairs) |
+| always_abstain | 0.000 | 0.000 | 0.000 |
+| never_abstain | 0.194 | 0.340 | 0.480 |
+| always_eligible | 0.041 | 0.343 | 0.500 |
+| never_eligible | 0.123 | 0.083 | 0.085 |
+| rules_only | 0.194 | 0.376 | 0.480 |
 | *ceiling agent* | *1.000* | *1.000* | *1.000* |
 
 No trivial strategy exceeds 0.50 on any headline, and the ceiling agent proves every metric
@@ -127,7 +148,11 @@ the **evaluation path** — loading tasks, prompting, parsing and scoring — wh
 installed `prime env install` gives you, and which was verified in a clean environment with
 `policyengine_us` absent.
 
-## The result
+## Superseded result (v0.1.0 corpus): retracted, do not cite
+
+**Kept for the record only. This is the finding the notice at the top retracts.** It was
+measured on the v0.1.0 corpus and does not hold on the corrected one. The current results
+are in the notice above.
 
 Claude Opus 5, 1,200 tasks, no tools:
 
