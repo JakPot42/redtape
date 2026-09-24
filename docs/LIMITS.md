@@ -2585,3 +2585,62 @@ published artifact for the number *and its wording* (here 0.396, 0.050, "eight-f
 0.131), not only rewriting the headline. **A test that fails when the Hub page's current
 sections quote a figure absent from the committed results files is intended, NOT built** —
 stated as intended per §32, not as a control in force.
+
+**Update 2026-09-24: BUILT** as `tests/test_published_figures.py`. It checks every
+exact-match, abstention and pair-consistency figure that `README.md` and
+`docs/HUB_README.md` quote, in tables and in prose beside the metric's name, against
+current-corpus `results/**/*.public.json` plus the same metrics recomputed on the task set
+two runs share. Sections headed "superseded", and paragraphs that themselves say a figure is
+retracted or withdrawn, are exempt.
+
+- **Current corpus only.** A results file counts only if every task hash it scored is in the
+  committed dev split. The first version read every results file, and its own teeth failed:
+  the superseded v0.1.0 Opus 5 run contains 0.514, so the stale figure was "in the results".
+- **Teeth, in the suite:** each of the three stale figures recorded above, reintroduced into
+  the Hub page, turns it red. Verified by hand too: putting "scores 0.131" back failed at
+  line 114, and restoring the file turned it green.
+- **It found a fourth instance on its first run:** the README's pair-diagnostic table quoted
+  never-differ 0.495 and always-differ 0.380, where the current results give 0.480 and 0.370.
+  Fixed in the same change.
+- **Known limit, asserted rather than hidden:** it matches values, so a stale figure equal to
+  some current figure passes. The stale Opus 5 abstention 0.438 equals Opus 5's current
+  indeterminate-class abstention, and the test asserts that it is not flagged, so the limit
+  stays visible. A stale figure inside a paragraph that uses "retracted" also passes.
+
+## 48. A citation confirmed from someone else's tentative suggestion reached two public comments
+
+**Status: corrected publicly 2026-09-24.** The date for California's SUA change was attributed
+in public, twice, to a document that does not contain it.
+
+**What happened.** On PolicyEngine #9374 the maintainer wrote that the 2025-10-31 date
+"needs a citation (ACIN I-46-25?) before it is encoded" — a tentative suggestion, with a
+question mark. Our reply of 2026-09-16 answered "We took 2025-10-31 from ACIN I-46-25", and
+the follow-up of 2026-09-24 built on the same framing. Neither document had been read for
+that purpose. Reading them while writing the PR:
+
+- **ACIN I-46-25 is the FFY 2026 cost-of-living notice.** It does not mention the SUAS change,
+  section 10103, or any automation date.
+- **The date is in ACL 25-68 itself**, in its Quality Control section: "a 120-day variance
+  exclusion is permitted for the misapplication of changes in Section 10103 ... until the
+  exclusionary period end date on November 1, 2025". That is a federal QC tolerance, not a
+  California implementation date.
+- **California's actual trigger** is "effective upon the completion of automation", at
+  initial certification and next recertification, with no date. The 2026-09-24 comment had
+  also described the hold-harmless as keeping "the automation-completion dependency
+  visible", which the source does not support.
+
+A correction was posted on #9374 the same day, before any PR was opened, and the PR uses
+2025-11-01 as a labelled proxy with the parameter description saying what it approximates.
+
+**Why it got through.** The attribution was a claim *confirmed from another party's tentative
+suggestion without reading the source* — agreement standing in for verification. Both
+comments were then reviewed carefully, but for tone, length and structure, and not for
+whether their citations held. The review checked the channel people look at and missed the
+region that mattered, the same shape as the standing principle.
+
+**Rule.** Public communication gets the same primary-source check as code. Every citation,
+section number and date in an outward-facing comment, PR or post is verified against the
+document itself before it is posted — never from notes, never from memory, and never because
+the other party suggested it. A question mark in someone else's message is a request to
+check, not a source.
+

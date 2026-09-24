@@ -136,6 +136,11 @@ Corrected corpus, full dev split. Each model row is that model's own run (exact-
 | rules_only | 0.194 | 0.376 | 0.480 |
 | *ceiling agent* | *1.000* | *1.000* | *1.000* |
 
+GPT-5.6 Sol's exact-match is 0.629 here, over the 778 determinate tasks its own run answered.
+The notice above gives 0.627, computed on the 774 determinate tasks that both it and Claude
+Opus 5 answered, so the two models are compared on identical tasks. Both are correct for
+their task sets.
+
 No trivial strategy exceeds 0.50 on any headline, and the ceiling agent proves every metric
 is actually achievable — until it was written, nothing established that the abstention metric
 was reachable at all. All six are scripted rather than model-driven, so they cost nothing and
