@@ -1,0 +1,1 @@
+{"reply": "", "usage": {"input_tokens": 1370, "output_tokens": 142, "reasoning_tokens": 142}, "model": "openrouter:anthropic/claude-opus-5.5", "condition": "tool_less", "task_hash": "fc4fa5ff349f326af7e11d2db3f8c3fa00d735c95dc2fc3ffaf31f0eb21d004f", "stop": "other", "raw_stop": "error", "served_by": "Anthropic", "reported_cost_usd": 0.0, "cached_at": 1790203226.556213}
