@@ -2442,3 +2442,106 @@ cross-model findings in §43.3 (GPT-5.6 Sol better calibrated, Opus 5 perfect on
 and zero confabulation, the two independent) are comparisons **between models on identical
 tasks**, so the fact mixture is held constant by construction and the confound does not
 reach them.
+
+
+## 45. Opus 5.5's exact-match regression is a temporal rule-version error
+
+**Status: explained, 2026-09-24, from cache at $0.** Opus 5.5 on the full dev split
+(commit 2f7d530) scored exact-match 0.563 against Opus 5's 0.621 on identical tasks: −0.055,
+paired 95% CI [−0.093, −0.018], McNemar p = 0.005. Per the standing order of suspicion the
+scorer and corpus were checked before anything was attributed to the model.
+
+### 45.1 What it is not
+
+- **Not abstention.** Opus 5.5 abstained on 0 determinate tasks.
+- **Not format or parsing.** 0 period-label errors; 1 `no_json_found`.
+- **Not eligibility.** 27 eligibility misses against Opus 5's 22.
+- It is entirely the amounts component, and almost entirely SNAP: 290 SNAP amount misses
+  against Opus 5's 143 on the 774 common determinate tasks.
+
+### 45.2 What it is
+
+**The regression is confined to FFY2025 months.** In October to December 2025 (FFY2026)
+SNAP misses are 52 against 51. In January to September 2025 (FFY2025) they are 238 against 92.
+
+**89 SNAP answers sit exactly $10 above the key**, all in FFY2025 months, none after
+2025-10-01. For two-person households the key reads $536 and Opus 5.5 reads $546; 66 of the 89
+are that exact pair. $536 is the FFY2025 two-person maximum allotment and $546 is FFY2026's —
+both taken from the externally sourced table in `tests/test_parameter_drift.py` ([D] and
+[B][E]), which also locks the October 1 boundary. **The key is correct.** In 82 of the 89,
+Opus 5 and GPT-5.6 Sol both match it. Opus 5.5 is applying next fiscal year's maximum
+allotment to this fiscal year's months. For a household below the maximum the error is still
+exactly $10, because the benefit is the maximum minus 30% of net income and only the maximum
+moved.
+
+**It accounts for the whole regression.** 80 tasks have the +$10 as their only defect.
+Removing that single error would take Opus 5.5 from 0.567 to 0.671 on the common set, above
+Opus 5's 0.621. That is a post-hoc decomposition, not a result, and the +0.049 is not claimed.
+
+**The residue is unclassified arithmetic.** About 54 FFY2025 SNAP under-estimates have both
+other models matching the key. No single parameter shift reproduces them: the implied
+net-income offsets range from −22 to +128. A hand calculator, used to test hypotheses and
+never as ground truth (it reproduced the key on 53 of 56 simple households), ruled out the
+FFY2026 table, the FFY2026 maximum alone, and the rounding convention. Reasoning is hidden, so
+nothing further is inferred.
+
+### 45.3 CTC improved for the same reason, in the opposite direction
+
+Opus 5.5 missed CTC on 30 determinate tasks against Opus 5's 155. **56 of Opus 5's misses are
+exact negative multiples of $200, and in 54 of those the multiple equals the household's
+number of children under 17.** That is the per-child difference between the pre-2025 $2,000
+credit and the $2,200 set by Pub. L. 119-21 §70104 (docs/PRIMARY_SOURCES_2026-09.md §2).
+**Opus 5 applied last year's law; Opus 5.5 applied next year's figures.** Opus 5.5 has no
+such errors. (A −$500 cluster shared by all three models is a separate pattern, not examined.)
+
+### 45.4 Why this matters beyond the number
+
+This is one error class, the **temporal rule-version error**: the model knows a rule's value
+but not the dates it is in force, and answers with confidence off by exactly the size of the
+rule change. It showed up in both generations, stale in one and early in the other. A newer
+model did not fix it, it moved it.
+
+It is the clearest evidence so far for **versioned rulebooks** — rules keyed by effective
+date, not "the current rules". Neither the error nor its fix is visible from a single
+snapshot of the law: the $536 and $546 are both correct, for different months.
+
+**Scorer implication: none.** The key uses the right table for each month and the drift test
+guards the boundary. Nothing here is a benchmark defect.
+
+## 46. Three models agree against the key on "reports a disability"
+
+**Status: scoped, NOT applied, 2026-09-24.**
+
+On 22 determinate tasks all three models (Opus 5, Opus 5.5, GPT-5.6 Sol) agree with each other
+against the SNAP key. 17 of the 22 are households where a person "reports a disability". The
+models treat that person as a disabled household member, which removes the excess-shelter
+cap and the gross income test, so they answer higher; for one-person households usually the
+maximum allotment. The key does not, because SNAP defines a disabled member by **receipt of a
+qualifying benefit** (7 CFR 271.2, implemented as `is_usda_disabled`; see CLAUDE.md, "How
+disability actually works for SNAP") and the case file's closure sentence rules out any
+income not stated.
+
+**The key is legally defensible, and the case file invites the other reading.** The
+disability sentence and the closure sentence are far apart, and "reports a disability" reads
+naturally as the fact that matters. This is another instance of the model-disagreement
+method: when capable models systematically disagree with the grader, suspect the grader
+first, then verify against primary sources. Here verification found the key right and the
+case file ambiguous, which is a corpus defect of wording rather than of arithmetic.
+
+It affects all three models equally, so it plays no part in §45 and does not change any
+between-model comparison.
+
+### 46.1 The fix, scoped
+
+For every person who reports a disability, the narrative states explicitly that they receive
+no disability benefit (no SSI determination, no SSDI, no veteran disability status) unless
+the household is generated with one. `tests/test_unstated_premises.py` should then assert
+the sentence is present whenever the disability flag is rendered.
+
+### 46.2 Why it is not applied yet
+
+Any regeneration changes the task hashes and breaks comparability with every committed run.
+The five-year bar (§39, §40, branch `lpr-five-year-bar`) is held for the same reason. **Both
+go into a single corpus revision, applied after any further cross-model runs**, so
+comparability breaks once rather than twice. Every run on the current corpus remains
+comparable until then.
