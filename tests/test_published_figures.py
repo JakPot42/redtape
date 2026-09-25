@@ -137,7 +137,7 @@ def unsupported_figures(text, allowed):
 
     def flush():
         nonlocal header
-        block = " ".join(l for _, l in paragraph)
+        block = " ".join(line for _, line in paragraph)
         exempt = any(EXEMPT_HEADING.search(h) for _, h in stack) or EXEMPT_PARAGRAPH.search(block)
         header = None
         for n, line in paragraph:
