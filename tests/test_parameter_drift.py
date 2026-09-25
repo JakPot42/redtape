@@ -49,12 +49,18 @@ def _cells(node_at_instant, region=REGION):
 #   [F] FNS SNAP FY2026 COLA memo, read by reviewer 2026-08-29
 #   [G] CBPP "A Quick Guide to SNAP Eligibility and Benefits", updated 2025-10-03,
 #       endnotes 4, 6, 9 and 12; supplied by reviewer 2026-08-30
+#   [H] USDA FNS, "SNAP Fiscal Year (FY) 2026 Maximum Allotments and Deductions", Table 1,
+#       48 States & District of Columbia column, PDF page 1 (effective October 1, 2025,
+#       through September 30, 2026). fns.usda.gov/sites/default/files/resource-files/
+#       snap-fy26maximumAllotments-deductions.pdf, read 2026-09-25, sha256
+#       c037d4d6da50c1f3de9f6871b2c8864ab220714fbcd8d4b0da633798b99a0732.
+#       All eight FFY2026 sizes checked against it.
 # ----------------------------------------------------------------------------------
 
 PUBLISHED = {
     "max_allotment": {
         FFY2025: ({1: 292, 2: 536, 3: 768, 4: 975, 5: 1158, 6: 1390, 7: 1536, 8: 1756}, "[D]"),
-        FFY2026: ({1: 298, 2: 546, 3: 785, 4: 994, 5: 1183, 6: 1421, 7: 1571, 8: 1789}, "[B][E]"),
+        FFY2026: ({1: 298, 2: 546, 3: 785, 4: 994, 5: 1183, 6: 1421, 7: 1571, 8: 1789}, "[H][E]"),
     },
     "standard_deduction": {
         FFY2025: ({1: 204, 2: 204, 3: 204, 4: 217, 5: 254, 6: 291}, "[A]"),
