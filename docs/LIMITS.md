@@ -1994,8 +1994,11 @@ qualified immigration status"*, *"other: p2 date lawful permanent residence bega
 **The model is right, and it is asking for something the benchmark cannot score.**
 
 - **The fact is real.** Most qualified non-citizens must complete a five-year waiting period
-  before federal SNAP eligibility (8 U.S.C. §1613; the exceptions include refugees, asylees,
-  children and veterans). For an LPR adult it is genuinely load-bearing.
+  before federal SNAP eligibility (SNAP's own rule, 8 U.S.C. 1612(a)(2)(L), implemented at
+  7 CFR 273.4(a)(6)(iii); 8 U.S.C. 1613 is the general bar. The exceptions in 7 CFR
+  273.4(a)(6)(ii) include refugees, asylees, children, veterans, and an LPR adult with 40
+  qualifying quarters of work). For an LPR adult it is genuinely load-bearing. *Citation
+  corrected 2026-09-25; this line cited 1613 alone. See §49.*
 - **Our case files do not state it.** The narrative gives immigration status and SSN status;
   it says nothing about when the status began. The generator has no such field.
 - **The engine does not read it.** `years_since_us_entry` exists in `policyengine-us` and
@@ -2042,7 +2045,7 @@ only as complete as the engine beneath it — the standing risk recorded in CLAU
 Claude Opus 5 has run on the CURRENT corpus. Then it is merged and both splits are
 regenerated once.**
 
-§39 found a real gap: the SNAP five-year bar (8 U.S.C. 1613) turns on how long a qualified
+§39 found a real gap: the SNAP five-year bar (8 U.S.C. 1612(a)(2)(L); §49) turns on how long a qualified
 non-citizen has held status, our case files do not state it, and the engine never reads it.
 The fix is built and tested. It is deliberately **not** applied yet, and the ordering is
 recorded here so it is a decision rather than an accident of scheduling.
@@ -2644,3 +2647,51 @@ document itself before it is posted — never from notes, never from memory, and
 the other party suggested it. A question mark in someone else's message is a request to
 check, not a source.
 
+
+## 49. The five-year bar was cited to the general statute, not SNAP's own rule
+
+**Status: CORRECTED 2026-09-25 wherever the citation lived. A further instance of §47: a
+correction has to reach every place the claim lives.**
+
+Since §39 (2026-09-21) this project has cited the SNAP five-year bar as **8 U.S.C. 1613**.
+1613(a) is real and does bar qualified aliens entering on or after 22 August 1996 from
+"any Federal means-tested public benefit" for 5 years. But SNAP's own five-year rule is
+**8 U.S.C. 1612(a)(2)(L)**, the "Food stamp exception for certain qualified aliens":
+
+> "paragraph (1) shall not apply to any qualified alien who has resided in the United States
+> with a status within the meaning of the term "qualified alien" for a period of 5 years or
+> more beginning on the date of the alien's entry into the United States."
+
+It is implemented at 7 CFR 273.4(a)(6)(iii): "The following qualified aliens ... must be in a
+qualified status for 5 years before being eligible to receive SNAP benefits", with (A) "An
+alien age 18 or older lawfully admitted for permanent residence under the INA".
+
+Found while opening the sources for `docs/ADJUDICATIONS.md` (entry A5), which requires every
+settling sentence to be quoted from the document itself. Opening 7 CFR 273.4 also surfaced a
+second point the citation had hidden: **273.4(a)(6)(ii)(A) exempts an LPR adult with 40
+qualifying quarters of work**, whatever the duration of status. So the fact the case files
+omit is "duration of status, or 40 qualifying quarters", not duration alone.
+
+**Where the 1613-only citation lived, and what was done:**
+
+| location | change |
+|---|---|
+| `docs/LIMITS.md` §39 | corrected in place, marked |
+| `docs/LIMITS.md` §40 | corrected in place |
+| `scripts/lpr_subset.py` docstring | corrected |
+| branch `lpr-five-year-bar`: README, `docs/LIMITS.md` §39, `redtape/generator/households.py` (x3), `redtape/generator/narratives.py`, `redtape/schemas.py` (x2), `tests/test_unstated_premises.py` | corrected on the branch |
+| `PROJECT_RECORD.md` §5 and §6 (outside the repo) | corrected; §6 also claimed `docs/PRIMARY_SOURCES_2026-09.md` records 1613, which it does not |
+| Thiel application, answer 4 (outside the repo, unsubmitted) | corrected |
+
+Not present in `README.md`, `docs/HUB_README.md`, the published Hub page or the essay, so
+nothing published carried it. The branch commit message for 925e195 still says "8 U.S.C.
+1613 read first"; that is an accurate record of what was read that day and is left alone.
+
+**Why it got through.** 1613 was opened on 2026-09-21, and it does say "5 years". Reading the
+right-sounding statute counted as verification, and nobody asked whether the program in
+question had its own provision. Same shape as §48: a real source, read, standing in for the
+source that actually governs.
+
+**Rule, sharpened from §48.** For a program-specific rule, open the program's own
+implementing regulation first, and cite the statute that regulation implements. A general
+statute that also applies is a second citation, not a substitute.

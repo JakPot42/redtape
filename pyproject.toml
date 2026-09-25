@@ -1,6 +1,6 @@
 [project]
 name = "redtape"
-version = "0.1.5"
+version = "0.1.6"
 description = "Does the agent know when a required fact is missing? Verifiable abstention scored against PolicyEngine, no LLM judge."
 readme = "README.md"
 license = { text = "Apache-2.0" }

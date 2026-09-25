@@ -1,7 +1,7 @@
 """Tasks containing an LPR adult, against the rest (LIMITS §39/§40).
 
 The case files never state how long a lawful permanent resident has held that status, and
-SNAP's five-year bar (8 U.S.C. 1613) turns on exactly that. The answer keys already assume
+SNAP's five-year bar (8 U.S.C. 1612(a)(2)(L), 7 CFR 273.4(a)(6)(iii)) turns on exactly that. The answer keys already assume
 the bar is satisfied - `years_since_us_entry` defaults to 5 in policyengine-us and SNAP's
 status test never reads it - so the keys are unstated rather than wrong, and both models
 face the same silence. This measures what the silence costs.
