@@ -86,7 +86,7 @@ _P_STUDENT = 0.10
 _P_FULL_TIME = 0.5           # of students
 
 # The earliest and latest year a lawful status may have begun. The latest is well before the
-# five-year bar (8 U.S.C. 1613) could apply to the corpus tax year, because the engine does
+# five-year bar (8 U.S.C. 1612(a)(2)(L), 7 CFR 273.4(a)(6)(iii)) could apply to the corpus tax year, because the engine does
 # not model the bar: an LPR whose status began recently would carry a legally wrong answer
 # key. Stating a long-held status makes the key correct rather than knowingly wrong, and
 # leaves a model no reason to ask (docs/LIMITS.md 39).
@@ -130,12 +130,15 @@ def status_start_year(rng: random.Random, status: ImmigrationStatus,
     """The year a lawful status began, or None for citizens and the undocumented.
 
     ADULTS get a year at least FIVE_YEAR_BAR before the tax year, so the SNAP five-year bar
-    (8 U.S.C. 1613(a), read 2026-09-21) cannot apply. The engine does not model the bar, so
+    (8 U.S.C. 1612(a)(2)(L) and 7 CFR 273.4(a)(6)(iii), read 2026-09-25; the general bar,
+    8 U.S.C. 1613(a), was read 2026-09-21) cannot apply. The engine does not model the bar, so
     a recently-arrived LPR adult would carry a legally wrong answer key (docs/LIMITS.md 39).
 
     Among the statuses this generator produces, only LEGAL_PERMANENT_RESIDENT is subject to
-    the bar at all: 1613(b)(1) exempts refugees, asylees, Cuban/Haitian entrants and
-    withheld-deportation cases outright. The rule is applied to every lawful status anyway,
+    the bar at all: 7 CFR 273.4(a)(6)(ii) (and, for the general bar, 8 U.S.C. 1613(b)(1))
+    exempts refugees, asylees, Cuban/Haitian entrants and withheld-deportation cases outright.
+    An LPR adult with 40 qualifying quarters of work is also exempt (273.4(a)(6)(ii)(A)); the
+    generator does not model quarters, so the stated start year is what keeps the bar away. The rule is applied to every lawful status anyway,
     because a uniform corpus is easier to reason about than one with a per-status exception.
 
     CHILDREN get their birth year, the longest duration a child can have: a four-year-old

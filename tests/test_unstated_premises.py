@@ -316,7 +316,7 @@ def _problems(hh) -> list[str]:
             problems.append(f"{var}: UNCLASSIFIED non-none default "
                             f"{tbs.variables[var].default_value!r}")
 
-    # 3b. The SNAP five-year bar (8 U.S.C. 1613(a)): the engine does not model it, so the
+    # 3b. The SNAP five-year bar (8 U.S.C. 1612(a)(2)(L), 7 CFR 273.4(a)(6)(iii)): the engine does not model it, so the
     # corpus keeps every lawful status old enough that it cannot apply, and states the year.
     # Without this the answer key for a recently-arrived LPR adult is legally wrong - the
     # gap GPT-5.6 Sol found by asking for the fact 13 times (docs/LIMITS.md 39).

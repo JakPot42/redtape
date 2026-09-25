@@ -223,8 +223,8 @@ consulted, and checks that each was stated. Everything it can see is, by constru
 something the engine already thinks matters. It closes the question *"does the answer key
 depend on something nobody stated?"*
 
-**The five-year bar is a fact the law requires and the engine never reads.** 8 U.S.C. §1613
-makes the duration of a qualified non-citizen's status decisive for SNAP; `policyengine-us`
+**The five-year bar is a fact the law requires and the engine never reads.** 8 U.S.C.
+1612(a)(2)(L), implemented at 7 CFR 273.4(a)(6)(iii), makes the duration of a qualified non-citizen's status decisive for SNAP; `policyengine-us`
 does not model it, so the variable is never consulted, so it never appears in any trace. No
 amount of tracing the oracle can surface a fact the oracle is blind to. Finding it needs the
 other direction: start from the statute, ask what it requires, and check the corpus states

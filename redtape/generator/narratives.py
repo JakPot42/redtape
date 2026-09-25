@@ -154,7 +154,7 @@ def _person_sentence(rng: random.Random, p: Person, is_first: bool) -> str:
         bits.append(rng.choice(["has no earnings", "is not working", "reports no wages"]))
 
     if p.immigration_status is not None:
-        # The year the status began is stated because the SNAP five-year bar (8 U.S.C. 1613)
+        # The year the status began is stated because the SNAP five-year bar (8 U.S.C. 1612(a)(2)(L))
         # turns on it and the engine does not model it, so a case file that omitted it would
         # leave the answer key resting on a fact nobody stated (docs/LIMITS.md 39).
         bits.append(status_clause(rng.choice(_STATUS_PHRASE[p.immigration_status.value]),

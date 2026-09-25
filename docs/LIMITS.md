@@ -1994,8 +1994,11 @@ qualified immigration status"*, *"other: p2 date lawful permanent residence bega
 **The model is right, and it is asking for something the benchmark cannot score.**
 
 - **The fact is real.** Most qualified non-citizens must complete a five-year waiting period
-  before federal SNAP eligibility (8 U.S.C. §1613; the exceptions include refugees, asylees,
-  children and veterans). For an LPR adult it is genuinely load-bearing.
+  before federal SNAP eligibility (SNAP's own rule, 8 U.S.C. 1612(a)(2)(L), implemented at
+  7 CFR 273.4(a)(6)(iii); 8 U.S.C. 1613 is the general bar. The exceptions in 7 CFR
+  273.4(a)(6)(ii) include refugees, asylees, children, veterans, and an LPR adult with 40
+  qualifying quarters of work). For an LPR adult it is genuinely load-bearing. *Citation
+  corrected 2026-09-25; this line cited 1613 alone. See §49.*
 - **Our case files do not state it.** The narrative gives immigration status and SSN status;
   it says nothing about when the status began. The generator has no such field.
 - **The engine does not read it.** `years_since_us_entry` exists in `policyengine-us` and

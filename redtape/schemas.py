@@ -197,7 +197,7 @@ class Person(Strict):
         description="calendar year the person's lawful immigration status began. None for "
         "citizens, for the undocumented, and when immigration_status is withheld (they are "
         "one fact). Generated at least FIVE_YEAR_BAR years before the tax year so the SNAP "
-        "five-year bar (8 U.S.C. 1613) cannot bite - the engine does not model the bar, so "
+        "five-year bar (8 U.S.C. 1612(a)(2)(L)) cannot bite - the engine does not model the bar, so "
         "an LPR whose status began recently would carry a legally wrong answer key "
         "(docs/LIMITS.md 39).",
     )
@@ -374,7 +374,8 @@ PERSON_FACTS = (
     "declared_benefits",
 )
 
-# The SNAP five-year bar for qualified non-citizens (8 U.S.C. 1613). The engine does not
+# The SNAP five-year bar for qualified non-citizens (8 U.S.C. 1612(a)(2)(L), implemented at
+# 7 CFR 273.4(a)(6)(iii); 8 U.S.C. 1613 is the general bar). The engine does not
 # model it, so the corpus keeps every lawful status old enough that it cannot apply, and the
 # narrative states the year. See docs/LIMITS.md 39 for why stating it beats the alternatives.
 FIVE_YEAR_BAR = 5
