@@ -345,8 +345,8 @@ workflow's own log is the record. It runs `pytest -rs`, which prints every skip 
 reason.
 
 The suite collects **425 tests**. What a run reports depends on what is on disk, so each
-figure names where it was measured. Both were measured locally on 2026-10-11 with the pinned
-interpreter, CPython 3.13.15:
+figure names where it was measured. Both were measured locally on 2026-10-11 with CPython
+3.13.15. The project pins the 3.13 line, not one patch release:
 
 - **A clean checkout**, which is what CI and anyone who clones the repository gets:
   **422 passed, 3 skipped**. The skipped tests are the ones whose subject is a file kept out

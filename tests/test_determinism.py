@@ -120,17 +120,32 @@ def test_the_recorded_environment_matches_the_running_one(reference):
 
     Not a hard failure on the engine version: the point of the fixture is to be run
     ACROSS versions, and failing here would just duplicate the real check above. The
-    interpreter is different - CLAUDE.md treats the 3.13 pin as measurement apparatus
+    interpreter is different: the project treats the 3.13 pin as measurement apparatus
     rather than setup, because two runs agreeing is only evidence if the interpreter is
     the same.
+
+    The pin is the 3.13 line, not one patch release. Until 2026-10-11 this test demanded
+    the exact release the reference was captured on (3.13.15), while the workflow
+    installs whatever 3.13 release is current, so CI would have failed on the next
+    patch release for a reason that has nothing to do with the engine. A different
+    patch release now passes and is reported as a warning, so it stays visible. A
+    different minor version still fails.
     """
     import platform
+    import warnings
     from importlib.metadata import version
 
-    assert platform.python_version() == reference["python"], (
-        "the reference was captured on a different interpreter, so agreement or "
-        "disagreement with it says nothing about the engine"
+    running_python = platform.python_version()
+    assert running_python.split(".")[:2] == reference["python"].split(".")[:2], (
+        "the reference was captured on a different minor version of the interpreter, so "
+        "agreement or disagreement with it says nothing about the engine"
     )
+    if running_python != reference["python"]:
+        warnings.warn(
+            f"reference captured on CPython {reference['python']}, running {running_python}: "
+            f"same 3.13 line, different patch release",
+            stacklevel=1,
+        )
 
     running = version("policyengine-us")
     if running != reference["policyengine_us"]:
