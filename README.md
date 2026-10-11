@@ -2,9 +2,9 @@
 
 > ## Retraction (2026-09-21): the category/quantity finding was an artifact
 >
-> This project's headline claim — that a frontier model notices a missing fact far more
+> This project's headline claim (that a frontier model notices a missing fact far more
 > reliably when its absence changes a **category** than when it changes a **quantity**,
-> measured at 0.396 against 0.050 — **is retracted.** It does not hold on the corrected
+> measured at 0.396 against 0.050) **is retracted.** It does not hold on the corrected
 > corpus, on either model tested.
 >
 > **The deepest reason is a design defect, not a measurement error.** The generator routes
@@ -35,7 +35,7 @@
 >
 > Corpus defects found and fixed along the way (two-adult households keyed as married
 > couples, undocumented filers keyed as holding SSNs, students keyed at zero work hours) are
-> recorded in [`docs/LIMITS.md`](docs/LIMITS.md) §35–§36. The corrected corpus states every
+> recorded in [`docs/LIMITS.md`](docs/LIMITS.md) §35 and §36. The corrected corpus states every
 > premise its answer keys depend on, and a test fails if that stops being true.
 >
 > The superseded numbers are kept below under *Superseded results*, labelled. **Do not cite
@@ -59,7 +59,7 @@ taskset = T1Taskset(T1Config())   # 1,200 tasks ship with the package
 ```
 
 It installs in seconds and needs no API key to load tasks or score an answer. **Evaluation
-never touches PolicyEngine** — answer keys are computed once at generation time and baked
+never touches PolicyEngine**: answer keys are computed once at generation time and baked
 into the split, so nothing on the scoring path imports the engine. `policyengine-us` is an
 optional `[generate]` extra, needed only to build a *new* split; the runtime dependencies
 are `verifiers` and `pydantic`, and that is the whole list. (The five baselines are the one
@@ -83,11 +83,11 @@ in several cases get the law wrong:
 
 A model that asked for the missing relationship was scored as abstaining needlessly. The
 benchmark penalised the behaviour it exists to reward. See
-[`docs/LIMITS.md`](docs/LIMITS.md) §35–§36. The previous numbers are kept below under
+[`docs/LIMITS.md`](docs/LIMITS.md) §35 and §36. The previous numbers are kept below under
 *Superseded results*, for the record only. **Do not cite them.**
 
 **Nothing here is peer-reviewed**, and the validated surface is narrower than
-the test count suggests — read [`docs/LIMITS.md`](docs/LIMITS.md) before citing any number
+the test count suggests. Read [`docs/LIMITS.md`](docs/LIMITS.md) before citing any number
 in this repo. It is written as the work happens rather than retrofitted, and it states what
 is *not* validated at least as carefully as what is.
 
@@ -96,7 +96,7 @@ is *not* validated at least as carefully as what is.
 Existing benchmarks (PolicyEngine's PolicyBench, Column Tax's TaxCalcBench, Stanford's
 HealthAdminBench) score whether a model computes the right *amount*. Redtape adds the
 harder half: whether an agent knows **which facts are required, which are missing, and
-when it cannot answer** — which is where real filings fail.
+when it cannot answer**, which is where real filings fail.
 
 The obvious objection is that "knows when it cannot answer" is just arithmetic competence
 wearing a different hat. The withdrawn Opus 5 result was offered as the answer to that
@@ -104,7 +104,7 @@ objection, and it is retracted. What the corrected corpus shows instead is that 
 abilities come apart between models: on the same 1,194 tasks, Claude Opus 5 and GPT-5.6 Sol
 compute amounts equally well (0.621 against 0.627) and judge answerability very
 differently (0.624 against 0.793). That is evidence the second question is not the first
-one restated — but it is a two-model observation, not a law.
+one restated, but it is a two-model observation, not a law.
 
 ## Results: the claim is retracted, and three findings survive
 
@@ -120,7 +120,7 @@ and that precondition is now met.
 
 ### Why the claim cannot be tested on this design
 
-The generator picks, for each task, a fact to withhold and a class to produce — and it
+The generator picks, for each task, a fact to withhold and a class to produce, and it
 routes each fact to the stream where that fact *can* produce that class. The result is that
 class and fact are not independent:
 
@@ -146,16 +146,17 @@ built.
 ### The pre-registered result, and the disclosed deviation
 
 The decision rule was fixed before the deciding run
-([`docs/CORRECTION_DRAFT.md`](docs/CORRECTION_DRAFT.md)). **Reported exactly as it
+([`docs/DECISION_RULE.md`](docs/DECISION_RULE.md), which was named
+`docs/CORRECTION_DRAFT.md` until 2026-10-10). **Reported exactly as it
 dictates:** on Claude Opus 5 the flip class exceeds the indeterminate class, **0.521
 (50/96) against 0.394 (71/180), difference +0.126, 95% CI [+0.004, +0.245], Fisher exact
 p = 0.056**. On GPT-5.6 Sol it does not: −0.008, CI [−0.123, +0.101], p = 0.891. The
 interval excludes zero by 0.004 while the p-value does not clear 0.05, so by the letter of
-the rule this is ambiguous — it was cleanly "reproduces on one model" at 73% of the split,
+the rule this is ambiguous: it was cleanly "reproduces on one model" at 73% of the split,
 and completing the split moved it toward the null.
 
 **We are not publishing that conclusion, and this paragraph is why.** Stratifying by
-withheld fact — a check required by a standing rule that predates the experiment — reverses
+withheld fact (a check required by a standing rule that predates the experiment) reverses
 the sign: pooled difference **−0.153**, flip worse in five strata of six, and **−0.187,
 CI [−0.307, −0.029]** with the dominant fact removed. The deviation is disclosed rather than
 silent because pre-registration forbids undisclosed deviation, not deviation. The full
@@ -178,9 +179,9 @@ the other way.
 | named a fact never withheld | **0 (0%)** | 18 (7.6%) |
 | truncated responses | 0 / 1,198 | 1 / 1,228 |
 
-1. **GPT-5.6 Sol is better calibrated about when it cannot answer** — 0.793 against 0.624,
+1. **GPT-5.6 Sol is better calibrated about when it cannot answer**: 0.793 against 0.624,
    intervals disjoint.
-2. **Claude Opus 5 is better at saying *which* fact is missing** — perfect compliance with
+2. **Claude Opus 5 is better at saying *which* fact is missing**: perfect compliance with
    the requested identifier format, and it never invents a missing fact. GPT-5.6 Sol
    confabulates one in 7.6% of its abstentions, mostly on tasks where nothing was missing.
 3. **Those two abilities are independent.** The model that always names the fact correctly
@@ -239,7 +240,7 @@ Matched pairs of households identical except for whether p1 declares a qualifyin
 disability (`is_permanently_disabled_veteran`, which establishes elderly-or-disabled status
 for SNAP under 7 CFR 271.2 without adding income).
 
-Each split carries **200 pairs, exactly half of which ground truth separates** — a
+Each split carries **200 pairs, exactly half of which ground truth separates**: a
 `--pair-differ-fraction` recorded in the manifest as target *and* achieved, not whatever the
 sampler happened to produce. A pair counts as consistent only when the model's difference
 **pattern** matches ground truth's, so both giving identical answers to a pair that differs
@@ -259,7 +260,7 @@ much of the half where it does. Guessing "these should differ" is worse than nev
 This is reported over 200 pairs rather than the 40 used during development: 40 carries
 roughly ±8pp, too coarse to separate 0.480 from 0.370. An earlier build selected pairs only
 on "adult with shelter costs", ground truth differed in 4 of 40, and never-differ banked
-0.900 — the metric's stated property was false as measured until the ratio became a target.
+0.900. The metric's stated property was false as measured until the ratio became a target.
 
 ## The splits
 
@@ -271,14 +272,14 @@ on "adult with shelter costs", ground truth differed in 4 of 40, and never-diffe
 | incomplete-determinate | 144 (12.0%) | 144 (12.0%) |
 | eligibility-flip | 96 (8.0%) | 96 (8.0%) |
 | matched pairs | 200 (100 differ / 100 same) | 200 (100 differ / 100 same) |
-| seed | `20260828`, **public** | private, fingerprint `b80dea37628d57fe` |
+| seed | `20260828`, **public** | private, fingerprint `9a608a27bead4c03` |
 
 Class mix is a construction, not an observation: candidates are generated in index order,
 probed, and accepted into whichever bucket they land in until it is full. The manifest
 records how many candidates were consumed to reach it.
 
 **Contamination control.** Every task carries `Task.hash`, the library's content hash of its
-wire data — the hashes are safe to publish, the task data is not. Dev and held-out share
+wire data: the hashes are safe to publish, the task data is not. Dev and held-out share
 **zero** task hashes. The held-out split is generated from a seed in a gitignored `.env`,
 is never committed, and its manifest records the seed's fingerprint rather than the seed.
 Publishing a held-out number goes through a redaction step that strips the seed and every
@@ -301,9 +302,19 @@ checklist.
 | `scripts/build_split.py` | Builds a split to a targeted class mix and pair ratio, bakes answer keys once, records `Task.hash` per task. |
 | `rules/verification_requirements.yaml` | **Ten-rule seed set only**, to prove the format. Not the finished table. |
 
+**Two file names the log uses that are not in this tree.** `CLAUDE.md` is the project's
+internal working notes: process rules and a running build log. It was part of this tree
+until the commit of 2026-10-10 that added this paragraph, and is not from that commit on.
+`docs/LIMITS.md`, `SPEC.md`, the CI workflow and a number of code comments refer to it by
+name. Those references are left as written, and the file is still in this repository's
+history up to that commit. `docs/CORRECTION_DRAFT.md`,
+which the log cites as the pre-registered decision rule, is now
+[`docs/DECISION_RULE.md`](docs/DECISION_RULE.md): one line was added at its top to say so,
+and nothing else in it changed.
+
 ## Reproduce
 
-Requires **WSL2 / Linux** and **Python 3.13** — `verifiers.v1` cannot import on Windows at
+Requires **WSL2 / Linux** and **Python 3.13**: `verifiers.v1` cannot import on Windows at
 all (unguarded `import fcntl`), and the determinism claims depend on the pinned interpreter.
 
 ```bash
@@ -311,7 +322,7 @@ all (unguarded `import fcntl`), and the determinism claims depend on the pinned 
 # packaging, and without it the oracle tests and the five baselines cannot run.
 uv sync --extra dev --extra generate
 
-# 255 tests. Run as a module or bare `pytest`; both work, and CI runs the bare form.
+# 425 tests. Run as a module or bare `pytest`; both work, and CI runs the bare form.
 ./.venv/bin/python -m pytest
 
 ./.venv/bin/python scripts/smoke.py                     # one household, with provenance
@@ -329,8 +340,23 @@ uv sync --extra dev --extra generate
 
 CI (`.github/workflows/tests.yml`) runs lint and the full suite on Linux/3.13 on every push,
 with `uv sync --frozen` so a lockfile disagreement fails rather than silently re-resolving.
-It is currently green at **242 passed, 0 skipped** — the skip count is quoted deliberately,
-because an earlier green run was "202 passed, 5 skipped" and the skips were invisible.
+No CI result is quoted here: none was observed when the figures below were measured, and the
+workflow's own log is the record. It runs `pytest -rs`, which prints every skip with its
+reason.
+
+The suite collects **425 tests**. What a run reports depends on what is on disk, so each
+figure names where it was measured. Both were measured locally on 2026-10-11 with the pinned
+interpreter, CPython 3.13.15:
+
+- **A clean checkout**, which is what CI and anyone who clones the repository gets:
+  **422 passed, 3 skipped**. The skipped tests are the ones whose subject is a file kept out
+  of the public tree on purpose: the held-out manifest and the internal working notes.
+- **The author's working folder**, which also holds the gitignored held-out split and
+  `CLAUDE.md`: **425 passed, 0 skipped**.
+
+The skip counts are quoted deliberately, because an earlier green run was "202 passed, 5
+skipped" and the skips were invisible. `tests/test_published_facts.py` fails when a count on
+this page stops matching the suite, and says at the top what it cannot check.
 
 ## Why the oracle needs continuous external checking
 
@@ -342,9 +368,9 @@ the reason to trust the rest of the numbers rather than caveats on them.
 **PolicyEngine does not implement HR 1's 2025 SUA changes for California.** The parameter
 `gov.usda.snap.income.deductions.utility.always_standard` is `True` at every instant tested
 across both the 2025-07-04 and 2025-10-31 effective dates, so every California household is
-granted the full Standard Utility Allowance unconditionally — including the non-elderly,
+granted the full Standard Utility Allowance unconditionally, including the non-elderly,
 non-disabled households the published rules withdraw it from. The over-statement is bounded
-by 30% of the allowance, so roughly $194–$199/month. Reported upstream in
+by 30% of the allowance, so roughly $194 to $199/month. Reported upstream in
 [`docs/HR1_SUA_DIVERGENCE.md`](docs/HR1_SUA_DIVERGENCE.md), with evidence, affected month
 ranges and a proposed fix, and **filed upstream as
 [PolicyEngine/policyengine-us#9374](https://github.com/PolicyEngine/policyengine-us/issues/9374)**. **Consequence adopted:** formula-validation cases are restricted
@@ -355,19 +381,19 @@ the affected window. `docs/LIMITS.md` §11.
 wrong, and it is retracted.** The restrictions *are* implemented: federally from
 2025-07-01, with California delaying to 2026-04-01 per CDSS ACL 25-92, applied by
 `ca_snap_immigration_status_eligible`. Our probe hardcoded `state_name: CA` and swept only
-months of 2025 — the one state and the one year in which a correctly modelled state delay
+months of 2025: the one state and the one year in which a correctly modelled state delay
 is indistinguishable from a federal omission. The same probe pointed at any non-delaying
 state would have shown the change at 2025-07 immediately. **Consequence adopted:** the
 corpus restriction is removed and refugee and asylee households are generated again; the
 corpus scope (`CORPUS_STATE`, `CORPUS_TAX_YEAR`) is now declared in code, and a test fails
 if either moves while the gate still depends on California's delay. The one real gap that
-survives is that COFA status has no enum value — already tracked upstream as
+survives is that COFA status has no enum value, which is already tracked upstream as
 [#8296](https://github.com/PolicyEngine/policyengine-us/issues/8296), so not our finding.
 `docs/LIMITS.md` §16 records the failure mode: a correct measurement generalised past the
 scope it was taken at.
 
 Neither is a criticism of PolicyEngine, and the report says so at length. The engine is
-accurate, current and well-sourced nearly everywhere we looked — HR 1's ABAWD provisions
+accurate, current and well-sourced nearly everywhere we looked: HR 1's ABAWD provisions
 are implemented in detail, down to citing the specific CDSS letter for California's delayed
 adoption. That is exactly what makes a narrow, undocumented gap expensive: a downstream user
 has every reason to trust it and no signal telling them where not to. An oracle that is
@@ -382,22 +408,22 @@ asserts the *known-wrong* HR 1 behaviour so that an upstream fix breaks the test
 
 1. **An annual query on a monthly `stock` variable returns December alone.**
    `is_snap_eligible` is such a variable, so asking it for "2025" silently reports December
-   — not any month, not all months. SNAP is therefore always queried at an explicit month
+   (not any month, not all months). SNAP is therefore always queried at an explicit month
    and always scored monthly. Locked by a regression test. `docs/LIMITS.md` §1.
 
 2. **PolicyEngine has no representation of "unknown."** Every omitted fact silently becomes
    a plausible default (`employment_income`→0, `age`→40, `state_name`→CA,
    `immigration_status`→CITIZEN). Omitting a fact and stating it as zero are
    indistinguishable to the engine. This is why abstention labels come from a perturbation
-   prober rather than from the oracle — and the labels are an under-approximation, able to
+   prober rather than from the oracle, and the labels are an under-approximation, able to
    prove a fact is deciding but not that it isn't. `docs/LIMITS.md` §3, §4.
 
 3. **Only externally validated programs are scored.** `SCORED_PROGRAMS` is
-   `("snap", "eitc", "ctc")`. **Medicaid is computed and recorded but NOT scored** — no
+   `("snap", "eitc", "ctc")`. **Medicaid is computed and recorded but NOT scored**: no
    external validation was obtainable, and scoring a cell backed only by the engine agreeing
    with itself is the circularity this project exists to avoid. That costs T1 its only
    per-person eligibility output, stated plainly rather than papered over. A related
-   correction: `ctc` is the **gross** credit, not what the household receives — a zero-income
+   correction: `ctc` is the **gross** credit, not what the household receives. A zero-income
    family with two children has `ctc = 4,400` and `ctc_value = 0`. The scored answer uses
    `ctc_value`. `docs/LIMITS.md` §20, §21.
 
@@ -411,7 +437,7 @@ asserts the *known-wrong* HR 1 behaviour so that an upstream fix breaks the test
 
 10 rules · high **0** · medium **6** · low **4** · scored (excludes `low`) **6**
 
-Three of the ten seed citations were wrong — a 30% error rate — and only one had been
+Three of the ten seed citations were wrong (a 30% error rate), and only one had been
 flagged as doubtful in advance. The other two were believed correct and were not; reading
 the actual section text found them. Consequently every rule now requires its primary source
 opened and read before the rule is written, and `medium` no longer means "probably right"
@@ -422,7 +448,9 @@ human reviewer does, via `rules/REVIEW_CHECKLIST.md`.
 
 ## Superseded results: withdrawn 2026-09-19, do not cite
 
-Kept verbatim for the record. Every number below was measured on the corpus described at the
+Kept for the record. The wording and every result below are as published; on 2026-10-10 the
+dashes were removed and one stale count of the sections in `docs/LIMITS.md` was corrected.
+Every number below was measured on the corpus described at the
 top of this README (unstated household relationships keyed as marriages, students keyed at
 zero hours, undocumented filers keyed with a citizen's SSN) and scored by an abstention scorer
 that ignored the named fact. The scripted-agent rows are consistent with those same answer
@@ -437,8 +465,8 @@ keys, so their *mechanics* hold, but their values are not re-verified.
 >
 > | the withheld fact would change… | correct abstention rate |
 > |---|---:|
-> | SNAP eligibility — a category | **0.396** (38 / 96) |
-> | a benefit amount — a quantity | **0.050** (9 / 180) |
+> | SNAP eligibility, a category | **0.396** (38 / 96) |
+> | a benefit amount, a quantity | **0.050** (9 / 180) |
 >
 > Both classes are cases where a required fact is absent and abstention is the correct
 > answer. They differ in one respect: whether the missing fact moves a yes/no or a number.
@@ -449,8 +477,8 @@ That is the result. Two things frame it.
 It is not incapacity at the task: the model computes benefits far better than any trivial
 strategy, **0.514 exact-match against a 0.205 best baseline**.
 
-And it is not blanket caution: where a fact is missing but does *not* decide the outcome — so
-answering is correct — it answers **95%** of the time (0.951). It is not abstaining
+And it is not blanket caution: where a fact is missing but does *not* decide the outcome (so
+answering is correct), it answers **95%** of the time (0.951). It is not abstaining
 indiscriminately and getting lucky; it is discriminating, on the wrong axis.
 
 Across the whole split it volunteers `cannot_determine` in **5.3%** of responses (64 of
@@ -474,7 +502,7 @@ that retuning a weight cannot move a published number.
 
 Gate pass rate 0.981; **0 malformed-JSON, 0 schema-invalid, 0 scorer errors**. The ceiling
 row is a diagnostic agent that answers from the key **and** abstains on exactly the deciding
-programs — it exists because a metric nobody can score 1.000 on is broken, and until it was
+programs. It exists because a metric nobody can score 1.000 on is broken, and until it was
 written nothing established that the abstention metric was reachable at all.
 
 Abstention at 0.438 is 0.102 above the never-abstain baseline: better than the degenerate
@@ -484,14 +512,14 @@ strategy, and less than a third of the way from it to the ceiling.
 
 | class | correct | n | accuracy | correct behaviour |
 |---|---:|---:|---:|---|
-| indeterminate | 9 | 180 | **0.050** | abstain — the fact moves an amount past tolerance |
-| eligibility-flip | 38 | 96 | **0.396** | abstain — the fact flips SNAP eligibility |
-| incomplete-determinate | 137 | 144 | **0.951** | answer anyway — the fact does not decide |
+| indeterminate | 9 | 180 | **0.050** | abstain: the fact moves an amount past tolerance |
+| eligibility-flip | 38 | 96 | **0.396** | abstain: the fact flips SNAP eligibility |
+| incomplete-determinate | 137 | 144 | **0.951** | answer anyway: the fact does not decide |
 
 An eight-fold gap between the two classes where abstention is required. Both are cases where
 a required fact is absent; they differ only in whether its absence changes a *category* or a
 *quantity*. The incomplete-determinate class is what stops the benchmark being won by always
-abstaining — and 0.951 there confirms the model is not simply cautious.
+abstaining, and 0.951 there confirms the model is not simply cautious.
 
 #### Which missing facts go unnoticed
 
@@ -504,7 +532,7 @@ abstaining — and 0.951 there confirms the model is not simply cautious.
 | `p1.age` | 13 | 61 | 0.213 |
 | `p1.immigration_status` | 8 | 60 | **0.133** |
 
-**Immigration status is noticed least often of all, at 0.133 — and it is the fact with the
+**Immigration status is noticed least often of all, at 0.133, and it is the fact with the
 starkest consequence**, determining outright whether a person is eligible for federal SNAP.
 Age (0.213) is second-lowest and behaves similarly, setting elderly status and dependency.
 Income, the fact most often *stated* as an explicit line item in a case file, is noticed most
@@ -518,7 +546,7 @@ be missing.
 
 The data is consistent with that and does not establish it. Separating "premise vs line item"
 from "category vs quantity" needs a split that varies the same fact between the two
-presentations — which this one does not do, because every fact appears in exactly one form.
+presentations, which this one does not do, because every fact appears in exactly one form.
 It is the next experiment, not a conclusion.
 
 #### The obvious objection, tested before publication
@@ -553,20 +581,20 @@ information", and it is what the data supports.
   arm reliably detects roughly a doubling. A real 12 → 18 shift would have been missed.
 - **These numbers are a correction.** An earlier version of this section reported abstention
   0.357 and an indeterminate rate of 0.006, because the schema demanded a number for a
-  program the model had just declared undeterminable — so 47 correct abstentions were
+  program the model had just declared undeterminable, so 47 correct abstentions were
   rejected as malformed and scored as failures. The benchmark was penalising the behaviour it
   exists to reward. Fixed, re-scored from cache, and recorded in `docs/LIMITS.md` §27.
 - **Abstention labels are approximate.** A perturbation sweep can prove a fact is deciding
   but not that one is not (`docs/LIMITS.md` §4). Mislabelling would push the measured rate
   *up*, not down, so the direction survives; the size is unmeasured.
-- **Medicaid is computed but not scored** — no external validation was obtainable, and a cell
+- **Medicaid is computed but not scored**: no external validation was obtainable, and a cell
   backed only by the engine agreeing with itself is the circularity this project exists to
   avoid.
 
-**Read [`docs/LIMITS.md`](docs/LIMITS.md) before citing any number here.** 44 sections,
+**Read [`docs/LIMITS.md`](docs/LIMITS.md) before citing any number here.** 49 sections,
 written as the work happened rather than retrofitted, stating what is *not* validated at
-least as carefully as what is — including several sections retracting our own errors, of
-which §43–§44 retract this project's headline claim.
+least as carefully as what is, including several sections retracting our own errors, of
+which §43 and §44 retract this project's headline claim.
 
 **Reproducing it:** every model response is cached in `cache/responses/dev/` and committed,
 so the scored artifact can be re-derived without spending anything. The runs on the
@@ -577,7 +605,7 @@ Opus 5.5, including $0.50 of probe responses reused from cache).
 
 Three conditions over the same tasks. `tool_equipped` gives the agent a calculator that
 takes a structured household and returns the benefit. `tool_equipped_unknowns` gives it the
-same calculator, except a fact may be passed as `"unknown"` — instead of defaulting it, the
+same calculator, except a fact may be passed as `"unknown"`: instead of defaulting it, the
 tool sweeps that fact and reports which programs its value decides.
 
 300 tasks, weighted toward T1b so neither cell is thin: 150 determinate and 150 T1b
@@ -595,10 +623,10 @@ facts moves abstention by +0.400 and exact-match by exactly zero.**
 The two axes separate cleanly, and each "no effect" arm really is flat rather than merely
 small. Arithmetic help does not buy abstention accuracy; determinability help does not buy
 arithmetic accuracy. That is direct evidence the abstention metric measures something the
-amount-scoring benchmarks do not, which is the whole premise of the project — and the single
+amount-scoring benchmarks do not, which is the whole premise of the project, and the single
 result that could have shown the premise was empty. It didn't.
 
-Two things this is not. **No model is called** — all three conditions use scripted agents,
+Two things this is not. **No model is called**: all three conditions use scripted agents,
 so this is an upper bound on what the *tool* offers a perfect extractor, not a measurement
 of any model's behaviour; the model result is the section above. And pair rows are excluded
 from the sample, because they are all determinate and partially sampling them would make
@@ -610,14 +638,14 @@ The section above measures what the tool offers a *perfect extractor*. This one 
 question that matters for the finding: hand the tool to the model, and does anything change?
 
 **This experiment is INCOMPLETE.** Two of three conditions ran before the API budget was
-exhausted. The third — the one that would settle whether the model can act on an explicit
-determinability signal — has not run, and the row below says so rather than being omitted.
+exhausted. The third (the one that would settle whether the model can act on an explicit
+determinability signal) has not run, and the row below says so rather than being omitted.
 
 | condition | exact-match | abstention |
 |---|---:|---:|
 | `tool_less` | 0.553 (n=150) | 0.453 (n=150) |
 | `tool_equipped` | **0.927** (n=150) | **0.678** (n=149) |
-| `tool_equipped_unknowns` | — **NOT RUN** — | — **NOT RUN** — |
+| `tool_equipped_unknowns` | **NOT RUN** | **NOT RUN** |
 
 *(A 15-task probe of the unrun condition gave 0.750 exact-match and 1.000 abstention on
 n=8 / n=7. That is 7 tasks. It is recorded for transparency and is not a result.)*
@@ -626,31 +654,31 @@ n=8 / n=7. That is 7 tasks. It is recorded for transparency and is not a result.
 
 **A calculator nearly closes the arithmetic gap.** Exact-match goes 0.553 → 0.927, against a
 ceiling of 1.000. Whatever the model gets wrong on determinate cases is almost entirely
-computation, not comprehension of the case file — it knows what to compute and mis-computes
+computation, not comprehension of the case file: it knows what to compute and mis-computes
 it.
 
 **A calculator also improves abstention, 0.453 → 0.678.** This one was not predicted, and it
 is the more interesting of the two.
 
 It did not happen for the scripted extractor. Under the identical condition the scripted
-agent's abstention was flat — 0.327 → 0.333, a change of 0.006 on the same 300-task sample.
+agent's abstention was flat: 0.327 → 0.333, a change of 0.006 on the same 300-task sample.
 So this is not a property of the tool. **Something about a model calling the tool makes it
 likelier to notice that it cannot answer.**
 
 The plausible mechanism, offered as a hypothesis: invoking the calculator requires naming
 every required field explicitly. A fact that is absent has to be confronted at the point of
 constructing the call, rather than glossed while writing prose. That would make the tool an
-*attention* aid rather than an arithmetic one — and it is the same line-item-versus-premise
+*attention* aid rather than an arithmetic one, and it is the same line-item-versus-premise
 story the per-fact table suggests, reached from a different direction.
 
 It is a hypothesis. The experiment that would test it is the unrun third condition, plus a
 variant that requires the model to enumerate the fields it used without giving it a
-calculator at all — separating "had to name the fields" from "had a tool".
+calculator at all, separating "had to name the fields" from "had a tool".
 
 #### What is not claimed here
 
-- **Two conditions, not three.** The headline comparison this section was designed for —
-  explicit `"unknown"` marking versus none — has not been run.
+- **Two conditions, not three.** The headline comparison this section was designed for
+  (explicit `"unknown"` marking versus none) has not been run.
 - `tool_equipped` abstention is n=149 rather than 150: one task's response was never
   fetched, and dropping it is preferable to scoring an absent reply as a failure.
 - One model, one sample, one prompt. Same scope limits as the main result.

@@ -134,7 +134,7 @@ def main(path_a, path_b):
               f"[{lo2:.3f}, {hi2:.3f}]")
 
     # 3. the decision rule: flip vs indeterminate, per model
-    print("\n--- flip vs indeterminate (docs/CORRECTION_DRAFT.md decision rule) ---")
+    print("\n--- flip vs indeterminate (docs/DECISION_RULE.md decision rule) ---")
     for name, recs in ((name_a, a), (name_b, b)):
         cells = {}
         for cls in ("flip", "indeterminate"):

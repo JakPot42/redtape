@@ -210,7 +210,7 @@ def test_teeth_stale_metrics_table_row(allowed):
 
 
 def test_teeth_stale_prose_figure(allowed):
-    stale = HUB.replace('winning — it scores 0.000.', 'winning — it scores 0.131.')
+    stale = HUB.replace('winning: it scores 0.000.', 'winning: it scores 0.131.')
     assert stale != HUB, "fixture drifted: the always-abstain sentence is not where expected"
     assert "0.131" in _flagged(stale, allowed)
 

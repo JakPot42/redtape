@@ -26,6 +26,10 @@ MUST_IGNORE = [
     "results/a/b/c/t1.raw.json",
     "results/t1_heldout.live.m.tool_less.public.json",
     "results/sub/t1_heldout.live.m.tool_less.public.json",
+    # Internal working notes and unsent drafts. Representative paths, like the ones above:
+    # the rule is what is tested, not any one file.
+    "CLAUDE.md",
+    "docs/EXAMPLE_DRAFT.md",
 ]
 
 MUST_TRACK = [
@@ -33,6 +37,9 @@ MUST_TRACK = [
     "results/probe10/t1.live.m.tool_less.public.json",
     "data/dev/t1.jsonl",
     "cache/responses/dev/ab/abcd.json",
+    # The rule for drafts must not swallow a published document.
+    "docs/DECISION_RULE.md",
+    "docs/HUB_README.md",
 ]
 
 
@@ -51,3 +58,17 @@ def test_sensitive_or_raw_paths_are_ignored(path):
 @pytest.mark.parametrize("path", MUST_TRACK)
 def test_publishable_paths_are_not_ignored(path):
     assert not _ignored(path), f"{path} is ignored but must be committable"
+
+
+INTERNAL_ONLY = [":(glob)**/CLAUDE.md", ":(glob)docs/*_DRAFT.md"]
+
+
+def test_internal_working_files_are_not_tracked():
+    """An ignore rule keeps `git add -A` from picking a file up. It does nothing about a
+    file that is already tracked, and `git add -f` walks straight past it. So the rules
+    above are half of the control, and this is the other half: it asks git what is in
+    the index."""
+    r = subprocess.run(["git", "ls-files", "--", *INTERNAL_ONLY], cwd=ROOT,
+                       capture_output=True, text=True)
+    assert r.returncode == 0, r.stderr
+    assert r.stdout.split() == [], "tracked, and meant to stay out of the public tree"

@@ -1,5 +1,5 @@
 """Headlines with Wilson intervals, and the flip-vs-indeterminate comparison the decision
-rule in docs/CORRECTION_DRAFT.md asks for."""
+rule in docs/DECISION_RULE.md asks for."""
 import collections
 import json
 import math

@@ -63,3 +63,6 @@ results/**/*heldout*
 # The held-out subtree NEVER is: each cached reply restates the household it was given, so
 # committing it would publish held-out case files in all but name.
 cache/responses/heldout/
+
+CLAUDE.md
+docs/*_DRAFT.md

@@ -1,3 +1,5 @@
+Renamed 2026-10-10: this file was `docs/CORRECTION_DRAFT.md`, the name `docs/LIMITS.md` and earlier commits cite. Nothing below this line was changed.
+
 # Correction, drafted BEFORE the deciding run (2026-09-20)
 
 Written now, on purpose, so the wording is not chosen under the temptation of a result we
