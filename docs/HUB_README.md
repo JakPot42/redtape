@@ -103,6 +103,13 @@ No API key is needed to load the tasks or to score an answer. The installed pack
 taskset, oracle and scoring; the baselines and test suite ship in the environment *source*
 (`prime env pull`, or the GitHub repo) and also need no key.
 
+Run in a pulled copy with the `[dev,generate]` extras installed, the suite reports
+**384 passed, 41 skipped**. The copy is not a git repository and leaves out the repository's
+`.gitignore`, CI workflow, results files and README (this page takes its place), so the 38
+checks on those skip and name what is missing; the other 3 skip in a clean checkout of the
+repository too. Measured on 2026-10-12 in the tree that is uploaded. In version 0.1.7 the
+suite did not pass in a pulled copy: `docs/LIMITS.md` §50.
+
 ## What makes it different
 
 - **Deterministic ground truth, no LLM judge.** Answer keys trace to named PolicyEngine
@@ -181,7 +188,7 @@ Medicaid is computed but deliberately **unscored**: no external validation was o
 for it. A held-out split exists, has never been evaluated against, and stays that way.
 
 **Read [`docs/LIMITS.md`](docs/LIMITS.md) before citing any number from this environment.**
-It is 49 sections, written as the work happened rather than retrofitted, and several of them
+It is 50 sections, written as the work happened rather than retrofitted, and several of them
 retract errors found in my own published results, including a schema bug that was
 penalising exactly the behaviour the benchmark exists to reward, and which sat visible in
 every report for two days before it was read correctly.

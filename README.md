@@ -354,6 +354,14 @@ figure names where it was measured. Both were measured locally on 2026-10-11 wit
 - **The author's working folder**, which also holds the gitignored held-out split and
   `CLAUDE.md`: **425 passed, 0 skipped**.
 
+A copy pulled from the Environments Hub (`prime env pull`) reports
+**384 passed, 41 skipped**. It is not a git repository, its `README.md` is the Hub page, and
+it carries no `.gitignore`, CI workflow, `results/` or `docs/HUB_README.md`, so the 38 checks
+on those skip and name what is missing; the other 3 are the clean checkout's. Measured on
+2026-10-12 in the tree `scripts/stage_hub_push.py` builds for upload. In version 0.1.7 the
+suite did not pass in a pulled copy, and it had not been run there since before the first
+publish: [`docs/LIMITS.md`](docs/LIMITS.md) §50.
+
 The skip counts are quoted deliberately, because an earlier green run was "202 passed, 5
 skipped" and the skips were invisible. `tests/test_published_facts.py` fails when a count on
 this page stops matching the suite, and says at the top what it cannot check.
@@ -591,7 +599,7 @@ information", and it is what the data supports.
   backed only by the engine agreeing with itself is the circularity this project exists to
   avoid.
 
-**Read [`docs/LIMITS.md`](docs/LIMITS.md) before citing any number here.** 49 sections,
+**Read [`docs/LIMITS.md`](docs/LIMITS.md) before citing any number here.** 50 sections,
 written as the work happened rather than retrofitted, stating what is *not* validated at
 least as carefully as what is, including several sections retracting our own errors, of
 which §43 and §44 retract this project's headline claim.

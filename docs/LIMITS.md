@@ -2695,3 +2695,107 @@ source that actually governs.
 **Rule, sharpened from §48.** For a program-specific rule, open the program's own
 implementing regulation first, and cite the statute that regulation implements. A general
 statute that also applies is a second citation, not a substitute.
+
+## 50. The suite was run in the copy the Hub ships once, before the first publish, and not again
+
+**Status: FIXED in v0.1.8, 2026-10-12, as measured in the staged tree. The check that would
+have caught it is still a step done by hand, not a test.**
+
+The Hub page tells readers that the test suite ships in the environment source, and
+`scripts/stage_hub_push.py` has said why since 2026-09-04: "Shipping a tree whose suite does
+not pass, while the README claims a passing suite, is not an option." On that day the suite
+was run in the staged tree and passed (255 passed, recorded in the commit message of
+318a6e1). That is the only run in that tree on record until 2026-10-12. For versions 0.1.1 to
+0.1.7 no run of the suite in the staged tree or in a pulled copy is recorded; where a check
+of the staged tree is recorded, it is a check of the file list. The suite itself was run in
+the working folder, in clean clones and in CI. Every one of those is a git checkout of the
+repository. The copy the Hub ships is not.
+
+**Measured on 2026-10-11**, in a fresh `prime env pull` of version 0.1.7, with the
+repository's locked packages. The suite has 425 tests:
+
+| outcome | tests |
+|---|---:|
+| passed | 385 |
+| failed | 27 |
+| errored | 3 |
+| skipped | 3 |
+| in a file that did not load | 7 |
+
+Every one of the 37 that failed, errored or did not load was a check on something the pulled
+copy does not have:
+
+| file | in the pulled copy | what the copy lacks |
+|---|---|---|
+| `tests/test_gitignore.py` | 20 failed | a git repository and the root `.gitignore`; git exits 128 |
+| `tests/test_citations.py` | 2 failed | `.github/workflows/tests.yml` |
+| `tests/test_published_facts.py` | 5 failed, 3 errored | `docs/HUB_README.md` and the repository README; the Hub page ships as `README.md` |
+| `tests/test_published_figures.py` | did not load, 7 tests | `docs/HUB_README.md`, which the file read while being imported, and `results/` |
+
+The 3 errors have one cause: those tests ask a child process to count the suite, and the
+count failed because one file would not load. Two more tests in
+`tests/test_published_facts.py` passed for the wrong reason. They read the Hub page as if it
+were the repository README and found nothing to object to.
+
+**Only 0.1.7 was measured.** `tests/test_gitignore.py` and `tests/test_citations.py` entered
+the repository on 2026-09-18, between 0.1.0 and 0.1.1, so versions 0.1.1 to 0.1.6 very
+probably failed in a pulled copy too. That is read from the history, not run.
+
+**The fix (76e7d09).** Outside a git checkout, when the repository-only files a test reads
+are absent, the test skips and names what is absent. The condition is "this copy is not a
+git checkout", decided by whether `.git` exists, and not the missing file alone. In a
+checkout nothing is skipped for this reason, so a published page deleted from the repository
+still fails.
+
+Measured on 2026-10-12 with CPython 3.13.15 and the repository's locked packages:
+
+| where | outcome |
+|---|---|
+| the tree the staging script builds for 0.1.8 | 384 passed, 41 skipped, none failed |
+| the working folder | 425 passed, none skipped |
+| a fresh clone | 422 passed, 3 skipped |
+
+In the working folder and the fresh clone every one of the 425 tests had the same outcome as
+on 2026-10-11, before the change.
+
+The 41 skips in the staged tree:
+
+| skips | what they need |
+|---:|---|
+| 20 | a git repository and the root `.gitignore` |
+| 2 | the CI workflow file |
+| 9 | the repository's two pages |
+| 7 | the two pages and `results/` |
+| 3 | the held-out manifest and the internal notes; these skip in a clean checkout too |
+
+**What a green run in a pulled copy does not tell you.**
+
+- The first 38 of those checks do not run there. A pulled copy verifies nothing about the
+  ignore rules, the CI file or the two pages. They are checked in the repository.
+- The staged tree is not the published copy. This entry was written before 0.1.8 was
+  uploaded, so it records no run of a copy pulled back from the Hub.
+- The figures were measured with the repository's locked packages. The pulled copy carries
+  `pyproject.toml` and no lockfile. The packages named there are pinned exactly, but the
+  packages those depend on may resolve to other versions in a fresh install.
+- A copy of the repository made without git, such as a ZIP download, is also not a git
+  checkout. By the skip condition, the 20 git tests skip there where they used to fail, and
+  the page tests still run because the pages are present. Read from the code, not run.
+- Nothing automatic proves that a checkout skips none of these tests. The run summary shows
+  it: no skips in the working folder, 3 in a clean checkout.
+
+**Why it got through.** The corollary of §30, a second time: "an audit is scoped to an
+artifact, and publishing a different artifact voids it." A green suite in a checkout was
+read as a green suite in the copy the Hub ships, which is a different tree: no `.git`, no
+hidden files, a different `README.md`. Each of the four files was written to check something
+only the repository has, and after 2026-09-04 each was only ever run in the repository. The
+sentence in the staging script was true the day it was written and was prose after that,
+with nothing behind it (§32).
+
+Found on 2026-10-11 by pulling the published copy into an empty folder and running it, at
+the owner's request, not by any check.
+
+**Rule.** Before a Hub publish, run the suite in the staged tree. After it, pull the
+published version into an empty folder and run it again. Quote both outcomes, with the
+skips. **This is a step done by hand. A check that runs the suite in the staged tree and
+refuses to publish on a failure is intended, NOT built**, stated as intended per §32, not as
+a control in force.
