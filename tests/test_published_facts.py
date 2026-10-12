@@ -49,6 +49,20 @@ PAGES = ["README.md", "docs/HUB_README.md"]
 LIMITS = ROOT / "docs" / "LIMITS.md"
 HELDOUT_MANIFEST = ROOT / "data" / "heldout" / "t1.manifest.json"
 
+# Outside a git checkout the two pages may not be the repository's. A copy pulled from the
+# Environments Hub ships the Hub page as README.md and has no docs/HUB_README.md, so the
+# checks below would compare the wrong document, or none. There every test that reads a
+# page SKIPS and says why (since 2026-10-12; before that they failed there). In a checkout
+# PAGES_ABSENT is always empty, so a missing page still fails.
+IN_CHECKOUT = (ROOT / ".git").exists()
+PAGES_ABSENT = [] if IN_CHECKOUT else [p for p in PAGES if not (ROOT / p).exists()]
+needs_the_published_pages = pytest.mark.skipif(
+    bool(PAGES_ABSENT),
+    reason="not a git checkout, and this copy does not ship " + ", ".join(PAGES_ABSENT)
+           + " (a Hub copy carries the Hub page as README.md); the pages are checked "
+           "against the repository in the repository",
+)
+
 
 def _page(name: str) -> str:
     return (ROOT / name).read_text(encoding="utf-8")
@@ -91,6 +105,7 @@ def void_fingerprints_in(text: str) -> set[str]:
     return {v for v in VOID_HELDOUT_FINGERPRINTS if v in text}
 
 
+@needs_the_published_pages
 def test_readme_states_the_current_heldout_fingerprint():
     assert stated_fingerprints(_page("README.md")) == {CURRENT_HELDOUT_FINGERPRINT}, (
         "README.md must give exactly one held-out seed fingerprint, the current one. If the "
@@ -98,6 +113,7 @@ def test_readme_states_the_current_heldout_fingerprint():
     )
 
 
+@needs_the_published_pages
 @pytest.mark.parametrize("page", PAGES)
 def test_no_published_page_contains_a_void_fingerprint(page):
     text = _page(page)
@@ -127,6 +143,7 @@ def test_heldout_manifest_agrees_with_the_published_fingerprint():
     )
 
 
+@needs_the_published_pages
 def test_teeth_a_void_fingerprint_on_the_page_is_caught():
     """The defect this file was written for, put back: the void value where the current one
     belongs."""
@@ -222,6 +239,7 @@ def count_problems(text: str, collected: int) -> list[str]:
     return problems
 
 
+@needs_the_published_pages
 @pytest.mark.parametrize("page", PAGES)
 def test_quoted_test_counts_match_the_suite(page, collected):
     problems = count_problems(_page(page), collected)
@@ -232,6 +250,7 @@ def test_quoted_test_counts_match_the_suite(page, collected):
     )
 
 
+@needs_the_published_pages
 def test_historical_counts_are_still_quoted():
     """A stale allowlist entry would excuse a future stale count of the same text."""
     corpus = " ".join(_flat(_page(p)) for p in PAGES)
@@ -282,6 +301,7 @@ def section_problems(text: str, sections: int) -> list[str]:
     return problems
 
 
+@needs_the_published_pages
 @pytest.mark.parametrize("page", PAGES)
 def test_quoted_section_counts_match_limits(page):
     problems = section_problems(_page(page), limits_section_count())

@@ -17,6 +17,11 @@ and nowhere else. Its citations are checked wherever the file is, by the two tes
 bottom. In a checkout without it those two tests SKIP and say why. A skip is a hole in
 the claim, and this one is stated: a clean checkout verifies the published documents and
 says nothing about the internal notes.
+
+A COPY THAT IS NOT A CHECKOUT, since 2026-10-12. A copy pulled from the Environments Hub has
+no .git and no .github/ folder, and its README.md is the Hub page. There the two tests on
+the published documents SKIP and name what is absent. In a git checkout that skip cannot
+happen: a missing published document still fails.
 """
 import re
 from pathlib import Path
@@ -26,6 +31,10 @@ import pytest
 ROOT = Path(__file__).resolve().parent.parent
 PUBLIC_DOCS = ["docs/LIMITS.md", "README.md", ".github/workflows/tests.yml"]
 INTERNAL_DOC = "CLAUDE.md"
+
+# Empty in every git checkout, so there a missing published document is never excused.
+IN_CHECKOUT = (ROOT / ".git").exists()
+ABSENT_PUBLIC_DOCS = [] if IN_CHECKOUT else [d for d in PUBLIC_DOCS if not (ROOT / d).exists()]
 
 HISTORICAL = {
     "tests/test_period_semantics.py": "records the wrong citation fixed in LIMITS §1/§33",
@@ -51,6 +60,12 @@ needs_internal_notes = pytest.mark.skipif(
            "checked by the tests above in every checkout",
 )
 
+needs_published_docs = pytest.mark.skipif(
+    bool(ABSENT_PUBLIC_DOCS),
+    reason="not a git checkout, and this copy does not ship " + ", ".join(ABSENT_PUBLIC_DOCS)
+           + "; the published documents are checked in the repository",
+)
+
 
 def _dangling(docs: list[str], allowlist: dict[str, str]) -> list[str]:
     tests_src = "\n".join(p.read_text(encoding="utf-8") for p in (ROOT / "tests").glob("*.py"))
@@ -73,10 +88,12 @@ def _unmentioned(docs: list[str], allowlist: dict[str, str]) -> list[str]:
     return [k for k in allowlist if k not in corpus]
 
 
+@needs_published_docs
 def test_every_cited_test_and_path_exists():
     assert _dangling(PUBLIC_DOCS, HISTORICAL) == []
 
 
+@needs_published_docs
 def test_allowlist_entries_are_still_mentioned():
     """A stale allowlist entry would silently excuse a future real miss of the same name."""
     assert _unmentioned(PUBLIC_DOCS, HISTORICAL) == []

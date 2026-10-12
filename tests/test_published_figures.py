@@ -39,6 +39,24 @@ import pytest
 
 ROOT = Path(__file__).resolve().parent.parent
 DOCS = ["README.md", "docs/HUB_README.md"]
+
+# The pages this file checks, and the results it checks them against, live in the
+# repository. Outside a git checkout they can be absent for a reason that is not a defect:
+# a copy pulled from the Environments Hub ships the Hub page as README.md and no results/.
+# Until 2026-10-12 this file read docs/HUB_README.md at import, so in such a copy it did
+# not load at all and its tests vanished from the count. Now they SKIP there and name what
+# is absent. A skip is a hole in the claim, and this one is stated: such a copy says
+# nothing about its page against the results. In a checkout ABSENT is always empty, so a
+# missing page or a missing results folder still fails.
+IN_CHECKOUT = (ROOT / ".git").exists()
+ABSENT = [] if IN_CHECKOUT else [
+    p for p in ("docs/HUB_README.md", "results") if not (ROOT / p).exists()
+]
+pytestmark = pytest.mark.skipif(
+    bool(ABSENT),
+    reason="not a git checkout, and this copy does not ship " + ", ".join(ABSENT)
+           + "; the published pages are checked against results/ in the repository",
+)
 METRIC = re.compile(r"exact[- ]match|abstention|pair[- ]consistency", re.I)
 PROSE_TRIGGER = re.compile(r"exact[- ]match|abstention|pair[- ]consistency|\bscores\b", re.I)
 EXEMPT_HEADING = re.compile(r"superseded", re.I)
@@ -189,7 +207,7 @@ def test_published_headline_figures_exist_in_results(doc, allowed):
 
 # --- teeth: each of the three stale figures §47 records must turn this red --------------
 
-HUB = (ROOT / "docs/HUB_README.md").read_text(encoding="utf-8")
+HUB = "" if ABSENT else (ROOT / "docs/HUB_README.md").read_text(encoding="utf-8")
 
 
 def _flagged(text, allowed):

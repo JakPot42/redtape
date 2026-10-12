@@ -14,6 +14,18 @@ import pytest
 
 ROOT = Path(__file__).resolve().parent.parent
 
+# These tests ask git two things: what the repository's .gitignore says, and what is tracked.
+# Both need a git checkout. A copy that is not one cannot answer either: a copy pulled from
+# the Environments Hub has no .git and no .gitignore. There every test in this file SKIPS
+# and says why. Until 2026-10-12 they failed there with git's exit code 128. In a checkout
+# nothing in this file is ever skipped.
+IN_CHECKOUT = (ROOT / ".git").exists()
+pytestmark = pytest.mark.skipif(
+    not IN_CHECKOUT,
+    reason="needs a git checkout: these tests ask git what the repository's .gitignore says "
+           "and what is tracked, and this copy is not a git repository",
+)
+
 MUST_IGNORE = [
     ".env",
     ".env.save",
