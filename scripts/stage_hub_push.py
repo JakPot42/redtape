@@ -13,10 +13,12 @@ WHAT SHIPS is what someone needs to RUN the environment and judge it:
   redtape/   the taskset, oracle, schemas and scoring
   eval/      the baselines and the ceiling agent - all of which run with no API key
   tests/     the suite, so the claims can be checked rather than believed
+  rules/     the verification-requirements table the scoring lints against
+  scripts/   the command-line tools, because the suite runs them (see DIRS below)
   data/dev/  the split itself, public seed 20260828
   docs/LIMITS.md   linked from the README, and the thing worth reading first
 
-WHAT DOES NOT: cache/ (our evaluation record), results/ (in the repo, linked), scripts/,
+WHAT DOES NOT: cache/ (our evaluation record), results/ (in the repo, linked),
 CLAUDE.md (our process log), and anything hidden.
 """
 

@@ -4,7 +4,13 @@ What is deterministic, what is approximate, and what we do not claim. Written as
 go, not retrofitted at release. Every entry states how it was established.
 
 Engine version for all findings below: `policyengine-us==1.821.4`,
-`policyengine-core==3.31.0`, CPython 3.13.15.
+`policyengine-core==3.31.1`, CPython 3.13.15.
+
+Until 2026-10-12 this line gave `policyengine-core==3.31.0`. That was the version until
+2026-09-01, when the pin moved to 3.31.1 (commit `abb35fe`), and the line was not updated
+with it. Sections 1 to 23 were already written when the pin moved. That commit records
+that the suite passed on both versions and that the oracle's output on the committed
+reference fixture was byte-identical across them.
 
 ---
 
@@ -2698,8 +2704,9 @@ statute that also applies is a second citation, not a substitute.
 
 ## 50. The suite was run in the copy the Hub ships once, before the first publish, and not again
 
-**Status: FIXED in v0.1.8, 2026-10-12, as measured in the staged tree. The check that would
-have caught it is still a step done by hand, not a test.**
+**Status: FIXED in v0.1.8, 2026-10-12, as measured in the staged tree and, after the upload,
+in a copy pulled back from the Hub (the dated update below). The check that would have
+caught it is still a step done by hand, not a test.**
 
 The Hub page tells readers that the test suite ships in the environment source, and
 `scripts/stage_hub_push.py` has said why since 2026-09-04: "Shipping a tree whose suite does
@@ -2774,6 +2781,11 @@ The 41 skips in the staged tree:
   ignore rules, the CI file or the two pages. They are checked in the repository.
 - The staged tree is not the published copy. This entry was written before 0.1.8 was
   uploaded, so it records no run of a copy pulled back from the Hub.
+  **Update, 2026-10-12, after the upload.** Version 0.1.8 was pulled into an empty folder
+  and its suite run there with the repository's locked packages: 384 passed, 41 skipped,
+  none failed, and every test had the same outcome as in the staged tree. Each of the 107
+  pulled files matched commit `97a194d` byte for byte, the page against
+  `docs/HUB_README.md`. One run, on one machine.
 - The figures were measured with the repository's locked packages. The pulled copy carries
   `pyproject.toml` and no lockfile. The packages named there are pinned exactly, but the
   packages those depend on may resolve to other versions in a fresh install.

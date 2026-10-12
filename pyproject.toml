@@ -14,7 +14,8 @@ tags = ["single-turn", "v1", "eval", "abstention", "calibration", "public-benefi
 # EXACT pins, never >=. CLAUDE.md required this and pyproject did not do it: the runtime
 # deps floated, so a Hub install resolved whatever  was current, and v1 API churn
 # is the thing redtape/envs/ exists to contain (LIMITS 33, audit item 1).
-# tests/test_dependency_pins.py fails on any non-== specifier here.
+# test_every_dependency_is_pinned_exactly in tests/test_audit_controls.py fails on any
+# non-== specifier here.
 dependencies = [
     "verifiers==0.3.1",
     "pydantic==2.12.3",
