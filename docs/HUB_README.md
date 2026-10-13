@@ -198,3 +198,9 @@ every report for two days before it was read correctly.
 Source, full README, and the raw results files:
 **https://github.com/JakPot42/redtape** · Apache-2.0 · 425 tests (the repository README
 says what a run reports, and where that was measured)
+
+PolicyEngine is not included here and is not covered by this licence. It is under the
+AGPL-3.0 and is installed separately, through the optional `[generate]` extra. It is needed
+to build a new split, to run the five baselines, and by the tests and scripts that call the
+engine. The answer keys in `data/` are PolicyEngine results, computed when the tasks were
+generated.
