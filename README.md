@@ -694,3 +694,9 @@ calculator at all, separating "had to name the fields" from "had a tool".
 ## License
 
 Apache-2.0.
+
+PolicyEngine is not included here and is not covered by this licence. It is under the
+AGPL-3.0 and is installed separately, through the optional `[generate]` extra. It is needed
+to build a new split, to run the five baselines, and by the tests and scripts that call the
+engine. The answer keys in `data/` are PolicyEngine results, computed when the tasks were
+generated.
