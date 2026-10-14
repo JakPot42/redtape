@@ -1,4 +1,4 @@
-# Redtape v0
+# redtape
 
 > ## Retraction (2026-09-21): the category/quantity finding was an artifact
 >

@@ -1,4 +1,6 @@
-# Redtape: verifiable abstention for public-benefits determinations
+# redtape
+
+Verifiable abstention for public-benefits determinations.
 
 > ## Retraction (2026-09-21): the category/quantity finding was an artifact
 >
