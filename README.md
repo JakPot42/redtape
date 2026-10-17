@@ -322,7 +322,7 @@ all (unguarded `import fcntl`), and the determinism claims depend on the pinned 
 # packaging, and without it the oracle tests and the five baselines cannot run.
 uv sync --extra dev --extra generate
 
-# 425 tests. Run as a module or bare `pytest`; both work, and CI runs the bare form.
+# 427 tests. Run as a module or bare `pytest`; both work, and CI runs the bare form.
 ./.venv/bin/python -m pytest
 
 ./.venv/bin/python scripts/smoke.py                     # one household, with provenance
@@ -344,18 +344,18 @@ No CI result is quoted here: none was observed when the figures below were measu
 workflow's own log is the record. It runs `pytest -rs`, which prints every skip with its
 reason.
 
-The suite collects **425 tests**. What a run reports depends on what is on disk, so each
+The suite collects **427 tests**. What a run reports depends on what is on disk, so each
 figure names where it was measured. Both were measured locally on 2026-10-11 with CPython
 3.13.15. The project pins the 3.13 line, not one patch release:
 
 - **A clean checkout**, which is what CI and anyone who clones the repository gets:
-  **422 passed, 3 skipped**. The skipped tests are the ones whose subject is a file kept out
+  **424 passed, 3 skipped**. The skipped tests are the ones whose subject is a file kept out
   of the public tree on purpose: the held-out manifest and the internal working notes.
 - **The author's working folder**, which also holds the gitignored held-out split and
-  `CLAUDE.md`: **425 passed, 0 skipped**.
+  `CLAUDE.md`: **427 passed, 0 skipped**.
 
 A copy pulled from the Environments Hub (`prime env pull`) reports
-**384 passed, 41 skipped**. It is not a git repository, its `README.md` is the Hub page, and
+**386 passed, 41 skipped**. It is not a git repository, its `README.md` is the Hub page, and
 it carries no `.gitignore`, CI workflow, `results/` or `docs/HUB_README.md`, so the 38 checks
 on those skip and name what is missing; the other 3 are the clean checkout's. Measured on
 2026-10-12 in the tree `scripts/stage_hub_push.py` builds for upload. In version 0.1.7 the
