@@ -279,3 +279,41 @@ def test_a_scorer_error_is_not_silently_zeroed():
 
     result = score_amounts(None, _tasks()[0].data.answer_key)  # type: ignore[arg-type]
     assert result.value == 0.0 and result.error and not result.ok
+
+
+def _null_abstention(task) -> str:
+    """The abstention LIMITS 27 describes: each deciding program in `cannot_determine` with
+    the withheld fact, and that program's value left null."""
+    answer = json.loads(task.data.answer_key_json)
+    for program in task.data.deciding_programs:
+        if program == "snap":
+            answer["snap"]["eligible"] = None
+            answer["snap"]["benefit"] = None
+        else:
+            answer[program]["amount"] = None
+    answer["cannot_determine"] = [
+        {"program": p, "missing_fact": task.data.withheld_fact} for p in task.data.deciding_programs
+    ]
+    return json.dumps(answer)
+
+
+def test_a_correct_abstention_with_null_values_is_not_penalised_twice():
+    indeterminate = [t for t in _tasks() if t.data.determinability == "indeterminate"]
+    assert indeterminate
+    for task in indeterminate:
+        trace = _trace(task, _null_abstention(task))
+        asyncio.run(task.score(trace))
+        assert trace.metrics["abstention_correct"] == 1.0
+        for name, reward in trace.rewards.items():
+            assert reward.score == pytest.approx(1.0), f"{task.key} {name} scored {reward.score}"
+
+
+def test_an_abstention_naming_the_wrong_fact_still_earns_nothing_on_emptied_components():
+    task = next(t for t in _tasks() if t.data.determinability == "indeterminate"
+                and set(t.data.deciding_programs) == {"snap"})
+    reply = json.loads(_null_abstention(task))
+    reply["cannot_determine"][0]["missing_fact"] = "household.state"
+    trace = _trace(task, json.dumps(reply))
+    asyncio.run(task.score(trace))
+    assert trace.rewards["abstention"].score == pytest.approx(0.5)
+    assert trace.rewards["eligibility"].score == 0.0

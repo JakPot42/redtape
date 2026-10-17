@@ -177,6 +177,26 @@ class T1Task(Task[T1Data, State, T1TaskConfig]):
             trace.record_metric("scorer_error", 1.0)
         return scored.value
 
+    def _excluded_component(self, trace: Trace, name: str, scored) -> float:
+        """Amounts and eligibility drop every program the answer abstained on (LIMITS 27).
+        When that leaves nothing to compare, the core scorer returns 0.0, which keeps
+        blanket abstention unrewarded. But on an indeterminate task where the abstention is
+        exactly right, that 0.0 is the second penalty LIMITS 27 removes: the abstention
+        scorer has already graded the decision. So in that one case the component is 1.0."""
+        value = self._record(trace, name, scored)
+        if not scored.ok or scored.detail.get("per_program"):
+            return value
+        abstained = score_abstention(
+            self._parsed(trace).answer,
+            Determinability(self.data.determinability),
+            tuple(self.data.deciding_programs),
+            self.data.withheld_fact,
+        )
+        if abstained.ok and abstained.value == 1.0:
+            trace.info[f"{name}_detail"] = {**scored.detail, "excluded": "correct abstention"}
+            return 1.0
+        return value
+
     def _gate(self, trace: Trace) -> bool:
         """The pass/fail filter that precedes all scoring.
 
@@ -308,7 +328,7 @@ class T1Task(Task[T1Data, State, T1TaskConfig]):
     async def amounts(self, trace: Trace) -> float:
         if not self._gate(trace):
             return 0.0
-        return self._record(
+        return self._excluded_component(
             trace, "amounts",
             score_amounts(self._parsed(trace).answer, self.data.answer_key,
                           self.config.tolerance),
@@ -318,7 +338,7 @@ class T1Task(Task[T1Data, State, T1TaskConfig]):
     async def eligibility(self, trace: Trace) -> float:
         if not self._gate(trace):
             return 0.0
-        return self._record(
+        return self._excluded_component(
             trace, "eligibility",
             score_eligibility(self._parsed(trace).answer, self.data.answer_key),
         )
