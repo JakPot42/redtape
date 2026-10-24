@@ -345,7 +345,7 @@ workflow's own log is the record. It runs `pytest -rs`, which prints every skip 
 reason.
 
 The suite collects **427 tests**. What a run reports depends on what is on disk, so each
-figure names where it was measured. Both were measured locally on 2026-10-11 with CPython
+figure names where it was measured. Both were measured locally on 2026-10-24 with CPython
 3.13.15. The project pins the 3.13 line, not one patch release:
 
 - **A clean checkout**, which is what CI and anyone who clones the repository gets:
@@ -358,7 +358,8 @@ A copy pulled from the Environments Hub (`prime env pull`) reports
 **386 passed, 41 skipped**. It is not a git repository, its `README.md` is the Hub page, and
 it carries no `.gitignore`, CI workflow, `results/` or `docs/HUB_README.md`, so the 38 checks
 on those skip and name what is missing; the other 3 are the clean checkout's. Measured on
-2026-10-12 in the tree `scripts/stage_hub_push.py` builds for upload. In version 0.1.7 the
+2026-10-24 in the tree `scripts/stage_hub_push.py` builds for upload; the version on the Hub
+now (0.1.8) predates pull request #1 and its two tests. In version 0.1.7 the
 suite did not pass in a pulled copy, and it had not been run there since before the first
 publish: [`docs/LIMITS.md`](docs/LIMITS.md) §50.
 
@@ -599,7 +600,7 @@ information", and it is what the data supports.
   backed only by the engine agreeing with itself is the circularity this project exists to
   avoid.
 
-**Read [`docs/LIMITS.md`](docs/LIMITS.md) before citing any number here.** 50 sections,
+**Read [`docs/LIMITS.md`](docs/LIMITS.md) before citing any number here.** 53 sections,
 written as the work happened rather than retrofitted, stating what is *not* validated at
 least as carefully as what is, including several sections retracting our own errors, of
 which §43 and §44 retract this project's headline claim.

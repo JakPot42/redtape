@@ -1706,7 +1706,7 @@
     ]
   },
   "composite": {
-    "value": 0.8756577480490524,
+    "value": 0.8940482162764772,
     "n": 1196,
     "note": "Weighted sum (amounts 0.325, eligibility 0.215, periods 0.110, abstention 0.350) behind a pass/fail gate. Reported for completeness. It is NOT the headline: quote the three headline fields instead."
   },
@@ -1787,7 +1787,14 @@
       }
     },
     "redacted": true,
-    "redaction_note": "Seed and all seed-derived identifiers removed. Tasks are identified by task_hash, the library's content hash of the task's wire data."
+    "redaction_note": "Seed and all seed-derived identifiers removed. Tasks are identified by task_hash, the library's content hash of the task's wire data.",
+    "rescored": {
+      "on": "2026-10-24",
+      "how": "from the committed response cache through eval/run_eval.py; $0, no request sent",
+      "scorer": "main after pull request #1 (bfea34a)",
+      "changed": "the composite and the per-task rewards; every headline metric is unchanged",
+      "see": "docs/LIMITS.md \u00a751"
+    }
   },
   "per_task": [
     {
@@ -1815,11 +1822,11 @@
       "gate_passed": true,
       "exact_match": false,
       "abstention_correct": true,
-      "composite": 0.785,
+      "composite": 1.0,
       "rewards": {
         "abstention": 1.0,
         "amounts": 1.0,
-        "eligibility": 0.0,
+        "eligibility": 1.0,
         "periods": 1.0
       },
       "parse_failure": "none",
@@ -2005,11 +2012,11 @@
       "gate_passed": true,
       "exact_match": false,
       "abstention_correct": true,
-      "composite": 0.45999999999999996,
+      "composite": 1.0,
       "rewards": {
         "abstention": 1.0,
-        "amounts": 0.0,
-        "eligibility": 0.0,
+        "amounts": 1.0,
+        "eligibility": 1.0,
         "periods": 1.0
       },
       "parse_failure": "none",
@@ -2195,11 +2202,11 @@
       "gate_passed": true,
       "exact_match": false,
       "abstention_correct": true,
-      "composite": 0.45999999999999996,
+      "composite": 1.0,
       "rewards": {
         "abstention": 1.0,
-        "amounts": 0.0,
-        "eligibility": 0.0,
+        "amounts": 1.0,
+        "eligibility": 1.0,
         "periods": 1.0
       },
       "parse_failure": "none",
@@ -2252,11 +2259,11 @@
       "gate_passed": true,
       "exact_match": false,
       "abstention_correct": true,
-      "composite": 0.6224999999999999,
+      "composite": 0.8375,
       "rewards": {
         "abstention": 1.0,
         "amounts": 0.5,
-        "eligibility": 0.0,
+        "eligibility": 1.0,
         "periods": 1.0
       },
       "parse_failure": "none",
@@ -2271,11 +2278,11 @@
       "gate_passed": true,
       "exact_match": false,
       "abstention_correct": true,
-      "composite": 0.785,
+      "composite": 1.0,
       "rewards": {
         "abstention": 1.0,
         "amounts": 1.0,
-        "eligibility": 0.0,
+        "eligibility": 1.0,
         "periods": 1.0
       },
       "parse_failure": "none",
@@ -2461,11 +2468,11 @@
       "gate_passed": true,
       "exact_match": false,
       "abstention_correct": true,
-      "composite": 0.6224999999999999,
+      "composite": 0.8375,
       "rewards": {
         "abstention": 1.0,
         "amounts": 0.5,
-        "eligibility": 0.0,
+        "eligibility": 1.0,
         "periods": 1.0
       },
       "parse_failure": "none",
@@ -2765,11 +2772,11 @@
       "gate_passed": true,
       "exact_match": false,
       "abstention_correct": true,
-      "composite": 0.45999999999999996,
+      "composite": 1.0,
       "rewards": {
         "abstention": 1.0,
-        "amounts": 0.0,
-        "eligibility": 0.0,
+        "amounts": 1.0,
+        "eligibility": 1.0,
         "periods": 1.0
       },
       "parse_failure": "none",
@@ -3221,11 +3228,11 @@
       "gate_passed": true,
       "exact_match": false,
       "abstention_correct": true,
-      "composite": 0.6224999999999999,
+      "composite": 0.8375,
       "rewards": {
         "abstention": 1.0,
         "amounts": 0.5,
-        "eligibility": 0.0,
+        "eligibility": 1.0,
         "periods": 1.0
       },
       "parse_failure": "none",
@@ -3525,11 +3532,11 @@
       "gate_passed": true,
       "exact_match": false,
       "abstention_correct": true,
-      "composite": 0.785,
+      "composite": 1.0,
       "rewards": {
         "abstention": 1.0,
         "amounts": 1.0,
-        "eligibility": 0.0,
+        "eligibility": 1.0,
         "periods": 1.0
       },
       "parse_failure": "none",
@@ -3715,11 +3722,11 @@
       "gate_passed": true,
       "exact_match": false,
       "abstention_correct": true,
-      "composite": 0.785,
+      "composite": 1.0,
       "rewards": {
         "abstention": 1.0,
         "amounts": 1.0,
-        "eligibility": 0.0,
+        "eligibility": 1.0,
         "periods": 1.0
       },
       "parse_failure": "none",
@@ -4019,11 +4026,11 @@
       "gate_passed": true,
       "exact_match": false,
       "abstention_correct": true,
-      "composite": 0.785,
+      "composite": 1.0,
       "rewards": {
         "abstention": 1.0,
         "amounts": 1.0,
-        "eligibility": 0.0,
+        "eligibility": 1.0,
         "periods": 1.0
       },
       "parse_failure": "none",
@@ -4475,11 +4482,11 @@
       "gate_passed": true,
       "exact_match": false,
       "abstention_correct": true,
-      "composite": 0.45999999999999996,
+      "composite": 1.0,
       "rewards": {
         "abstention": 1.0,
-        "amounts": 0.0,
-        "eligibility": 0.0,
+        "amounts": 1.0,
+        "eligibility": 1.0,
         "periods": 1.0
       },
       "parse_failure": "none",
@@ -5235,11 +5242,11 @@
       "gate_passed": true,
       "exact_match": false,
       "abstention_correct": true,
-      "composite": 0.45999999999999996,
+      "composite": 1.0,
       "rewards": {
         "abstention": 1.0,
-        "amounts": 0.0,
-        "eligibility": 0.0,
+        "amounts": 1.0,
+        "eligibility": 1.0,
         "periods": 1.0
       },
       "parse_failure": "none",
@@ -5615,11 +5622,11 @@
       "gate_passed": true,
       "exact_match": false,
       "abstention_correct": true,
-      "composite": 0.45999999999999996,
+      "composite": 1.0,
       "rewards": {
         "abstention": 1.0,
-        "amounts": 0.0,
-        "eligibility": 0.0,
+        "amounts": 1.0,
+        "eligibility": 1.0,
         "periods": 1.0
       },
       "parse_failure": "none",
@@ -5805,11 +5812,11 @@
       "gate_passed": true,
       "exact_match": false,
       "abstention_correct": true,
-      "composite": 0.785,
+      "composite": 1.0,
       "rewards": {
         "abstention": 1.0,
         "amounts": 1.0,
-        "eligibility": 0.0,
+        "eligibility": 1.0,
         "periods": 1.0
       },
       "parse_failure": "none",
@@ -6375,11 +6382,11 @@
       "gate_passed": true,
       "exact_match": false,
       "abstention_correct": true,
-      "composite": 0.45999999999999996,
+      "composite": 1.0,
       "rewards": {
         "abstention": 1.0,
-        "amounts": 0.0,
-        "eligibility": 0.0,
+        "amounts": 1.0,
+        "eligibility": 1.0,
         "periods": 1.0
       },
       "parse_failure": "none",
@@ -6451,11 +6458,11 @@
       "gate_passed": true,
       "exact_match": false,
       "abstention_correct": true,
-      "composite": 0.785,
+      "composite": 1.0,
       "rewards": {
         "abstention": 1.0,
         "amounts": 1.0,
-        "eligibility": 0.0,
+        "eligibility": 1.0,
         "periods": 1.0
       },
       "parse_failure": "none",
@@ -6565,11 +6572,11 @@
       "gate_passed": true,
       "exact_match": false,
       "abstention_correct": true,
-      "composite": 0.45999999999999996,
+      "composite": 1.0,
       "rewards": {
         "abstention": 1.0,
-        "amounts": 0.0,
-        "eligibility": 0.0,
+        "amounts": 1.0,
+        "eligibility": 1.0,
         "periods": 1.0
       },
       "parse_failure": "none",
@@ -6679,11 +6686,11 @@
       "gate_passed": true,
       "exact_match": false,
       "abstention_correct": true,
-      "composite": 0.785,
+      "composite": 1.0,
       "rewards": {
         "abstention": 1.0,
         "amounts": 1.0,
-        "eligibility": 0.0,
+        "eligibility": 1.0,
         "periods": 1.0
       },
       "parse_failure": "none",
@@ -6755,11 +6762,11 @@
       "gate_passed": true,
       "exact_match": false,
       "abstention_correct": true,
-      "composite": 0.45999999999999996,
+      "composite": 1.0,
       "rewards": {
         "abstention": 1.0,
-        "amounts": 0.0,
-        "eligibility": 0.0,
+        "amounts": 1.0,
+        "eligibility": 1.0,
         "periods": 1.0
       },
       "parse_failure": "none",
@@ -7515,11 +7522,11 @@
       "gate_passed": true,
       "exact_match": false,
       "abstention_correct": true,
-      "composite": 0.45999999999999996,
+      "composite": 1.0,
       "rewards": {
         "abstention": 1.0,
-        "amounts": 0.0,
-        "eligibility": 0.0,
+        "amounts": 1.0,
+        "eligibility": 1.0,
         "periods": 1.0
       },
       "parse_failure": "none",
@@ -7629,11 +7636,11 @@
       "gate_passed": true,
       "exact_match": false,
       "abstention_correct": true,
-      "composite": 0.785,
+      "composite": 1.0,
       "rewards": {
         "abstention": 1.0,
         "amounts": 1.0,
-        "eligibility": 0.0,
+        "eligibility": 1.0,
         "periods": 1.0
       },
       "parse_failure": "none",
@@ -7895,11 +7902,11 @@
       "gate_passed": true,
       "exact_match": false,
       "abstention_correct": true,
-      "composite": 0.45999999999999996,
+      "composite": 1.0,
       "rewards": {
         "abstention": 1.0,
-        "amounts": 0.0,
-        "eligibility": 0.0,
+        "amounts": 1.0,
+        "eligibility": 1.0,
         "periods": 1.0
       },
       "parse_failure": "none",
@@ -8275,11 +8282,11 @@
       "gate_passed": true,
       "exact_match": false,
       "abstention_correct": true,
-      "composite": 0.45999999999999996,
+      "composite": 1.0,
       "rewards": {
         "abstention": 1.0,
-        "amounts": 0.0,
-        "eligibility": 0.0,
+        "amounts": 1.0,
+        "eligibility": 1.0,
         "periods": 1.0
       },
       "parse_failure": "none",
@@ -8351,11 +8358,11 @@
       "gate_passed": true,
       "exact_match": false,
       "abstention_correct": true,
-      "composite": 0.785,
+      "composite": 1.0,
       "rewards": {
         "abstention": 1.0,
         "amounts": 1.0,
-        "eligibility": 0.0,
+        "eligibility": 1.0,
         "periods": 1.0
       },
       "parse_failure": "none",
@@ -9016,11 +9023,11 @@
       "gate_passed": true,
       "exact_match": false,
       "abstention_correct": true,
-      "composite": 0.45999999999999996,
+      "composite": 1.0,
       "rewards": {
         "abstention": 1.0,
-        "amounts": 0.0,
-        "eligibility": 0.0,
+        "amounts": 1.0,
+        "eligibility": 1.0,
         "periods": 1.0
       },
       "parse_failure": "none",
@@ -9073,11 +9080,11 @@
       "gate_passed": true,
       "exact_match": false,
       "abstention_correct": true,
-      "composite": 0.785,
+      "composite": 1.0,
       "rewards": {
         "abstention": 1.0,
         "amounts": 1.0,
-        "eligibility": 0.0,
+        "eligibility": 1.0,
         "periods": 1.0
       },
       "parse_failure": "none",
@@ -9320,11 +9327,11 @@
       "gate_passed": true,
       "exact_match": false,
       "abstention_correct": true,
-      "composite": 0.785,
+      "composite": 1.0,
       "rewards": {
         "abstention": 1.0,
         "amounts": 1.0,
-        "eligibility": 0.0,
+        "eligibility": 1.0,
         "periods": 1.0
       },
       "parse_failure": "none",
@@ -9491,11 +9498,11 @@
       "gate_passed": true,
       "exact_match": false,
       "abstention_correct": true,
-      "composite": 0.45999999999999996,
+      "composite": 1.0,
       "rewards": {
         "abstention": 1.0,
-        "amounts": 0.0,
-        "eligibility": 0.0,
+        "amounts": 1.0,
+        "eligibility": 1.0,
         "periods": 1.0
       },
       "parse_failure": "none",
@@ -9757,11 +9764,11 @@
       "gate_passed": true,
       "exact_match": false,
       "abstention_correct": true,
-      "composite": 0.45999999999999996,
+      "composite": 1.0,
       "rewards": {
         "abstention": 1.0,
-        "amounts": 0.0,
-        "eligibility": 0.0,
+        "amounts": 1.0,
+        "eligibility": 1.0,
         "periods": 1.0
       },
       "parse_failure": "none",
@@ -10327,11 +10334,11 @@
       "gate_passed": true,
       "exact_match": false,
       "abstention_correct": true,
-      "composite": 0.45999999999999996,
+      "composite": 1.0,
       "rewards": {
         "abstention": 1.0,
-        "amounts": 0.0,
-        "eligibility": 0.0,
+        "amounts": 1.0,
+        "eligibility": 1.0,
         "periods": 1.0
       },
       "parse_failure": "none",
@@ -10460,11 +10467,11 @@
       "gate_passed": true,
       "exact_match": false,
       "abstention_correct": true,
-      "composite": 0.45999999999999996,
+      "composite": 1.0,
       "rewards": {
         "abstention": 1.0,
-        "amounts": 0.0,
-        "eligibility": 0.0,
+        "amounts": 1.0,
+        "eligibility": 1.0,
         "periods": 1.0
       },
       "parse_failure": "none",
@@ -10745,11 +10752,11 @@
       "gate_passed": true,
       "exact_match": false,
       "abstention_correct": true,
-      "composite": 0.785,
+      "composite": 1.0,
       "rewards": {
         "abstention": 1.0,
         "amounts": 1.0,
-        "eligibility": 0.0,
+        "eligibility": 1.0,
         "periods": 1.0
       },
       "parse_failure": "none",
@@ -10821,11 +10828,11 @@
       "gate_passed": true,
       "exact_match": false,
       "abstention_correct": true,
-      "composite": 0.45999999999999996,
+      "composite": 1.0,
       "rewards": {
         "abstention": 1.0,
-        "amounts": 0.0,
-        "eligibility": 0.0,
+        "amounts": 1.0,
+        "eligibility": 1.0,
         "periods": 1.0
       },
       "parse_failure": "none",
@@ -10878,11 +10885,11 @@
       "gate_passed": true,
       "exact_match": false,
       "abstention_correct": true,
-      "composite": 0.785,
+      "composite": 1.0,
       "rewards": {
         "abstention": 1.0,
         "amounts": 1.0,
-        "eligibility": 0.0,
+        "eligibility": 1.0,
         "periods": 1.0
       },
       "parse_failure": "none",
@@ -10935,11 +10942,11 @@
       "gate_passed": true,
       "exact_match": false,
       "abstention_correct": true,
-      "composite": 0.45999999999999996,
+      "composite": 1.0,
       "rewards": {
         "abstention": 1.0,
-        "amounts": 0.0,
-        "eligibility": 0.0,
+        "amounts": 1.0,
+        "eligibility": 1.0,
         "periods": 1.0
       },
       "parse_failure": "none",
@@ -11619,11 +11626,11 @@
       "gate_passed": true,
       "exact_match": false,
       "abstention_correct": true,
-      "composite": 0.785,
+      "composite": 1.0,
       "rewards": {
         "abstention": 1.0,
         "amounts": 1.0,
-        "eligibility": 0.0,
+        "eligibility": 1.0,
         "periods": 1.0
       },
       "parse_failure": "none",
@@ -11866,11 +11873,11 @@
       "gate_passed": true,
       "exact_match": false,
       "abstention_correct": true,
-      "composite": 0.45999999999999996,
+      "composite": 1.0,
       "rewards": {
         "abstention": 1.0,
-        "amounts": 0.0,
-        "eligibility": 0.0,
+        "amounts": 1.0,
+        "eligibility": 1.0,
         "periods": 1.0
       },
       "parse_failure": "none",
@@ -12056,11 +12063,11 @@
       "gate_passed": true,
       "exact_match": false,
       "abstention_correct": true,
-      "composite": 0.785,
+      "composite": 1.0,
       "rewards": {
         "abstention": 1.0,
         "amounts": 1.0,
-        "eligibility": 0.0,
+        "eligibility": 1.0,
         "periods": 1.0
       },
       "parse_failure": "none",
@@ -12132,11 +12139,11 @@
       "gate_passed": true,
       "exact_match": false,
       "abstention_correct": true,
-      "composite": 0.45999999999999996,
+      "composite": 1.0,
       "rewards": {
         "abstention": 1.0,
-        "amounts": 0.0,
-        "eligibility": 0.0,
+        "amounts": 1.0,
+        "eligibility": 1.0,
         "periods": 1.0
       },
       "parse_failure": "none",
@@ -12360,11 +12367,11 @@
       "gate_passed": true,
       "exact_match": false,
       "abstention_correct": true,
-      "composite": 0.45999999999999996,
+      "composite": 1.0,
       "rewards": {
         "abstention": 1.0,
-        "amounts": 0.0,
-        "eligibility": 0.0,
+        "amounts": 1.0,
+        "eligibility": 1.0,
         "periods": 1.0
       },
       "parse_failure": "none",
@@ -12569,11 +12576,11 @@
       "gate_passed": true,
       "exact_match": false,
       "abstention_correct": true,
-      "composite": 0.785,
+      "composite": 1.0,
       "rewards": {
         "abstention": 1.0,
         "amounts": 1.0,
-        "eligibility": 0.0,
+        "eligibility": 1.0,
         "periods": 1.0
       },
       "parse_failure": "none",
@@ -12759,11 +12766,11 @@
       "gate_passed": true,
       "exact_match": false,
       "abstention_correct": true,
-      "composite": 0.45999999999999996,
+      "composite": 1.0,
       "rewards": {
         "abstention": 1.0,
-        "amounts": 0.0,
-        "eligibility": 0.0,
+        "amounts": 1.0,
+        "eligibility": 1.0,
         "periods": 1.0
       },
       "parse_failure": "none",
@@ -12930,11 +12937,11 @@
       "gate_passed": true,
       "exact_match": false,
       "abstention_correct": true,
-      "composite": 0.6224999999999999,
+      "composite": 0.8375,
       "rewards": {
         "abstention": 1.0,
         "amounts": 0.5,
-        "eligibility": 0.0,
+        "eligibility": 1.0,
         "periods": 1.0
       },
       "parse_failure": "none",
@@ -13082,11 +13089,11 @@
       "gate_passed": true,
       "exact_match": false,
       "abstention_correct": true,
-      "composite": 0.785,
+      "composite": 1.0,
       "rewards": {
         "abstention": 1.0,
         "amounts": 1.0,
-        "eligibility": 0.0,
+        "eligibility": 1.0,
         "periods": 1.0
       },
       "parse_failure": "none",
@@ -13196,10 +13203,10 @@
       "gate_passed": true,
       "exact_match": false,
       "abstention_correct": true,
-      "composite": 0.45999999999999996,
+      "composite": 0.785,
       "rewards": {
         "abstention": 1.0,
-        "amounts": 0.0,
+        "amounts": 1.0,
         "eligibility": 0.0,
         "periods": 1.0
       },
@@ -13462,11 +13469,11 @@
       "gate_passed": true,
       "exact_match": false,
       "abstention_correct": true,
-      "composite": 0.45999999999999996,
+      "composite": 1.0,
       "rewards": {
         "abstention": 1.0,
-        "amounts": 0.0,
-        "eligibility": 0.0,
+        "amounts": 1.0,
+        "eligibility": 1.0,
         "periods": 1.0
       },
       "parse_failure": "none",
@@ -13500,11 +13507,11 @@
       "gate_passed": true,
       "exact_match": false,
       "abstention_correct": true,
-      "composite": 0.785,
+      "composite": 1.0,
       "rewards": {
         "abstention": 1.0,
         "amounts": 1.0,
-        "eligibility": 0.0,
+        "eligibility": 1.0,
         "periods": 1.0
       },
       "parse_failure": "none",
@@ -13595,11 +13602,11 @@
       "gate_passed": true,
       "exact_match": false,
       "abstention_correct": true,
-      "composite": 0.785,
+      "composite": 1.0,
       "rewards": {
         "abstention": 1.0,
         "amounts": 1.0,
-        "eligibility": 0.0,
+        "eligibility": 1.0,
         "periods": 1.0
       },
       "parse_failure": "none",
@@ -13690,11 +13697,11 @@
       "gate_passed": true,
       "exact_match": false,
       "abstention_correct": true,
-      "composite": 0.45999999999999996,
+      "composite": 1.0,
       "rewards": {
         "abstention": 1.0,
-        "amounts": 0.0,
-        "eligibility": 0.0,
+        "amounts": 1.0,
+        "eligibility": 1.0,
         "periods": 1.0
       },
       "parse_failure": "none",
@@ -13880,11 +13887,11 @@
       "gate_passed": true,
       "exact_match": false,
       "abstention_correct": true,
-      "composite": 0.785,
+      "composite": 1.0,
       "rewards": {
         "abstention": 1.0,
         "amounts": 1.0,
-        "eligibility": 0.0,
+        "eligibility": 1.0,
         "periods": 1.0
       },
       "parse_failure": "none",
@@ -13918,11 +13925,11 @@
       "gate_passed": true,
       "exact_match": false,
       "abstention_correct": true,
-      "composite": 0.785,
+      "composite": 1.0,
       "rewards": {
         "abstention": 1.0,
         "amounts": 1.0,
-        "eligibility": 0.0,
+        "eligibility": 1.0,
         "periods": 1.0
       },
       "parse_failure": "none",
@@ -13937,11 +13944,11 @@
       "gate_passed": true,
       "exact_match": false,
       "abstention_correct": true,
-      "composite": 0.785,
+      "composite": 1.0,
       "rewards": {
         "abstention": 1.0,
         "amounts": 1.0,
-        "eligibility": 0.0,
+        "eligibility": 1.0,
         "periods": 1.0
       },
       "parse_failure": "none",
@@ -14564,11 +14571,11 @@
       "gate_passed": true,
       "exact_match": false,
       "abstention_correct": true,
-      "composite": 0.785,
+      "composite": 1.0,
       "rewards": {
         "abstention": 1.0,
         "amounts": 1.0,
-        "eligibility": 0.0,
+        "eligibility": 1.0,
         "periods": 1.0
       },
       "parse_failure": "none",
@@ -14811,11 +14818,11 @@
       "gate_passed": true,
       "exact_match": false,
       "abstention_correct": true,
-      "composite": 0.6224999999999999,
+      "composite": 0.8375,
       "rewards": {
         "abstention": 1.0,
         "amounts": 0.5,
-        "eligibility": 0.0,
+        "eligibility": 1.0,
         "periods": 1.0
       },
       "parse_failure": "none",
@@ -14982,11 +14989,11 @@
       "gate_passed": true,
       "exact_match": false,
       "abstention_correct": true,
-      "composite": 0.785,
+      "composite": 1.0,
       "rewards": {
         "abstention": 1.0,
         "amounts": 1.0,
-        "eligibility": 0.0,
+        "eligibility": 1.0,
         "periods": 1.0
       },
       "parse_failure": "none",
@@ -15381,11 +15388,11 @@
       "gate_passed": true,
       "exact_match": false,
       "abstention_correct": true,
-      "composite": 0.785,
+      "composite": 1.0,
       "rewards": {
         "abstention": 1.0,
         "amounts": 1.0,
-        "eligibility": 0.0,
+        "eligibility": 1.0,
         "periods": 1.0
       },
       "parse_failure": "none",
@@ -15913,11 +15920,11 @@
       "gate_passed": true,
       "exact_match": false,
       "abstention_correct": true,
-      "composite": 0.6224999999999999,
+      "composite": 0.8375,
       "rewards": {
         "abstention": 1.0,
         "amounts": 0.5,
-        "eligibility": 0.0,
+        "eligibility": 1.0,
         "periods": 1.0
       },
       "parse_failure": "none",
@@ -16236,11 +16243,11 @@
       "gate_passed": true,
       "exact_match": false,
       "abstention_correct": true,
-      "composite": 0.785,
+      "composite": 1.0,
       "rewards": {
         "abstention": 1.0,
         "amounts": 1.0,
-        "eligibility": 0.0,
+        "eligibility": 1.0,
         "periods": 1.0
       },
       "parse_failure": "none",
@@ -16350,11 +16357,11 @@
       "gate_passed": true,
       "exact_match": false,
       "abstention_correct": true,
-      "composite": 0.785,
+      "composite": 1.0,
       "rewards": {
         "abstention": 1.0,
         "amounts": 1.0,
-        "eligibility": 0.0,
+        "eligibility": 1.0,
         "periods": 1.0
       },
       "parse_failure": "none",
@@ -16369,11 +16376,11 @@
       "gate_passed": true,
       "exact_match": false,
       "abstention_correct": true,
-      "composite": 0.6224999999999999,
+      "composite": 0.8375,
       "rewards": {
         "abstention": 1.0,
         "amounts": 0.5,
-        "eligibility": 0.0,
+        "eligibility": 1.0,
         "periods": 1.0
       },
       "parse_failure": "none",
@@ -16578,11 +16585,11 @@
       "gate_passed": true,
       "exact_match": false,
       "abstention_correct": true,
-      "composite": 0.785,
+      "composite": 1.0,
       "rewards": {
         "abstention": 1.0,
         "amounts": 1.0,
-        "eligibility": 0.0,
+        "eligibility": 1.0,
         "periods": 1.0
       },
       "parse_failure": "none",
@@ -16635,11 +16642,11 @@
       "gate_passed": true,
       "exact_match": false,
       "abstention_correct": true,
-      "composite": 0.785,
+      "composite": 1.0,
       "rewards": {
         "abstention": 1.0,
         "amounts": 1.0,
-        "eligibility": 0.0,
+        "eligibility": 1.0,
         "periods": 1.0
       },
       "parse_failure": "none",
@@ -16768,11 +16775,11 @@
       "gate_passed": true,
       "exact_match": false,
       "abstention_correct": true,
-      "composite": 0.785,
+      "composite": 1.0,
       "rewards": {
         "abstention": 1.0,
         "amounts": 1.0,
-        "eligibility": 0.0,
+        "eligibility": 1.0,
         "periods": 1.0
       },
       "parse_failure": "none",

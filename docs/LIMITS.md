@@ -2811,3 +2811,86 @@ published version into an empty folder and run it again. Quote both outcomes, wi
 skips. **This is a step done by hand. A check that runs the suite in the staged tree and
 refuses to publish on a failure is intended, NOT built**, stated as intended per §32, not as
 a control in force.
+
+## 51. A correct abstention with null values scored 0 on eligibility and amounts
+
+**Status: FIXED 2026-10-24 by pull request #1 from @Super-Eric (commit bfea34a, merged
+unchanged). No headline moves: exact-match, abstention and pair-consistency are identical on
+every task of every published run. Only the secondary composite changes.**
+
+§27 says a program the answer leaves null is excluded from the amounts and eligibility
+scores, so that a correct abstention is not penalised twice. `score_amounts` and
+`score_eligibility` in `redtape/scoring/core.py` do exclude it, and then return 0.0 when
+nothing is left to compare. That 0.0 is the guard against blanket abstention. On an
+indeterminate task where the abstention is exactly right it is the second penalty §27
+removes: a model that abstained as instructed, naming the withheld fact and leaving the value
+null, got eligibility 0.0 whenever SNAP decided the task, and amounts 0.0 as well when all
+three programs did.
+
+**The fix.** `T1Task` gives an emptied component 1.0 only when `score_abstention` rates the
+abstention fully correct. Blanket abstention, needless abstention and an abstention naming the
+wrong fact score as before. `core.py` is unchanged. Two tests in `tests/test_env.py` pin it:
+every indeterminate smoke task scores 1.0 on every reward with a correct null abstention, and
+an abstention naming the wrong fact still earns nothing on the emptied components.
+
+**Measured on all 1,200 dev tasks, before and after** (the contributor's figures, reproduced):
+
+| reply | before | after |
+|---|---:|---:|
+| correct null abstention, 276 indeterminate tasks | 0.717 (1.0 on 13) | 1.000 |
+| the same abstention with a fixed guess beside it | 0.822 | 0.822 |
+| no abstention, the key's values | 0.650 | 0.650 |
+
+263 tasks change: eligibility 0 to 1 on all of them, and amounts 0 to 1 on the 66 where all
+three programs decide. No determinate or incomplete-determinate task moves, and neither does
+any baseline, pair diagnostic or the ceiling agent, which gives the key's values beside its
+abstention and was never affected.
+
+**The published runs.** Re-scored from the committed response cache through
+`eval/run_eval.py` on 2026-10-24, $0, no request sent:
+
+| run | composite before | after | tasks that change |
+|---|---:|---:|---:|
+| Claude Opus 5.5 | 0.876 | 0.913 | 125 |
+| Claude Opus 5 | 0.876 | 0.894 | 64 |
+| GPT-5.6 Sol | 0.883 | 0.906 | 86 |
+
+The composite order of the first and third runs swaps. No page ranks by the composite, and
+none quotes it. In the three results files only the composite and the per-task rewards
+changed. Each file keeps its original timestamp, usage and budget, which describe the run
+that produced the replies, and gains a `run.rescored` block saying when and why it was
+re-scored. The files from 2026-09-02 to 2026-09-04 score the withdrawn corpus, whose tasks are
+no longer in `data/dev/`, and were not re-scored.
+
+## 52. Through the verifiers path, the model never sees the system prompt
+
+**Status: OPEN, reported 2026-10-17 by @Super-Eric in pull request #1 and reproduced
+2026-10-24. No published result is affected. A run through the Environments Hub or any
+other verifiers harness before the fix is NOT comparable with the published results.**
+
+`T1Taskset` loads every task with `data.system_prompt` set to None, and the verifiers
+harnesses attach a system message only from that field or from the taskset config. The user
+prompt is the case file alone: it carries no answer schema, no list of fact names and no
+instruction to abstain. Measured on all 1,200 dev tasks: none of their prompts contains
+`cannot_determine`, `missing_fact`, `period_label` or "single JSON object". A model run that
+way is asked to answer a form it has not been shown.
+
+The published runs did not go that way. `eval/run_eval.py` sends `SYSTEM_PROMPT` itself; its
+cache key includes the system text, and every reply behind the published results was served
+from the cache under the current `SYSTEM_PROMPT`. Until the fix lands, setting the taskset
+config's `system_prompt` to a file holding `SYSTEM_PROMPT` attaches it.
+
+## 53. The parser reads the JSON object and not the words around it
+
+**Status: BY DESIGN, recorded 2026-10-24, reported by @Super-Eric in pull request #1. No
+published result depends on it.**
+
+`parse_answer` (`redtape/scoring/parsing.py`) tries fenced blocks first, then the last
+balanced JSON object, and reads nothing else. Models wrap JSON in prose and fences, and the
+parser accepts that so that formatting is not scored as reasoning. The cost is that text
+around the object is ignored even when it reverses it: `not {...}`, a sentence disowning the
+object before it, and a retraction after it all score exactly like the bare object.
+
+Checked on 2026-10-24: every reply behind the three published runs is a bare JSON object,
+except one empty reply, already scored as malformed. A run of other models, or with another
+prompt, could differ, and a reply that disowns its own object would be credited.
