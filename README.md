@@ -248,8 +248,8 @@ and inventing a difference in a pair that does not are failures.
 
 | strategy | pair consistency |
 |---|---|
-| never differ | **0.480** |
-| always differ | **0.370** |
+| never differ | **0.500** |
+| always differ | **0.405** |
 | ceiling | **1.000** |
 
 Never-differ lands at chance, as a 50/50 split implies. **Always-differ scores *below*
@@ -258,9 +258,15 @@ presence, so an invented difference fails on the half where truth does not move 
 much of the half where it does. Guessing "these should differ" is worse than never guessing.
 
 This is reported over 200 pairs rather than the 40 used during development: 40 carries
-roughly ±8pp, too coarse to separate 0.480 from 0.370. An earlier build selected pairs only
+roughly ±8pp, too coarse to separate 0.500 from 0.405. An earlier build selected pairs only
 on "adult with shelter costs", ground truth differed in 4 of 40, and never-differ banked
 0.900. The metric's stated property was false as measured until the ratio became a target.
+
+**Correction, 2026-10-24.** The two diagnostics above were re-run on this date. The figures
+published before it, 0.480 for never differ and 0.370 for always differ, are superseded:
+they were scored on 2026-09-19, before the anti-hack gate stopped reading the answer key
+([`docs/LIMITS.md`](docs/LIMITS.md) §42), and were not re-run after it. The baselines on
+the Hub page were corrected the same day. Details in [`docs/LIMITS.md`](docs/LIMITS.md) §54.
 
 ## The splits
 
@@ -600,7 +606,7 @@ information", and it is what the data supports.
   backed only by the engine agreeing with itself is the circularity this project exists to
   avoid.
 
-**Read [`docs/LIMITS.md`](docs/LIMITS.md) before citing any number here.** 53 sections,
+**Read [`docs/LIMITS.md`](docs/LIMITS.md) before citing any number here.** 54 sections,
 written as the work happened rather than retrofitted, stating what is *not* validated at
 least as carefully as what is, including several sections retracting our own errors, of
 which §43 and §44 retract this project's headline claim.

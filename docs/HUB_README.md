@@ -138,12 +138,20 @@ Corrected corpus, full dev split. Each model row is that model's own run (exact-
 | **Claude Opus 5** | **0.621** | **0.624** | **0.636** (198 pairs) |
 | **Claude Opus 5.5** | **0.563** | **0.745** | **0.705** (200 pairs) |
 | **GPT-5.6 Sol** | **0.629** | **0.793** | **0.675** (200 pairs) |
-| always_abstain | 0.000 | 0.000 | 0.000 |
-| never_abstain | 0.194 | 0.340 | 0.480 |
+| always_abstain | 0.194 | 0.000 | 0.500 |
+| never_abstain | 0.194 | 0.343 | 0.500 |
 | always_eligible | 0.041 | 0.343 | 0.500 |
-| never_eligible | 0.123 | 0.083 | 0.085 |
-| rules_only | 0.194 | 0.376 | 0.480 |
+| never_eligible | 0.123 | 0.343 | 0.500 |
+| rules_only | 0.194 | 0.388 | 0.500 |
 | *ceiling agent* | *1.000* | *1.000* | *1.000* |
+
+**Correction, 2026-10-24.** The baseline rows above were re-run on this date. The figures
+published before it are superseded: always_abstain 0.000 / 0.000 / 0.000, never_abstain
+0.194 / 0.340 / 0.480, never_eligible 0.123 / 0.083 / 0.085 and rules_only 0.194 / 0.376 /
+0.480. They were scored on 2026-09-19, two days before the anti-hack gate stopped reading
+the answer key (`docs/LIMITS.md` §42), and were not re-run after it. always_eligible is
+unchanged. Every model row was scored after that change and is unaffected. Details in
+`docs/LIMITS.md` §54.
 
 GPT-5.6 Sol's exact-match is 0.629 here, over the 778 determinate tasks its own run answered.
 The notice above gives 0.627, computed on the 774 determinate tasks that both it and Claude
@@ -190,7 +198,7 @@ Medicaid is computed but deliberately **unscored**: no external validation was o
 for it. A held-out split exists, has never been evaluated against, and stays that way.
 
 **Read [`docs/LIMITS.md`](docs/LIMITS.md) before citing any number from this environment.**
-It is 53 sections, written as the work happened rather than retrofitted, and several of them
+It is 54 sections, written as the work happened rather than retrofitted, and several of them
 retract errors found in my own published results, including a schema bug that was
 penalising exactly the behaviour the benchmark exists to reward, and which sat visible in
 every report for two days before it was read correctly.

@@ -2894,3 +2894,44 @@ object before it, and a retraction after it all score exactly like the bare obje
 Checked on 2026-10-24: every reply behind the three published runs is a bare JSON object,
 except one empty reply, already scored as malformed. A run of other models, or with another
 prompt, could differ, and a reply that disowns its own object would be credited.
+
+## 54. The published baseline figures predated the gate change of §42
+
+**Status: CORRECTED 2026-10-24. The five baselines and the two pair diagnostics were re-run and
+the README and the Hub page now quote the new figures, each with a dated correction. No model
+figure was affected.**
+
+The baseline and pair-diagnostic results were run on 2026-09-19 and committed with the
+corpus rebuild in bdaca71. Two days later 0763bbd removed the two anti-hack gate checks that
+read the answer key (§42). The baselines were never run again, so the Hub page's metrics table
+and the README's pair-consistency section went on quoting figures from the old gate. Re-run at
+cb4bc0c, the commit just before 0763bbd, every baseline reproduces its published row exactly,
+so the gate change is the whole difference. Re-run on 2026-10-24 (exact-match / abstention /
+pair-consistency):
+
+| | as published | now |
+|---|---|---|
+| always_abstain | 0.000 / 0.000 / 0.000 | 0.194 / 0.000 / 0.500 |
+| never_abstain | 0.194 / 0.340 / 0.480 | 0.194 / 0.343 / 0.500 |
+| always_eligible | 0.041 / 0.343 / 0.500 | unchanged |
+| never_eligible | 0.123 / 0.083 / 0.085 | 0.123 / 0.343 / 0.500 |
+| rules_only | 0.194 / 0.376 / 0.480 | 0.194 / 0.388 / 0.500 |
+| pair never differ | 0.194 / 0.340 / 0.480 | 0.194 / 0.343 / 0.500 |
+| pair always differ | 0.158 / 0.340 / 0.370 | 0.158 / 0.343 / 0.405 |
+
+Every change is one of the two removed checks no longer zeroing an answer. `never_eligible`
+answers zero everywhere, which the old gate zeroed whenever the truth was not all zero; it now
+scores 0.343 on abstention, the same as never abstaining, which is what it does. `always_abstain`
+now earns exact-match on the determinate tasks where the estimates it states beside its blanket
+abstention are right, while its abstention stays 0.000. Never-differ now lands exactly at
+chance, 0.500, and always-differ, at 0.405, is still below it. §42's own line that
+`never_eligible` "scores 0.123 exact-match and 0.083 abstention" was true when it was written
+and is kept as written.
+
+**Why it got through.** `tests/test_published_figures.py` checks the pages against the results
+files, and the results files were stale in the same way, so page and file agreed with each
+other and neither agreed with the scorer. The §31 pattern again: an artifact checked only
+against another artifact built at the same time. The model rows were safe only because every
+model run was scored after 0763bbd. Found on 2026-10-24 while checking whether pull request #1
+moved any published number, by re-running the baselines through `eval/run_eval.py`; it did not
+move them. Nothing in the suite re-runs a baseline and compares it with its committed file.
