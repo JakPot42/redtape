@@ -106,10 +106,10 @@ taskset, oracle and scoring; the baselines and test suite ship in the environmen
 (`prime env pull`, or the GitHub repo) and also need no key.
 
 Run in a pulled copy with the `[dev,generate]` extras installed, the suite reports
-**386 passed, 41 skipped**. The copy is not a git repository and leaves out the repository's
+**387 passed, 41 skipped**. The copy is not a git repository and leaves out the repository's
 `.gitignore`, CI workflow, results files and README (this page takes its place), so the 38
 checks on those skip and name what is missing; the other 3 skip in a clean checkout of the
-repository too. Measured on 2026-10-24 in the tree that is uploaded. In version 0.1.7 the
+repository too. Measured on 2026-10-29 in the tree that is uploaded. In version 0.1.7 the
 suite did not pass in a pulled copy: `docs/LIMITS.md` §50.
 
 ## What makes it different
@@ -206,7 +206,7 @@ every report for two days before it was read correctly.
 ---
 
 Source, full README, and the raw results files:
-**https://github.com/JakPot42/redtape** · Apache-2.0 · 427 tests (the repository README
+**https://github.com/JakPot42/redtape** · Apache-2.0 · 428 tests (the repository README
 says what a run reports, and where that was measured)
 
 PolicyEngine is not included here and is not covered by this licence. It is under the

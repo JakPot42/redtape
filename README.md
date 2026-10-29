@@ -328,7 +328,7 @@ all (unguarded `import fcntl`), and the determinism claims depend on the pinned 
 # packaging, and without it the oracle tests and the five baselines cannot run.
 uv sync --extra dev --extra generate
 
-# 427 tests. Run as a module or bare `pytest`; both work, and CI runs the bare form.
+# 428 tests. Run as a module or bare `pytest`; both work, and CI runs the bare form.
 ./.venv/bin/python -m pytest
 
 ./.venv/bin/python scripts/smoke.py                     # one household, with provenance
@@ -350,22 +350,25 @@ No CI result is quoted here: none was observed when the figures below were measu
 workflow's own log is the record. It runs `pytest -rs`, which prints every skip with its
 reason.
 
-The suite collects **427 tests**. What a run reports depends on what is on disk, so each
-figure names where it was measured. Both were measured locally on 2026-10-24 with CPython
-3.13.15. The project pins the 3.13 line, not one patch release:
+The suite collects **428 tests**. What a run reports depends on what is on disk, so each
+figure names where it was measured. The clean checkout was measured on macOS on 2026-10-29
+with CPython 3.13.16. The working-folder figure has not been re-measured: it is the
+2026-10-24 measurement (CPython 3.13.15) plus the one test added since, which runs in every
+checkout. The project pins the 3.13 line, not one patch release:
 
 - **A clean checkout**, which is what CI and anyone who clones the repository gets:
-  **424 passed, 3 skipped**. The skipped tests are the ones whose subject is a file kept out
+  **425 passed, 3 skipped**. The skipped tests are the ones whose subject is a file kept out
   of the public tree on purpose: the held-out manifest and the internal working notes.
 - **The author's working folder**, which also holds the gitignored held-out split and
-  `CLAUDE.md`: **427 passed, 0 skipped**.
+  `CLAUDE.md`: **428 passed, 0 skipped**.
 
 A copy pulled from the Environments Hub (`prime env pull`) reports
-**386 passed, 41 skipped**. It is not a git repository, its `README.md` is the Hub page, and
+**387 passed, 41 skipped**. It is not a git repository, its `README.md` is the Hub page, and
 it carries no `.gitignore`, CI workflow, `results/` or `docs/HUB_README.md`, so the 38 checks
 on those skip and name what is missing; the other 3 are the clean checkout's. Measured on
-2026-10-24 in the tree `scripts/stage_hub_push.py` builds for upload; the version on the Hub
-now (0.1.8) predates pull request #1 and its two tests. In version 0.1.7 the
+2026-10-29 on macOS with CPython 3.13.16 in the tree `scripts/stage_hub_push.py` builds for
+upload; the version on the Hub now (0.1.8) predates pull request #1 and the system-prompt
+change, and their three tests. In version 0.1.7 the
 suite did not pass in a pulled copy, and it had not been run there since before the first
 publish: [`docs/LIMITS.md`](docs/LIMITS.md) §50.
 
