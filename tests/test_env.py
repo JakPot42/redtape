@@ -317,3 +317,22 @@ def test_an_abstention_naming_the_wrong_fact_still_earns_nothing_on_emptied_comp
     asyncio.run(task.score(trace))
     assert trace.rewards["abstention"].score == pytest.approx(0.5)
     assert trace.rewards["eligibility"].score == 0.0
+
+
+def test_the_taskset_attaches_the_system_prompt(tmp_path):
+    from redtape.envs.t1_eligibility import SYSTEM_PROMPT, T1Config, T1Taskset
+
+    if not SPLIT.exists():
+        pytest.skip("smoke split not built")
+    tasks = list(T1Taskset(T1Config(split_path=str(SPLIT))))
+    assert tasks
+    assert all(t.data.system_prompt == SYSTEM_PROMPT for t in tasks)
+    # the prompt does not rename the task: the key is still the one the split records
+    with SPLIT.open(encoding="utf-8") as fh:
+        recorded = [json.loads(line)["task_key"] for line in fh if line.strip()]
+    assert [t.key for t in tasks] == recorded
+
+    override = tmp_path / "prompt.txt"
+    override.write_text("a variant")
+    tasks = list(T1Taskset(T1Config(split_path=str(SPLIT), system_prompt=override)))
+    assert all(t.data.system_prompt == "a variant" for t in tasks)

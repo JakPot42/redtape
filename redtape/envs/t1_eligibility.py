@@ -18,7 +18,7 @@ from collections.abc import Iterator
 from verifiers.v1.configs.task import TaskConfig
 from verifiers.v1.configs.taskset import TasksetConfig
 from verifiers.v1.state import State
-from verifiers.v1.task import Task, TaskData
+from verifiers.v1.task import Task, TaskData, task_key
 from verifiers.v1.taskset import Taskset
 from verifiers.v1.trace import Trace
 from verifiers.v1.utils.decorators import metric, reward
@@ -152,6 +152,13 @@ class T1Config(TasksetConfig):
 
 class T1Task(Task[T1Data, State, T1TaskConfig]):
     NEEDS_CONTAINER = False
+
+    @property
+    def key(self) -> str:
+        """The split's `task_key`: the content hash without the system prompt, so attaching or
+        overriding the prompt does not rename the task. `hash` still covers the prompt."""
+        return task_key(self.data.model_dump(mode="json", exclude_none=True,
+                                             exclude={"system_prompt"}))
 
     # ---------------------------------------------------------------- helpers
     def _parsed(self, trace: Trace):
@@ -409,4 +416,8 @@ class T1Taskset(Taskset[T1Task, T1Config]):
                 line = line.strip()
                 if not line:
                     continue
-                yield T1Task(T1Data.model_validate(json.loads(line)), self.config.task)
+                # The case file carries no answer format, and the only system text a verifiers
+                # harness takes from the task is `data.system_prompt`. A `system_prompt` file in
+                # the config still wins.
+                task = T1Task(T1Data.model_validate(json.loads(line)), self.config.task)
+                yield task.with_system_prompt(SYSTEM_PROMPT)
